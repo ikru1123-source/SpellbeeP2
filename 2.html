@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 900;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 16px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 20px; height: 20px; }
+.dots-row {
+  display: flex; align-items: center; gap: 3px;
+  max-width: 220px; flex-wrap: nowrap;
+  overflow: hidden; justify-content: center;
+}
+.dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: rgba(255,255,255,0.12);
+  transition: all 0.3s; flex-shrink: 0;
+}
+.dot.active {
+  width: 7px; height: 7px;
+  background: var(--gold);
+  box-shadow: 0 0 6px rgba(212,175,55,0.5);
+}
+.dot.nearby { background: rgba(212,175,55,0.3); }
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1>Spelling Bee</h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="dots-row" id="dotsRow"></div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'pabulum', pronunciation:'PAB-yuh-lum', ipa:'/ˈpæbjʊləm/', pos:'noun', def:'Food or nourishment, especially that which is bland or insipid; also, intellectual sustenance or material considered oversimplified or dull.', lang:'Latin, from pabulum (\'food, fodder\'), from pascere (\'to feed\').', example:'The TV show offered nothing but pabulum for the masses, with predictable plots and shallow characters.', isNoun:true },
+  { word:'pagoda', pronunciation:'puh-GOH-duh', ipa:'/pəˈɡoʊdə/', pos:'noun', def:'A tiered tower with multiple eaves, common in East and Southeast Asia, typically associated with Buddhist temples.', lang:'Portuguese, from pagode, probably from Persian butkada (\'temple of idols\'), from but (\'idol\') + kada (\'dwelling\').', example:'The ancient pagoda stood majestically above the treetops, its curved eaves catching the morning light.', isNoun:true },
+  { word:'Paleozoic', pronunciation:'PAY-lee-uh-ZOH-ik', ipa:'/ˌpeɪliəˈzoʊɪk/', pos:'adjective', def:'Relating to the geological era between about 541 and 252 million years ago, during which fish, insects, amphibians, reptiles, and land plants first appeared.', lang:'Greek, from palaios (\'ancient\') + zōē (\'life\').', example:'The Paleozoic era saw the emergence of complex life forms, including the first vertebrates to walk on land.', isNoun:false },
+  { word:'paletot', pronunciation:'PAL-uh-toh', ipa:'/ˈpælɪˌtoʊ/', pos:'noun', def:'A loose-fitting overcoat or cloak, typically worn by men or women as an outer garment.', lang:'French, from paletot (\'overcoat\'), of uncertain origin, possibly from Middle English paltok (\'a type of jacket\').', example:'She draped her elegant paletot over her shoulders before stepping into the chilly autumn evening.', isNoun:true },
+  { word:'palmate', pronunciation:'PAL-mayt', ipa:'/ˈpælmeɪt/', pos:'adjective', def:'Shaped like an open palm or hand with fingers spread; having lobes or leaflets radiating from a common point.', lang:'Latin, from palmatus (\'shaped like a palm\'), from palma (\'palm of the hand\').', example:'The maple tree\'s palmate leaves turned brilliant shades of red and orange in the fall.', isNoun:false },
+  { word:'palpebral', pronunciation:'PAL-puh-bruhl', ipa:'/ˈpælpəbrəl/', pos:'adjective', def:'Relating to or situated near the eyelids.', lang:'Latin, from palpebra (\'eyelid\').', example:'The doctor examined the palpebral conjunctiva by gently everting the patient\'s upper eyelid.', isNoun:false },
+  { word:'palpitant', pronunciation:'PAL-pih-tunt', ipa:'/ˈpælpɪtənt/', pos:'adjective', def:'Trembling, quivering, or pulsating; throbbing with excitement or emotion.', lang:'Latin, from palpitant- (\'throbbing\'), present participle of palpitare (\'to throb, flutter\').', example:'Her palpitant heart raced as she opened the envelope containing the contest results.', isNoun:false },
+  { word:'Panama', pronunciation:'PAN-uh-mah', ipa:'/ˈpænəˌmɑː/', pos:'noun', def:'A country in Central America; also, a lightweight hat made from the plaited leaves of a palmlike plant, traditionally from Ecuador.', lang:'Spanish, possibly from an indigenous Kuna word meaning \'abundance of fish\' or \'abundance of butterflies\'.', example:'He wore a stylish Panama hat to shield himself from the tropical sun during his vacation.', isNoun:true },
+  { word:'panary', pronunciation:'PAN-uh-ree', ipa:'/ˈpænəri/', pos:'adjective', def:'Of or relating to bread or a bakery; suitable for breadmaking.', lang:'Latin, from panarium (\'bread basket\'), from panis (\'bread\').', example:'The panary fermentation process gives sourdough bread its distinctive tangy flavor and chewy texture.', isNoun:false },
+  { word:'pancetta', pronunciation:'pan-CHET-uh', ipa:'/pænˈtʃɛtə/', pos:'noun', def:'Italian cured meat made from pork belly, seasoned with salt and spices, and typically rolled into a cylinder.', lang:'Italian, from pancia (\'belly\'), from Latin pantex (\'belly, paunch\').', example:'The chef added diced pancetta to the carbonara sauce, letting it render until crispy and golden.', isNoun:true },
+  { word:'panchreston', pronunciation:'PAN-kres-tun', ipa:'/ˈpænkrɛstən/', pos:'noun', def:'A remedy or solution purported to cure all diseases or solve all problems; a universal remedy.', lang:'Greek, from pankhrēston (\'useful for everything\'), from pan (\'all\') + khrēstos (\'useful\').', example:'The salesman\'s miracle tonic was nothing more than a panchreston, promising to cure everything from headaches to heartbreak.', isNoun:true },
+  { word:'pancreas', pronunciation:'PAN-kree-us', ipa:'/ˈpæŋkriəs/', pos:'noun', def:'A large gland behind the stomach that secretes digestive enzymes into the duodenum and produces insulin and glucagon for regulating blood sugar.', lang:'Greek, from pan (\'all\') + kreas (\'flesh\').', example:'The pancreas plays a vital role in digestion by producing enzymes that break down fats, proteins, and carbohydrates.', isNoun:true },
+  { word:'panopticon', pronunciation:'pan-OP-tih-kon', ipa:'/pænˈɒptɪkɒn/', pos:'noun', def:'A circular building with cells arranged around a central well from which prisoners can be observed at all times; a system of total surveillance.', lang:'Greek, from pan (\'all\') + optikon (\'relating to sight\'), from optikos (\'of or for sight\').', example:'The philosopher used the panopticon as a metaphor for modern surveillance society where citizens feel constantly watched.', isNoun:true },
+  { word:'pantomime', pronunciation:'PAN-tuh-myme', ipa:'/ˈpæntəmaɪm/', pos:'noun', def:'A dramatic entertainment in which performers express meaning through gestures and body movements without words; in Britain, a theatrical production based on a fairy tale.', lang:'Latin, from pantomimus, from Greek pantomimos (\'imitating all\'), from pan (\'all\') + mimos (\'imitator\').', example:'The children roared with laughter at the pantomime, cheering when the hero outwitted the villain.', isNoun:true },
+  { word:'papyrus', pronunciation:'puh-PYE-rus', ipa:'/pəˈpaɪrəs/', pos:'noun', def:'A material prepared in ancient Egypt from the pithy stem of a water plant, used for writing or painting on; also, the plant itself.', lang:'Latin, from Greek papyros, possibly of Egyptian origin.', example:'Scholars carefully unrolled the ancient papyrus scroll, revealing hieroglyphic text that had been preserved for thousands of years.', isNoun:true },
+  { word:'par excellence', pronunciation:'par EK-suh-LAHNS', ipa:'/ˌpɑːr ˌɛksəˈlɑːns/', pos:'adverb', def:'Being the best or most typical example of something; preeminently; above all.', lang:'French, literally \'by excellence\'.', example:'She was the hostess par excellence, ensuring every guest felt welcome and comfortable at her gatherings.', isNoun:false },
+  { word:'parabola', pronunciation:'puh-RAB-uh-luh', ipa:'/pəˈræbələ/', pos:'noun', def:'A symmetrical open plane curve formed by the intersection of a cone with a plane parallel to its side; the path of a projectile under the influence of gravity.', lang:'Greek, from parabolē (\'comparison, application\'), from paraballein (\'to throw beside\'), from para (\'beside\') + ballein (\'to throw\').', example:'The trajectory of the basketball formed a perfect parabola as it arced toward the hoop.', isNoun:true },
+  { word:'parameters', pronunciation:'puh-RAM-uh-turz', ipa:'/pəˈræmɪtərz/', pos:'noun', def:'Limits or boundaries that define the scope of a process or activity; in mathematics, quantities that define the characteristics of a function or system.', lang:'Greek, from para (\'beside\') + metron (\'measure\'), via modern Latin.', example:'The researchers carefully defined the parameters of the study before collecting any data.', isNoun:true },
+  { word:'paraplegic', pronunciation:'PAIR-uh-PLEE-jik', ipa:'/ˌpærəˈpliːdʒɪk/', pos:'noun', def:'A person affected by paralysis of the legs and lower body, typically caused by spinal cord injury or disease.', lang:'Greek, from paraplegia, from para (\'beside, amiss\') + plēssein (\'to strike\').', example:'After months of intensive rehabilitation, the paraplegic athlete competed in the wheelchair marathon.', isNoun:true },
+  { word:'parasol', pronunciation:'PAIR-uh-sol', ipa:'/ˈpærəˌsɒl/', pos:'noun', def:'A light umbrella used to provide shade from the sun.', lang:'French, from Italian parasole, from para- (\'protection against\') + sole (\'sun\'), from Latin sol (\'sun\').', example:'She carried a delicate lace parasol to protect her complexion during the garden party.', isNoun:true },
+  { word:'parazonium', pronunciation:'PAIR-uh-ZOH-nee-um', ipa:'/ˌpærəˈzoʊniəm/', pos:'noun', def:'A large triangular dagger worn at the left side by Greek and Roman officers as a badge of rank.', lang:'Latin, from Greek parazōnion, from para (\'beside\') + zōnē (\'belt, girdle\').', example:'The marble statue of the Roman general depicted him with a parazonium strapped to his belt.', isNoun:true },
+  { word:'parbuckle', pronunciation:'PAR-buk-ul', ipa:'/ˈpɑːrˌbʌkəl/', pos:'noun', def:'A sling made by passing both ends of a rope through a loop, used for raising or lowering cylindrical objects; also, a method of righting a capsized vessel.', lang:'English, of uncertain origin, possibly an alteration of earlier barbuckle.', example:'The salvage crew used a parbuckle technique to right the capsized cargo ship in the harbor.', isNoun:true },
+  { word:'Parcheesi', pronunciation:'par-CHEE-zee', ipa:'/pɑːrˈtʃiːzi/', pos:'noun', def:'A board game adapted from the Indian game pachisi in which players race their pieces around a cross-shaped board.', lang:'Hindi, from pachīsī (\'of twenty-five\'), referring to the highest throw of the dice.', example:'The family gathered around the table for a lively game of Parcheesi on a rainy Saturday afternoon.', isNoun:true },
+  { word:'parfleche', pronunciation:'PAR-flesh', ipa:'/ˈpɑːrflɛʃ/', pos:'noun', def:'A type of rawhide made from buffalo or other animal skin that has been dried after being soaked in lye; also, an article made from this material.', lang:'Canadian French, from French parer (\'to parry, ward off\') + flèche (\'arrow\').', example:'The Indigenous peoples of the Great Plains used parfleche containers to store dried meat and pemmican.', isNoun:true },
+  { word:'pariah', pronunciation:'puh-RYE-uh', ipa:'/pəˈraɪə/', pos:'noun', def:'An outcast; a person who is avoided or despised by others.', lang:'Tamil, from paraiyar (\'hereditary drummers\'), from parai (\'a large drum\').', example:'After the scandal, he became a pariah in the business community, shunned by former allies.', isNoun:true },
+  { word:'parlay', pronunciation:'PAR-lay', ipa:'/ˈpɑːrleɪ/', pos:'verb', def:'To use an initial stake or winnings from a previous bet as the stake for a further bet; to exploit successfully or transform into something of greater value.', lang:'French, from paroli (\'a set of cards\'), from Italian paroli, from paro (\'equal\'), from Latin par (\'equal\').', example:'She managed to parlay her small startup into a multimillion-dollar company within five years.', isNoun:false },
+  { word:'Parmesan', pronunciation:'PAR-muh-zahn', ipa:'/ˈpɑːrməˌzɑːn/', pos:'noun', def:'A hard, dry Italian cheese made from skimmed cow\'s milk, used especially in grated form.', lang:'Italian, from Parmigiano (\'of Parma\'), from Parma, a city in northern Italy.', example:'She grated fresh Parmesan over the steaming pasta, adding a rich, nutty flavor to the dish.', isNoun:true },
+  { word:'parochial', pronunciation:'puh-ROH-kee-ul', ipa:'/pəˈroʊkiəl/', pos:'adjective', def:'Relating to a church parish; having a limited or narrow outlook or scope.', lang:'Latin, from parochia (\'diocese\'), from Greek paroikia (\'sojourning\'), from paroikos (\'dwelling beside\'), from para (\'beside\') + oikos (\'house\').', example:'His parochial attitude prevented him from appreciating the diverse cultural perspectives of his colleagues.', isNoun:false },
+  { word:'parodic', pronunciation:'puh-ROD-ik', ipa:'/pəˈrɒdɪk/', pos:'adjective', def:'Of, relating to, or having the characteristics of a parody; imitating something in a humorous or satirical way.', lang:'Greek, from parōidia (\'burlesque song\'), from para (\'beside, against\') + ōidē (\'song, ode\').', example:'The comedian\'s parodic impression of the politician had the entire audience in stitches.', isNoun:false },
+  { word:'parr', pronunciation:'PAR', ipa:'/pɑːr/', pos:'noun', def:'A young Atlantic salmon with dark vertical bars on its sides, living in fresh water before its first migration to the sea.', lang:'English, of unknown origin; first recorded in the early 18th century.', example:'The biologist carefully counted the parr in the stream to assess the health of the salmon population.', isNoun:true },
+  { word:'parsec', pronunciation:'PAR-sek', ipa:'/ˈpɑːrsɛk/', pos:'noun', def:'A unit of distance used in astronomy, equal to about 3.26 light-years, defined as the distance at which one astronomical unit subtends an angle of one arcsecond.', lang:'English, a blend of parallax + second (of arc).', example:'The nearest star system to Earth, Alpha Centauri, is approximately 1.3 parsecs away.', isNoun:true },
+  { word:'parsimony', pronunciation:'PAR-suh-MOH-nee', ipa:'/ˈpɑːrsɪˌmoʊni/', pos:'noun', def:'Extreme unwillingness to spend money or use resources; stinginess. In science, the principle that the simplest explanation is usually correct.', lang:'Latin, from parsimonia (\'frugality, thrift\'), from parcere (\'to spare\').', example:'His legendary parsimony meant he never tipped more than five percent, even at the finest restaurants.', isNoun:true },
+  { word:'partiality', pronunciation:'par-shee-AL-ih-tee', ipa:'/ˌpɑːrʃiˈælɪti/', pos:'noun', def:'Unfair bias in favor of one thing or person compared with another; favoritism. Also, a particular fondness or liking.', lang:'Latin, from partialis (\'of a part\'), from pars (\'part\'), via Old French.', example:'The judge was criticized for showing partiality toward the defendant throughout the trial.', isNoun:true },
+  { word:'particulate', pronunciation:'par-TIK-yuh-lut', ipa:'/pɑːrˈtɪkjʊlɪt/', pos:'adjective', def:'Relating to or in the form of minute separate particles; consisting of or occurring as fine particles.', lang:'Latin, from particula (\'small part, particle\'), diminutive of pars (\'part\').', example:'The factory\'s smokestacks released particulate matter into the air, prompting environmental concerns.', isNoun:false },
+  { word:'parturient', pronunciation:'par-TOOR-ee-unt', ipa:'/pɑːrˈtjʊəriənt/', pos:'adjective', def:'About to give birth; in labor. Also, relating to or associated with childbirth.', lang:'Latin, from parturient- (\'being in labor\'), present participle of parturire (\'to be in labor\'), from parere (\'to bring forth\').', example:'The parturient woman was rushed to the delivery room as her contractions grew closer together.', isNoun:false },
+  { word:'parvo', pronunciation:'PAR-voh', ipa:'/ˈpɑːrvoʊ/', pos:'noun', def:'Short for parvovirus, a highly contagious viral disease affecting dogs, characterized by severe vomiting and diarrhea.', lang:'Latin, from parvus (\'small\'), referring to the small size of the virus.', example:'The veterinarian stressed the importance of vaccinating puppies against parvo before exposing them to other dogs.', isNoun:true },
+  { word:'pashmina', pronunciation:'pash-MEE-nuh', ipa:'/pæʃˈmiːnə/', pos:'noun', def:'A fine type of cashmere wool from the Changthangi goat; a shawl or scarf made from this wool.', lang:'Persian, from pashm (\'wool\'), ultimately from a Turkic language.', example:'She wrapped the soft pashmina shawl around her shoulders to ward off the evening chill.', isNoun:true },
+  { word:'passé', pronunciation:'pa-SAY', ipa:'/pæˈseɪ/', pos:'adjective', def:'No longer fashionable or current; out of date.', lang:'French, past participle of passer (\'to pass\').', example:'Bell-bottom jeans were considered passé by the 1980s, though they eventually made a comeback.', isNoun:false },
+  { word:'pasteurize', pronunciation:'PAS-chuh-ryze', ipa:'/ˈpæstʃəˌraɪz/', pos:'verb', def:'To subject food or drink to a process of partial sterilization by heating to a specific temperature for a set period of time, killing harmful microorganisms.', lang:'French, named after Louis Pasteur, the French chemist who developed the process.', example:'Dairy farmers are required to pasteurize milk before selling it to consumers in most countries.', isNoun:false },
+  { word:'pastrami', pronunciation:'puh-STRAH-mee', ipa:'/pəˈstrɑːmi/', pos:'noun', def:'A highly seasoned smoked cut of beef, typically made from the brisket or navel, cured in a mixture of spices and then smoked.', lang:'Yiddish, from Romanian pastramă, from Turkish pastırma (\'pressed meat\').', example:'He ordered a thick pastrami on rye with mustard from the famous New York delicatessen.', isNoun:true },
+  { word:'patella', pronunciation:'puh-TEL-uh', ipa:'/pəˈtɛlə/', pos:'noun', def:'The kneecap; a flat, circular-triangular bone situated at the front of the knee joint.', lang:'Latin, diminutive of patina (\'pan, dish\'), referring to its shape.', example:'The X-ray revealed a hairline fracture in her patella after she fell during the ice skating competition.', isNoun:true },
+  { word:'pathos', pronunciation:'PAY-thos', ipa:'/ˈpeɪθɒs/', pos:'noun', def:'A quality that evokes feelings of pity, sympathy, or sorrow; the power to stir tender or melancholy emotion.', lang:'Greek, from pathos (\'suffering, feeling, emotion\'), from paschein (\'to suffer\').', example:'The film\'s final scene was filled with such pathos that most of the audience was moved to tears.', isNoun:true },
+  { word:'patronymic', pronunciation:'PAT-ruh-NIM-ik', ipa:'/ˌpætrəˈnɪmɪk/', pos:'noun', def:'A name derived from the name of a father or ancestor, typically by the addition of a prefix or suffix.', lang:'Greek, from patronymikos, from patēr (\'father\') + onyma (\'name\').', example:'Johnson is a patronymic surname meaning \'son of John,\' common in English-speaking countries.', isNoun:true },
+  { word:'paucity', pronunciation:'PAW-sih-tee', ipa:'/ˈpɔːsɪti/', pos:'noun', def:'The presence of something in only small or insufficient quantities; scarcity.', lang:'Latin, from paucitas (\'fewness\'), from paucus (\'few\').', example:'The paucity of evidence made it impossible for the prosecution to build a convincing case.', isNoun:true },
+  { word:'peacenik', pronunciation:'PEESE-nik', ipa:'/ˈpiːsnɪk/', pos:'noun', def:'A person who advocates for peace, especially one who demonstrates against war or military action; often used somewhat dismissively.', lang:'English, from peace + -nik (a Yiddish/Russian suffix meaning \'person associated with\').', example:'During the 1960s, peaceniks organized massive demonstrations against the Vietnam War across the country.', isNoun:true },
+  { word:'peculate', pronunciation:'PEK-yuh-layt', ipa:'/ˈpɛkjʊˌleɪt/', pos:'verb', def:'To steal or misappropriate money or property entrusted to one\'s care, especially public funds; to embezzle.', lang:'Latin, from peculatus (\'embezzlement\'), from peculium (\'private property\'), from pecu (\'cattle, money\').', example:'The treasurer was found to have peculated thousands of dollars from the charity\'s accounts over several years.', isNoun:false },
+  { word:'pecuniary', pronunciation:'pih-KYOO-nee-air-ee', ipa:'/pɪˈkjuːniˌɛri/', pos:'adjective', def:'Relating to or consisting of money; having to do with financial matters.', lang:'Latin, from pecuniarius (\'of or relating to money\'), from pecunia (\'money\'), from pecu (\'cattle\').', example:'The lawsuit sought pecuniary damages for the financial losses suffered by the plaintiffs.', isNoun:false },
+  { word:'pedantry', pronunciation:'PED-un-tree', ipa:'/ˈpɛdəntri/', pos:'noun', def:'Excessive concern with minor details or rules, especially in academic learning; an ostentatious display of learning.', lang:'Italian, from pedante (\'teacher, pedant\'), possibly from Greek paideuein (\'to teach\'), from pais (\'child\').', example:'His colleagues grew tired of his pedantry, as he insisted on correcting every minor grammatical error in their emails.', isNoun:true },
+  { word:'pelagial', pronunciation:'puh-LAY-jee-ul', ipa:'/pəˈleɪdʒiəl/', pos:'adjective', def:'Of, relating to, or living in the open sea, away from the coast or the bottom.', lang:'Greek, from pelagios (\'of the sea\'), from pelagos (\'open sea\').', example:'Pelagial ecosystems support a vast array of marine life, from microscopic plankton to enormous whales.', isNoun:false },
+  { word:'pelerine', pronunciation:'PEL-uh-reen', ipa:'/ˈpɛləˌriːn/', pos:'noun', def:'A woman\'s short cape with pointed ends at the center front, typically made of fur or cloth.', lang:'French, from pèlerine (\'pilgrim\'s cloak\'), from pèlerin (\'pilgrim\'), from Latin peregrinus (\'foreigner, traveler\').', example:'The Victorian lady fastened her lace pelerine at the throat before heading out to the afternoon tea.', isNoun:true },
+  { word:'pelf', pronunciation:'PELF', ipa:'/pɛlf/', pos:'noun', def:'Money, especially when gained in a dishonest or dishonorable way; ill-gotten riches.', lang:'Old French, from pelfre (\'booty, spoils\'), of uncertain origin, possibly Germanic.', example:'The corrupt official amassed a fortune of pelf through decades of bribery and backroom deals.', isNoun:true },
+  { word:'Peloponnesian', pronunciation:'PEL-uh-puh-NEE-zhun', ipa:'/ˌpɛləpəˈniːʒən/', pos:'adjective', def:'Of or relating to the Peloponnese, a peninsula in southern Greece, or the wars fought between Athens and Sparta.', lang:'Greek, from Peloponnēsos (\'island of Pelops\'), from Pelops (a mythological figure) + nēsos (\'island\').', example:'The Peloponnesian War between Athens and Sparta lasted nearly three decades and reshaped the ancient Greek world.', isNoun:false },
+  { word:'pendentive', pronunciation:'pen-DEN-tiv', ipa:'/pɛnˈdɛntɪv/', pos:'noun', def:'A curved triangular section of vaulting that provides the transition from a square or polygonal base to a dome above.', lang:'French, from pendentif, from Latin pendens (\'hanging\'), present participle of pendere (\'to hang\').', example:'The cathedral\'s soaring dome rested on four elegantly curved pendentives that bridged the square nave below.', isNoun:true },
+  { word:'pendragon', pronunciation:'pen-DRAG-un', ipa:'/pɛnˈdræɡən/', pos:'noun', def:'A chief leader or a king, especially the supreme chief of the ancient British or Welsh princes.', lang:'Welsh, from pen (\'head, chief\') + dragon (\'dragon, war leader\').', example:'In Arthurian legend, Uther Pendragon was the father of King Arthur and a powerful ruler of Britain.', isNoun:true },
+  { word:'pendulous', pronunciation:'PEN-juh-lus', ipa:'/ˈpɛndjʊləs/', pos:'adjective', def:'Hanging down loosely; swinging freely; drooping.', lang:'Latin, from pendulus (\'hanging\'), from pendere (\'to hang\').', example:'The pendulous branches of the weeping willow swept gracefully over the surface of the pond.', isNoun:false },
+  { word:'penitentiary', pronunciation:'PEN-ih-TEN-shuh-ree', ipa:'/ˌpɛnɪˈtɛnʃəri/', pos:'noun', def:'A prison, especially a state or federal facility for serious offenders.', lang:'Latin, from paenitentia (\'repentance\'), from paenitere (\'to cause to repent\').', example:'The convicted felon was sentenced to twenty years in a federal penitentiary for his crimes.', isNoun:true },
+  { word:'penultimate', pronunciation:'pih-NUL-tuh-mut', ipa:'/pɪˈnʌltɪmɪt/', pos:'adjective', def:'Last but one in a series; second to last.', lang:'Latin, from paenultimus, from paene (\'almost\') + ultimus (\'last\').', example:'The penultimate chapter of the novel contained a shocking twist that set up the dramatic finale.', isNoun:false },
+  { word:'pepita', pronunciation:'peh-PEE-tuh', ipa:'/pɛˈpiːtə/', pos:'noun', def:'A pumpkin seed, especially one that has been hulled and is eaten as a snack or used as a garnish.', lang:'Spanish, diminutive of pepita (\'seed, pip\'), from Latin pepo (\'pumpkin\'), from Greek pepōn (\'ripe\').', example:'She sprinkled toasted pepitas over the butternut squash soup for a satisfying crunch.', isNoun:true },
+  { word:'per se', pronunciation:'pur SAY', ipa:'/ˌpɜːr ˈseɪ/', pos:'adverb', def:'By or in itself; intrinsically; without reference to anything else.', lang:'Latin, literally \'by itself\'.', example:'The plan wasn\'t bad per se, but the timing made it unlikely to succeed.', isNoun:false },
+  { word:'peradventure', pronunciation:'pur-ad-VEN-chur', ipa:'/ˌpɜːrədˈvɛntʃər/', pos:'adverb', def:'Perhaps; possibly. As a noun, uncertainty or doubt.', lang:'Old French, from par aventure (\'by chance\'), from Latin per (\'through\') + adventura (\'what is about to happen\').', example:'If peradventure the weather clears by noon, we shall proceed with the outdoor ceremony as planned.', isNoun:false },
+  { word:'perceptible', pronunciation:'pur-SEP-tuh-bul', ipa:'/pərˈsɛptɪbəl/', pos:'adjective', def:'Able to be perceived by the senses or the mind; noticeable.', lang:'Latin, from perceptibilis, from percipere (\'to seize, understand\'), from per (\'thoroughly\') + capere (\'to take\').', example:'There was a barely perceptible tremor in her voice as she delivered the difficult news to her team.', isNoun:false },
+  { word:'periaktos', pronunciation:'PAIR-ee-AK-tos', ipa:'/ˌpɛriˈæktoʊs/', pos:'noun', def:'A triangular prism of wood used in ancient Greek theater that could be rotated to show different painted scenes on each side.', lang:'Greek, from periaktos (\'revolving\'), from peri (\'around\') + agein (\'to lead, drive\').', example:'The ancient Greek stagehands rotated the periaktos to reveal a new painted backdrop for the next scene of the play.', isNoun:true },
+  { word:'perigynous', pronunciation:'puh-RIJ-ih-nus', ipa:'/pəˈrɪdʒɪnəs/', pos:'adjective', def:'Of a flower in which the stamens and other floral parts are borne on the rim of a cuplike receptacle surrounding the ovary.', lang:'Greek, from peri (\'around\') + gynē (\'woman, female\'), referring to the pistil.', example:'Roses are perigynous flowers, with their stamens attached to the rim of a cup-shaped structure enclosing the ovary.', isNoun:false },
+  { word:'periodontist', pronunciation:'PAIR-ee-oh-DON-tist', ipa:'/ˌpɛriəˈdɒntɪst/', pos:'noun', def:'A dentist who specializes in the treatment of diseases and conditions affecting the gums and other structures supporting the teeth.', lang:'Greek, from peri (\'around\') + odous (genitive odontos, \'tooth\') + -ist.', example:'Her dentist referred her to a periodontist when the gum recession became too advanced for standard treatment.', isNoun:true },
+  { word:'peripheral', pronunciation:'puh-RIF-ur-ul', ipa:'/pəˈrɪfərəl/', pos:'adjective', def:'Relating to or situated on the edge or periphery; of secondary importance; not central.', lang:'Greek, from periphereia (\'circumference\'), from peri (\'around\') + pherein (\'to carry\').', example:'The peripheral details of the story distracted readers from the central mystery the author was trying to build.', isNoun:false },
+  { word:'periwinkle', pronunciation:'PAIR-ih-WING-kul', ipa:'/ˈpɛrɪˌwɪŋkəl/', pos:'noun', def:'A trailing evergreen plant with blue or purple flowers; also, a small spiral-shelled marine snail.', lang:'Old English, from pervince, from Latin pervinca (\'periwinkle plant\'), possibly combined with Old English wincel (\'corner, winkle\').', example:'The garden path was bordered by trailing periwinkle, its delicate blue flowers dotting the greenery.', isNoun:true },
+  { word:'permutation', pronunciation:'PUR-myoo-TAY-shun', ipa:'/ˌpɜːrmjʊˈteɪʃən/', pos:'noun', def:'Each of several possible ways in which a set or number of things can be ordered or arranged; a transformation or change.', lang:'Latin, from permutatio (\'complete change\'), from permutare (\'to change thoroughly\'), from per (\'through\') + mutare (\'to change\').', example:'The mathematician calculated all possible permutations of the six-digit code to determine the number of combinations.', isNoun:true },
+  { word:'pernicious', pronunciation:'pur-NISH-us', ipa:'/pərˈnɪʃəs/', pos:'adjective', def:'Having a harmful effect, especially in a gradual or subtle way; deadly or destructive.', lang:'Latin, from perniciosus (\'destructive\'), from pernicies (\'ruin, destruction\'), from per (\'completely\') + nex (\'death\').', example:'The pernicious influence of misinformation on social media has eroded public trust in legitimate news sources.', isNoun:false },
+  { word:'perpetrator', pronunciation:'PUR-puh-TRAY-tur', ipa:'/ˈpɜːrpɪˌtreɪtər/', pos:'noun', def:'A person who carries out a harmful, illegal, or immoral act.', lang:'Latin, from perpetrare (\'to carry out, accomplish\'), from per (\'to completion\') + patrare (\'to bring about\').', example:'Police launched a manhunt to find the perpetrator of the armed robbery before they could flee the state.', isNoun:true },
+  { word:'perquisite', pronunciation:'PUR-kwuh-zit', ipa:'/ˈpɜːrkwɪzɪt/', pos:'noun', def:'A benefit or privilege that comes with a job or position in addition to regular salary; a perk.', lang:'Latin, from perquisitum (\'thing gained\'), neuter past participle of perquirere (\'to search diligently\'), from per (\'thoroughly\') + quaerere (\'to seek\').', example:'One of the perquisites of the executive position was a company car and a generous expense account.', isNoun:true },
+  { word:'perseverance', pronunciation:'PUR-suh-VEER-uns', ipa:'/ˌpɜːrsɪˈvɪərəns/', pos:'noun', def:'Persistence in doing something despite difficulty or delay in achieving success; steadfastness.', lang:'Latin, from perseverantia (\'steadfastness\'), from perseverare (\'to persist\'), from per (\'thoroughly\') + severus (\'strict, serious\').', example:'Her perseverance through years of setbacks and rejections finally paid off when her novel became a bestseller.', isNoun:true },
+  { word:'perspicacious', pronunciation:'PUR-spih-KAY-shus', ipa:'/ˌpɜːrspɪˈkeɪʃəs/', pos:'adjective', def:'Having a ready insight into and understanding of things; mentally sharp or discerning.', lang:'Latin, from perspicax (\'having the power of seeing through\'), from perspicere (\'to look through\'), from per (\'through\') + specere (\'to look\').', example:'The perspicacious detective noticed the tiny inconsistency in the suspect\'s alibi that everyone else had missed.', isNoun:false },
+  { word:'persuasible', pronunciation:'pur-SWAY-zuh-bul', ipa:'/pərˈsweɪzɪbəl/', pos:'adjective', def:'Capable of being persuaded; open to persuasion.', lang:'Latin, from persuasibilis, from persuadere (\'to persuade\'), from per (\'thoroughly\') + suadere (\'to advise, urge\').', example:'The committee members proved to be persuasible once presented with the compelling financial data.', isNoun:false },
+  { word:'pertinacity', pronunciation:'PUR-tih-NAS-ih-tee', ipa:'/ˌpɜːrtɪˈnæsɪti/', pos:'noun', def:'The quality of holding firmly to an opinion or a course of action; persistent determination; stubbornness.', lang:'Latin, from pertinacitas (\'stubbornness\'), from pertinax (\'very tenacious\'), from per (\'very\') + tenax (\'holding fast\').', example:'It was her pertinacity in pursuing justice that ultimately led to the landmark court ruling.', isNoun:true },
+  { word:'pertussal', pronunciation:'pur-TUS-ul', ipa:'/pərˈtʌsəl/', pos:'adjective', def:'Of or relating to pertussis (whooping cough).', lang:'Latin, from pertussis (\'whooping cough\'), from per (\'intensive\') + tussis (\'cough\').', example:'The pediatrician recommended the pertussal vaccine for all children under the age of six.', isNoun:false },
+  { word:'pervenche', pronunciation:'pair-VAHNSH', ipa:'/pɛrˈvɑːnʃ/', pos:'noun', def:'A shade of blue or blue-violet resembling the color of the periwinkle flower.', lang:'French, from pervenche (\'periwinkle\'), from Latin pervinca.', example:'The designer chose a soft pervenche fabric for the bridesmaids\' dresses, complementing the spring garden setting.', isNoun:true },
+  { word:'pestilence', pronunciation:'PES-tuh-luns', ipa:'/ˈpɛstɪləns/', pos:'noun', def:'A fatal epidemic disease, especially bubonic plague; something that is destructive or pernicious.', lang:'Latin, from pestilentia (\'plague, unhealthy atmosphere\'), from pestilens (\'unhealthy, destructive\'), from pestis (\'plague\').', example:'Medieval chronicles describe the pestilence sweeping through villages, leaving devastation in its wake.', isNoun:true },
+  { word:'petroleum', pronunciation:'puh-TROH-lee-uhm', ipa:'/pəˈtroʊliəm/', pos:'noun', def:'A dark, thick, flammable liquid consisting of a complex mixture of hydrocarbons, found naturally beneath the earth\'s surface and refined into fuels such as gasoline, kerosene, and diesel oil.', lang:'Medieval Latin, from Latin petra (Greek pétra, \'rock\') + Latin oleum (\'oil\').', example:'Gas and diesel are produced from petroleum, making it one of the most important natural resources in the modern world.', isNoun:true },
+  { word:'phantasmagoria', pronunciation:'fan-TAZ-muh-GOR-ee-uh', ipa:'/fænˌtæzməˈɡɔːriə/', pos:'noun', def:'A constantly shifting, complex succession of things seen or imagined; a scene that constantly changes. Originally, an exhibition of optical illusions produced by a magic lantern.', lang:'French, from fantasmagorie, based on Greek phantasma (\'ghost, apparition\').', example:'He saw a phantasmagoria of shadowy creatures through the fog, each shape dissolving into the next.', isNoun:true },
+  { word:'phenotype', pronunciation:'FEE-nuh-type', ipa:'/ˈfiːnəˌtaɪp/', pos:'noun', def:'The set of observable characteristics or traits of an organism, resulting from the interaction of its genotype (genetic makeup) with the environment.', lang:'German, from Phänotypus, based on Greek phainein (\'to show\') + typos (\'type\').', example:'A breed is a group of genetically related individuals with a common phenotype—physical characteristics such as ear shape, coat color, and behavioral tendencies.', isNoun:true },
+  { word:'philosophize', pronunciation:'fih-LOSS-uh-fize', ipa:'/fɪˈlɒsəˌfaɪz/', pos:'verb', def:'To reason or theorize in the manner of a philosopher; to talk or think about important subjects at length, sometimes in a superficial or imprecise manner.', lang:'English, from Greek philosophia (\'love of wisdom\'), from philos (\'loving\') + sophia (\'wisdom\') + -ize suffix.', example:'He spent the evening trying to philosophize on the meaning of life, though his friends wished he would be more practical.', isNoun:false },
+  { word:'philtrum', pronunciation:'FIL-trum', ipa:'/ˈfɪltrəm/', pos:'noun', def:'The vertical groove or indentation in the middle area of the upper lip, extending from the base of the nasal septum to the tubercle of the upper lip.', lang:'Latin, from philtrum (\'love potion\'), from Greek philtron (\'love charm\'), from philein (\'to love, to kiss\').', example:'Pediatricians can recognize fetal alcohol syndrome by certain physical traits such as thin lips, narrow eyelid openings, and a smooth philtrum.', isNoun:true },
+  { word:'phishing', pronunciation:'FISH-ing', ipa:'/ˈfɪʃɪŋ/', pos:'noun', def:'The fraudulent practice of sending emails or creating websites that appear to be from reputable companies in order to trick individuals into revealing personal information, such as passwords and credit card numbers.', lang:'English, a deliberate respelling of \'fishing\' (as in fishing for information), using \'ph\' from \'phone phreaking\' hacker slang.', example:'The company warned employees to watch out for emails that mimic internal communications and ask for login credentials.', isNoun:false },
+  { word:'phlebotomy', pronunciation:'fluh-BOT-uh-mee', ipa:'/flɪˈbɒtəmi/', pos:'noun', def:'The surgical opening or puncture of a vein in order to withdraw blood, either as a treatment or for diagnostic testing.', lang:'Greek, from phlebotomia, from phleps (genitive phlebos, \'vein\') + -tomia (\'cutting\').', example:'The nurse was trained in phlebotomy and could draw blood quickly and painlessly.', isNoun:true },
+  { word:'phoenix', pronunciation:'FEE-niks', ipa:'/ˈfiːnɪks/', pos:'noun', def:'A mythical bird that cyclically regenerates or is reborn from the ashes of its predecessor; a symbol of renewal and resurrection.', lang:'Greek, from phoinix (\'phoenix, Phoenician, purple-red\'), possibly of Egyptian origin.', example:'Like a phoenix rising from the ashes, the company reinvented itself after near bankruptcy and became an industry leader.', isNoun:true },
+  { word:'phonetician', pronunciation:'FOH-nuh-TISH-un', ipa:'/ˌfoʊnɪˈtɪʃən/', pos:'noun', def:'An expert in or student of the sounds of human speech and their classification; a specialist in phonetics.', lang:'Greek, from phōnētikos (\'vocal\'), from phōnein (\'to speak\'), from phōnē (\'sound, voice\').', example:'The phonetician analyzed the subtle differences in vowel sounds between the two regional dialects.', isNoun:true },
+  { word:'phosphorescent', pronunciation:'FOS-fur-ES-unt', ipa:'/ˌfɒsfəˈrɛsənt/', pos:'adjective', def:'Emitting light without combustion or perceptible heat; glowing in the dark after exposure to light.', lang:'Greek, from phōsphoros (\'light-bringing\'), from phōs (\'light\') + pherein (\'to carry\'), + Latin -escent (\'becoming\').', example:'The phosphorescent plankton lit up the waves with an eerie blue-green glow as the boat passed through.', isNoun:false },
+  { word:'phraseology', pronunciation:'FRAY-zee-OL-uh-jee', ipa:'/ˌfreɪziˈɒlədʒi/', pos:'noun', def:'A particular mode of expression, especially one characteristic of a particular speaker or subject area; the choice and arrangement of words and phrases.', lang:'Greek, from phrasis (\'way of speaking\') + -logia (\'study of\').', example:'The legal phraseology in the contract was so dense that she hired a lawyer to interpret it for her.', isNoun:true },
+  { word:'phycology', pronunciation:'fye-KOL-uh-jee', ipa:'/faɪˈkɒlədʒi/', pos:'noun', def:'The branch of botany concerned with the study of algae.', lang:'Greek, from phykos (\'seaweed\') + -logia (\'study of\').', example:'Her passion for marine biology led her to specialize in phycology, studying the diverse algae of coral reef ecosystems.', isNoun:true },
+  { word:'phylum', pronunciation:'FYE-lum', ipa:'/ˈfaɪləm/', pos:'noun', def:'A principal taxonomic category that ranks above class and below kingdom, grouping organisms that share a fundamental body plan.', lang:'Greek, from phylon (\'race, tribe, class\').', example:'Arthropods belong to the largest phylum in the animal kingdom, which includes insects, spiders, and crustaceans.', isNoun:true },
+  { word:'phyteral', pronunciation:'FYE-tur-ul', ipa:'/ˈfaɪtərəl/', pos:'adjective', def:'Of or relating to plants; having the character of a plant.', lang:'Greek, from phyton (\'plant\') + -al.', example:'The researcher examined the phyteral remains preserved in the ancient sediment to reconstruct the prehistoric landscape.', isNoun:false },
+  { word:'pickerel', pronunciation:'PIK-ur-ul', ipa:'/ˈpɪkərəl/', pos:'noun', def:'A small North American pike, especially the chain pickerel, found in lakes and streams.', lang:'English, diminutive of pike (the fish), from Old English pīc (\'point, pike\').', example:'He caught a chain pickerel while fishing in the weedy shallows of the freshwater lake.', isNoun:true },
+  { word:'Pierre', pronunciation:'pee-AIR', ipa:'/piˈɛr/', pos:'noun', def:'The capital city of South Dakota, located in the central part of the state; also a common French given name.', lang:'French, from Latin Petrus, from Greek Petros (\'rock, stone\').', example:'Pierre is one of the least populated state capitals in the United States, with a quiet, small-town atmosphere.', isNoun:true },
+  { word:'pilaster', pronunciation:'pih-LAS-tur', ipa:'/pɪˈlæstər/', pos:'noun', def:'A rectangular column, especially one projecting from a wall, with a base and capital in the style of one of the classical orders.', lang:'Italian, from pilastro (\'pillar\'), from Latin pila (\'pillar\').', example:'The grand entrance was flanked by Corinthian pilasters that gave the building a stately, classical appearance.', isNoun:true },
+  { word:'pileus', pronunciation:'PYE-lee-us', ipa:'/ˈpaɪliəs/', pos:'noun', def:'The cap-shaped upper part of a mushroom or toadstool; in Roman antiquity, a brimless felt cap given to freed slaves.', lang:'Latin, from pileus (\'felt cap\').', example:'The mushroom\'s broad red pileus made it easy to identify as a species of Amanita.', isNoun:true },
+  { word:'pilferer', pronunciation:'PIL-fur-ur', ipa:'/ˈpɪlfərər/', pos:'noun', def:'A person who steals things of little value; a petty thief.', lang:'Old French, from pelfrer (\'to pillage, steal\'), related to pelfre (\'booty\').', example:'The shopkeeper installed cameras to catch the pilferer who had been stealing small items for weeks.', isNoun:true },
+  { word:'pilosity', pronunciation:'pye-LOS-ih-tee', ipa:'/paɪˈlɒsɪti/', pos:'noun', def:'The state or quality of being pilose; hairiness, especially an excessive or notable growth of hair.', lang:'Latin, from pilositas, from pilosus (\'hairy\'), from pilus (\'hair\').', example:'The entomologist noted the pilosity of the caterpillar\'s body, covered in fine, bristle-like hairs.', isNoun:true },
+  { word:'pilotage', pronunciation:'PYE-luh-tij', ipa:'/ˈpaɪlətɪdʒ/', pos:'noun', def:'The action or skill of piloting a ship or aircraft; the fee paid for the services of a harbor pilot.', lang:'French, from piloter (\'to pilot\'), from pilote (\'pilot\'), from Italian pilota, ultimately from Greek pēdon (\'rudder\').', example:'The captain relied on the harbor master\'s expertise in pilotage to navigate the ship through the narrow channel.', isNoun:true },
+  { word:'pinnacle', pronunciation:'PIN-uh-kul', ipa:'/ˈpɪnəkəl/', pos:'noun', def:'The most successful point; the culmination. Also, a high, pointed piece of rock or a small turret on a building.', lang:'Latin, from pinnaculum (\'small wing, gable\'), diminutive of pinna (\'wing, feather, pinnacle\').', example:'Winning the Nobel Prize represented the pinnacle of her scientific career.', isNoun:true },
+  { word:'pinnate', pronunciation:'PIN-ayt', ipa:'/ˈpɪneɪt/', pos:'adjective', def:'Having leaflets or primary divisions arranged on each side of a common stalk, resembling a feather.', lang:'Latin, from pinnatus (\'feathered, winged\'), from pinna (\'feather, wing\').', example:'The fern\'s pinnate fronds unfurled in the spring, each leaflet perfectly symmetrical along the central stalk.', isNoun:false },
+  { word:'pious', pronunciation:'PYE-us', ipa:'/ˈpaɪəs/', pos:'adjective', def:'Devoutly religious; showing a dutiful spirit of reverence for God. Also, making a hypocritical display of virtue.', lang:'Latin, from pius (\'dutiful, devout\').', example:'The pious monk devoted his entire life to prayer, study, and service to his community.', isNoun:false },
+  { word:'Pisces', pronunciation:'PYE-seez', ipa:'/ˈpaɪsiːz/', pos:'noun', def:'A constellation and the twelfth astrological sign of the zodiac, represented by two fish; people born between February 19 and March 20.', lang:'Latin, plural of piscis (\'fish\').', example:'As a Pisces, she was said to be intuitive, artistic, and deeply empathetic toward others.', isNoun:true },
+  { word:'pituitary', pronunciation:'pih-TOO-ih-TAIR-ee', ipa:'/pɪˈtjuːɪˌtɛri/', pos:'noun', def:'A small endocrine gland at the base of the brain that controls growth and development and the functioning of other endocrine glands.', lang:'Latin, from pituitarius (\'of phlegm, mucus\'), from pituita (\'phlegm\'), because it was once thought to channel nasal mucus.', example:'The pituitary gland is often called the \'master gland\' because it regulates many other hormone-producing glands.', isNoun:true },
+  { word:'placoderm', pronunciation:'PLAK-uh-durm', ipa:'/ˈplækəˌdɜːrm/', pos:'noun', def:'An extinct class of armored fish from the Devonian period, characterized by bony plates covering the head and thorax.', lang:'Greek, from plax (genitive plakos, \'flat plate\') + derma (\'skin\').', example:'Fossils of the placoderm Dunkleosteus reveal a massive predatory fish that dominated Devonian seas.', isNoun:true },
+  { word:'plagiarism', pronunciation:'PLAY-juh-RIZ-um', ipa:'/ˈpleɪdʒəˌrɪzəm/', pos:'noun', def:'The practice of taking someone else\'s work or ideas and passing them off as one\'s own.', lang:'Latin, from plagiarius (\'kidnapper, literary thief\'), from plagium (\'kidnapping\'), from plaga (\'net, snare\').', example:'The student was expelled from the university after multiple instances of plagiarism were discovered in her thesis.', isNoun:true },
+  { word:'plaintiff', pronunciation:'PLAYN-tif', ipa:'/ˈpleɪntɪf/', pos:'noun', def:'A person who brings a case against another in a court of law; the complaining party in a lawsuit.', lang:'Old French, from plaintif (\'complaining\'), from plainte (\'complaint\'), from Latin plangere (\'to lament\').', example:'The plaintiff sought damages of two million dollars for injuries sustained in the automobile accident.', isNoun:true },
+  { word:'planetesimal', pronunciation:'PLAN-ih-TES-ih-mul', ipa:'/ˌplænɪˈtɛsɪməl/', pos:'noun', def:'A small celestial body that existed in the early stages of the solar system, from which the planets were formed through accretion.', lang:'English, from planet + infinitesimal.', example:'Over millions of years, countless planetesimals collided and merged to form the rocky planets of our solar system.', isNoun:true },
+  { word:'plangency', pronunciation:'PLAN-jun-see', ipa:'/ˈplændʒənsi/', pos:'noun', def:'The quality of having a loud, reverberating, mournful sound.', lang:'Latin, from plangens (\'lamenting\'), present participle of plangere (\'to beat, lament\').', example:'The plangency of the cello solo brought the audience to a hushed, emotional stillness.', isNoun:true },
+  { word:'planisphere', pronunciation:'PLAN-ih-sfeer', ipa:'/ˈplænɪˌsfɪər/', pos:'noun', def:'A map formed by the projection of a sphere onto a plane, especially a star chart that can be adjusted to show the visible stars for any time and date.', lang:'Latin, from planisphaerium, from planus (\'flat\') + sphaera (\'sphere\'), from Greek sphaira.', example:'The astronomy students used a planisphere to identify constellations visible from their latitude at different times of the year.', isNoun:true },
+  { word:'planogram', pronunciation:'PLAN-uh-gram', ipa:'/ˈplænəˌɡræm/', pos:'noun', def:'A diagram or model that indicates the placement of products on retail store shelves to maximize sales.', lang:'English, from plan + -o- + -gram (from Greek gramma, \'something written\').', example:'The store manager rearranged the shelves according to the new planogram sent by the corporate merchandising team.', isNoun:true },
+  { word:'plantain', pronunciation:'PLAN-tin', ipa:'/ˈplæntɪn/', pos:'noun', def:'A banana-like fruit that is larger, starchier, and typically cooked before eating; also, a low-growing plant with broad leaves.', lang:'Spanish, from plántano (\'plantain tree\'), from Medieval Latin plantanus, possibly influenced by Latin planta (\'plant\').', example:'Fried plantains are a staple side dish in many Caribbean and Latin American cuisines.', isNoun:true },
+  { word:'plantigrade', pronunciation:'PLAN-tih-grayd', ipa:'/ˈplæntɪˌɡreɪd/', pos:'adjective', def:'Walking on the soles of the feet, as humans and bears do, with the entire sole touching the ground.', lang:'French, from Latin planta (\'sole of the foot\') + gradus (\'step, walk\').', example:'Bears are plantigrade animals, walking flat on the soles of their feet rather than on their toes like cats.', isNoun:false },
+  { word:'plaudits', pronunciation:'PLAW-dits', ipa:'/ˈplɔːdɪts/', pos:'noun', def:'Praise; enthusiastic approval or applause.', lang:'Latin, from plaudite (\'applaud!\'), imperative plural of plaudere (\'to clap, applaud\').', example:'The director received plaudits from critics and audiences alike for her groundbreaking new film.', isNoun:true },
+  { word:'plenitude', pronunciation:'PLEN-ih-tood', ipa:'/ˈplɛnɪˌtjuːd/', pos:'noun', def:'An abundance; a full or ample amount or quantity. Also, the condition of being full or complete.', lang:'Latin, from plenitudo (\'fullness\'), from plenus (\'full\').', example:'The garden offered a plenitude of fresh herbs, vegetables, and flowers throughout the summer months.', isNoun:true },
+  { word:'plentiful', pronunciation:'PLEN-tih-ful', ipa:'/ˈplɛntɪfəl/', pos:'adjective', def:'Existing in or yielding great quantities; abundant; more than adequate.', lang:'English, from plenty + -ful. Plenty from Old French plenté, from Latin plenitas (\'fullness\').', example:'Rainfall was plentiful that spring, and the farmers anticipated a bountiful harvest.', isNoun:false },
+  { word:'plumbago', pronunciation:'plum-BAY-goh', ipa:'/plʌmˈbeɪɡoʊ/', pos:'noun', def:'An old-fashioned term for graphite; also, a plant of the genus Plumbago with blue or white flowers.', lang:'Latin, from plumbago (\'lead ore\'), from plumbum (\'lead\').', example:'Before it was called graphite, the mineral used in pencils was known as plumbago, or \'black lead.\'', isNoun:true },
+  { word:'Plumeria', pronunciation:'ploo-MEER-ee-uh', ipa:'/pluːˈmɪəriə/', pos:'noun', def:'A genus of tropical trees and shrubs known for their intensely fragrant, colorful flowers, commonly used in Hawaiian leis.', lang:'Latin, named after Charles Plumier, a 17th-century French botanist.', example:'The sweet scent of Plumeria blossoms drifted through the warm tropical air as she walked along the beach.', isNoun:true },
+  { word:'plutonomy', pronunciation:'ploo-TON-uh-mee', ipa:'/pluːˈtɒnəmi/', pos:'noun', def:'The branch of political economy dealing with wealth; an economy driven primarily by the spending and investment of the wealthy.', lang:'Greek, from ploutos (\'wealth\') + -nomia (\'management, law\').', example:'Analysts described the country\'s growing plutonomy, where economic growth was driven almost entirely by the top one percent.', isNoun:true },
+  { word:'poblano', pronunciation:'poh-BLAH-noh', ipa:'/poʊˈblɑːnoʊ/', pos:'noun', def:'A mild, dark-green chili pepper commonly used in Mexican cuisine, especially when stuffed for chiles rellenos.', lang:'Spanish, from Puebla, a state and city in central Mexico; poblano means \'of Puebla.\'', example:'She roasted the poblano peppers over an open flame until the skins were charred and blistered.', isNoun:true },
+  { word:'pochard', pronunciation:'POCH-urd', ipa:'/ˈpɒtʃərd/', pos:'noun', def:'A diving duck with a large head, native to Europe and parts of Asia, with the male typically having a reddish-brown head.', lang:'French, from pocher (\'to poach, poke\'), possibly referring to the bird\'s diving habit.', example:'The birdwatcher spotted a common pochard gliding across the lake, its russet head distinct among the other waterfowl.', isNoun:true },
+  { word:'pococurante', pronunciation:'POH-koh-koo-RAN-tee', ipa:'/ˌpoʊkoʊkʊˈrænti/', pos:'adjective', def:'Indifferent or nonchalant; caring little about something.', lang:'Italian, from poco (\'little\') + curante (\'caring\'), present participle of curare (\'to care\'), from Latin curare.', example:'His pococurante attitude toward deadlines frustrated his colleagues, who worked tirelessly to finish on time.', isNoun:false },
+  { word:'podsnappery', pronunciation:'pod-SNAP-ur-ee', ipa:'/pɒdˈsnæpəri/', pos:'noun', def:'An attitude of complacent self-satisfaction combined with a refusal to acknowledge anything unpleasant.', lang:'English, from Mr. Podsnap, a character in Charles Dickens\'s Our Mutual Friend (1865).', example:'The politician\'s podsnappery was evident in his refusal to acknowledge the hardships faced by ordinary citizens.', isNoun:true },
+  { word:'Podunk', pronunciation:'POH-dunk', ipa:'/ˈpoʊdʌŋk/', pos:'noun', def:'A small, insignificant, or isolated town, used dismissively.', lang:'Algonquian, from the name of a Native American people and place in Connecticut.', example:'He dreamed of leaving his Podunk hometown and making a name for himself in the big city.', isNoun:true },
+  { word:'poinsettia', pronunciation:'poyn-SET-ee-uh', ipa:'/pɔɪnˈsɛtiə/', pos:'noun', def:'A small Mexican shrub with large showy scarlet bracts surrounding the small yellow flowers, widely popular as a Christmas decoration.', lang:'Latin, named after Joel Roberts Poinsett, the American diplomat who introduced the plant from Mexico to the US in 1825.', example:'The lobby was decorated with dozens of vibrant red poinsettias for the holiday season.', isNoun:true },
+  { word:'pointelle', pronunciation:'poyn-TEL', ipa:'/pɔɪnˈtɛl/', pos:'noun', def:'A type of knit fabric featuring a pattern of small holes or perforations, creating a delicate, lace-like effect.', lang:'French, diminutive of pointe (\'point\'), from Latin puncta (\'point\').', example:'The baby\'s soft pointelle blanket had a delicate pattern of tiny eyelet holes.', isNoun:true },
+  { word:'pointillage', pronunciation:'PWAN-tee-YAZH', ipa:'/ˌpwæ̃tiˈjɑːʒ/', pos:'noun', def:'A therapeutic technique of massage using the fingertips; also, the art technique of applying small dots of color.', lang:'French, from pointiller (\'to dot, stipple\'), from point (\'point, dot\'), from Latin punctum.', example:'The masseuse applied pointillage along the patient\'s spine, using gentle fingertip pressure to relieve tension.', isNoun:true },
+  { word:'politick', pronunciation:'POL-ih-tik', ipa:'/ˈpɒlɪtɪk/', pos:'verb', def:'To engage in political activity or campaigning; to act in a politically shrewd or calculating manner.', lang:'Greek, from politikos (\'of citizens, civic\'), from politēs (\'citizen\'), from polis (\'city\').', example:'She spent the afternoon politicking at the town hall, shaking hands and making promises to potential voters.', isNoun:false },
+  { word:'pollutant', pronunciation:'puh-LOO-tunt', ipa:'/pəˈluːtənt/', pos:'noun', def:'A substance that pollutes something, especially the air, water, or soil; a contaminant.', lang:'Latin, from polluere (\'to soil, defile\'), from por- (\'before\') + luere (\'to wash\').', example:'Factories are required to limit the amount of pollutant discharged into rivers to protect aquatic ecosystems.', isNoun:true },
+  { word:'polonaise', pronunciation:'POL-uh-NAYZ', ipa:'/ˌpɒləˈneɪz/', pos:'noun', def:'A slow, stately dance of Polish origin in triple time; also, a woman\'s dress with a bodice and a skirt draped to show an underskirt.', lang:'French, from polonaise (\'Polish\'), feminine of polonais (\'Polish\').', example:'Chopin\'s polonaises capture the grandeur and patriotic spirit of Polish national identity.', isNoun:true },
+  { word:'polonium', pronunciation:'puh-LOH-nee-um', ipa:'/pəˈloʊniəm/', pos:'noun', def:'A rare, highly radioactive metallic element discovered by Marie and Pierre Curie, with the atomic number 84.', lang:'Latin, from Polonia (\'Poland\'), named by Marie Curie after her homeland.', example:'Marie Curie named the newly discovered element polonium in honor of Poland, her native country.', isNoun:true },
+  { word:'polyester', pronunciation:'POL-ee-ES-tur', ipa:'/ˌpɒliˈɛstər/', pos:'noun', def:'A synthetic fabric or resin made from a polymer containing ester groups, widely used in clothing, packaging, and manufacturing.', lang:'English, from poly- (Greek polys, \'many\') + ester (German Essigäther, \'acetic ether\').', example:'The shirt was made of a polyester blend that resisted wrinkles and dried quickly after washing.', isNoun:true },
+  { word:'polygenous', pronunciation:'puh-LIJ-uh-nus', ipa:'/pəˈlɪdʒənəs/', pos:'adjective', def:'Having many origins or derived from multiple sources; in geology, consisting of various kinds of material.', lang:'Greek, from polys (\'many\') + -genēs (\'born, produced\').', example:'The polygenous composition of the rock suggested it had formed from multiple volcanic events over millions of years.', isNoun:false },
+  { word:'polypeptide', pronunciation:'POL-ee-PEP-tyde', ipa:'/ˌpɒliˈpɛptaɪd/', pos:'noun', def:'A chain of amino acids linked by peptide bonds; a molecule that forms the building blocks of proteins.', lang:'Greek, from polys (\'many\') + peptos (\'digested\'), from peptein (\'to digest\').', example:'Insulin is a polypeptide hormone produced by the pancreas that regulates blood sugar levels.', isNoun:true },
+  { word:'polysemy', pronunciation:'puh-LIS-uh-mee', ipa:'/pəˈlɪsəmi/', pos:'noun', def:'The coexistence of many possible meanings for a word or phrase.', lang:'Greek, from polysēmos (\'having many meanings\'), from polys (\'many\') + sēma (\'sign, meaning\').', example:'The polysemy of the word \'bank\' can confuse language learners, as it can refer to a financial institution or the side of a river.', isNoun:true },
+  { word:'polysyllabic', pronunciation:'POL-ee-sih-LAB-ik', ipa:'/ˌpɒlisɪˈlæbɪk/', pos:'adjective', def:'Having more than one syllable; especially, having many syllables.', lang:'Greek, from polys (\'many\') + syllabē (\'syllable\'), from syn (\'together\') + lambanein (\'to take\').', example:'The polysyllabic technical jargon in the medical textbook made it difficult for non-specialists to understand.', isNoun:false },
+  { word:'pomato', pronunciation:'puh-MAH-toh', ipa:'/pəˈmɑːtoʊ/', pos:'noun', def:'A hybrid plant produced by grafting a tomato plant onto a potato plant, yielding both tomatoes and potatoes.', lang:'English, a portmanteau of potato + tomato.', example:'The experimental pomato produced cherry tomatoes above ground and small potatoes below the soil.', isNoun:true },
+  { word:'pomegranate', pronunciation:'POM-uh-GRAN-it', ipa:'/ˈpɒmɪˌɡrænɪt/', pos:'noun', def:'A round tropical fruit with a tough reddish outer skin, containing many seeds surrounded by juicy red edible pulp.', lang:'Old French, from pome grenate (\'seeded apple\'), from Latin pomum (\'apple, fruit\') + granatum (\'having many seeds\').', example:'She carefully split open the pomegranate, scattering its jewel-like ruby seeds across the salad.', isNoun:true },
+  { word:'Pomeranian', pronunciation:'POM-uh-RAY-nee-un', ipa:'/ˌpɒməˈreɪniən/', pos:'noun', def:'A small, active dog of a breed with long, thick, silky hair, a foxlike face, and a plumed tail curled over the back.', lang:'German, from Pommern (\'Pomerania\'), a historical region along the Baltic Sea.', example:'The tiny Pomeranian pranced around the park, its fluffy orange coat bouncing with every step.', isNoun:true },
+  { word:'pomology', pronunciation:'poh-MOL-uh-jee', ipa:'/poʊˈmɒlədʒi/', pos:'noun', def:'The science and practice of growing fruit, especially tree fruits.', lang:'Latin, from pomum (\'fruit\') + Greek -logia (\'study of\').', example:'Her degree in pomology led to a career developing new apple varieties at the agricultural research station.', isNoun:true },
+  { word:'pomposity', pronunciation:'pom-POS-ih-tee', ipa:'/pɒmˈpɒsɪti/', pos:'noun', def:'The quality of being pompous; an affectedly grand, solemn, or self-important manner.', lang:'Latin, from pompositas, from pomposus (\'stately\'), from pompa (\'procession, display\'), from Greek pompē.', example:'His pomposity at the dinner party, boasting about his yacht and vacation homes, made the other guests uncomfortable.', isNoun:true },
+  { word:'pongee', pronunciation:'pon-JEE', ipa:'/pɒnˈdʒiː/', pos:'noun', def:'A soft, unbleached type of Chinese silk fabric with a knotty or rough weave, typically light tan in color.', lang:'Chinese, possibly from Mandarin běn jī (\'own loom\') or a similar dialectal form.', example:'The curtains were made of natural pongee silk, lending the room a warm, understated elegance.', isNoun:true },
+  { word:'pontiff', pronunciation:'PON-tif', ipa:'/ˈpɒntɪf/', pos:'noun', def:'The Pope; the head of the Roman Catholic Church. Historically, a chief priest.', lang:'Latin, from pontifex (\'high priest\'), possibly from pons (\'bridge\') + facere (\'to make\').', example:'The pontiff addressed the crowd gathered in Saint Peter\'s Square, delivering a message of peace and hope.', isNoun:true },
+  { word:'populace', pronunciation:'POP-yuh-lus', ipa:'/ˈpɒpjʊləs/', pos:'noun', def:'The people living in a particular country or area; the general public.', lang:'French, from Italian popolaccio (\'common people\'), from popolo (\'people\'), from Latin populus (\'people\').', example:'The new tax policy was deeply unpopular with the general populace, sparking widespread protests.', isNoun:true },
+  { word:'porcelain', pronunciation:'POR-suh-lin', ipa:'/ˈpɔːrsəlɪn/', pos:'noun', def:'A hard, white, translucent ceramic material made by firing kaolin clay at high temperatures, used for making pottery and decorative objects.', lang:'French, from Italian porcellana (\'cowrie shell\'), from porcella (\'little sow\'), from Latin porcus (\'pig\'), because the shell\'s shape resembled a pig\'s back.', example:'The antique dealer carefully unwrapped the delicate porcelain vase, its hand-painted flowers still vivid after centuries.', isNoun:true },
+  { word:'porosity', pronunciation:'por-OS-ih-tee', ipa:'/pɔːˈrɒsɪti/', pos:'noun', def:'The quality of being porous; the degree to which a material contains tiny holes or spaces through which fluid can pass.', lang:'Latin, from porosus (\'full of pores\'), from porus (\'pore\'), from Greek poros (\'passage\').', example:'The porosity of the sandstone allowed groundwater to seep through and fill the aquifer below.', isNoun:true },
+  { word:'portico', pronunciation:'POR-tih-koh', ipa:'/ˈpɔːrtɪˌkoʊ/', pos:'noun', def:'A structure consisting of a roof supported by columns at regular intervals, typically attached to a building as a porch.', lang:'Italian, from Latin porticus (\'porch, colonnade\'), from porta (\'gate\').', example:'The neoclassical courthouse featured an impressive portico with six towering Doric columns.', isNoun:true },
+  { word:'posada', pronunciation:'poh-SAH-duh', ipa:'/poʊˈsɑːdə/', pos:'noun', def:'A traditional Mexican celebration held during the nine days before Christmas, reenacting Mary and Joseph\'s search for lodging; also, an inn or lodging house in Spanish-speaking countries.', lang:'Spanish, from posar (\'to lodge, rest\'), from Latin pausare (\'to pause, rest\').', example:'Each night of the posada, neighbors gathered to sing carols and reenact the journey to Bethlehem.', isNoun:true },
+  { word:'posse', pronunciation:'POS-ee', ipa:'/ˈpɒsi/', pos:'noun', def:'A group of people summoned by a sheriff to enforce the law; informally, a group of friends or associates.', lang:'Latin, from posse comitatus (\'power of the county\'), from posse (\'to be able\') + comitatus (\'of the county\').', example:'The sheriff assembled a posse to track down the outlaws who had robbed the stagecoach.', isNoun:true },
+  { word:'possessive', pronunciation:'puh-ZES-iv', ipa:'/pəˈzɛsɪv/', pos:'adjective', def:'Demanding someone\'s total attention and love; showing a desire to own or dominate. In grammar, indicating ownership.', lang:'Latin, from possessivus, from possessus, past participle of possidere (\'to possess\'), from potis (\'able\') + sedere (\'to sit\').', example:'Her possessive behavior toward her partner eventually drove a wedge between them and their friends.', isNoun:false },
+  { word:'posterity', pronunciation:'pos-TAIR-ih-tee', ipa:'/pɒˈstɛrɪti/', pos:'noun', def:'All future generations of people; the descendants of a person.', lang:'Latin, from posteritas (\'future generations\'), from posterus (\'coming after\'), from post (\'after\').', example:'The letters were preserved for posterity, offering future historians a window into life during the war.', isNoun:true },
+  { word:'posthumous', pronunciation:'POS-chuh-mus', ipa:'/ˈpɒstʃʊməs/', pos:'adjective', def:'Occurring, awarded, or appearing after the death of the originator.', lang:'Latin, from postumus (\'last, superlative of posterus\'), later altered to posthumus by association with humus (\'ground, burial\').', example:'The artist received a posthumous award for her contributions to modern sculpture, years after her passing.', isNoun:false },
+  { word:'postural', pronunciation:'POS-chur-ul', ipa:'/ˈpɒstʃərəl/', pos:'adjective', def:'Relating to or involving the posture or position of the body.', lang:'Latin, from postura (\'position\'), from ponere (\'to place\').', example:'The physical therapist recommended postural exercises to correct the patient\'s chronic back pain.', isNoun:false },
+  { word:'potassium', pronunciation:'puh-TAS-ee-um', ipa:'/pəˈtæsiəm/', pos:'noun', def:'A soft, silvery-white metallic chemical element with the symbol K, essential for cell function in living organisms.', lang:'English, from potash + -ium. Potash from Dutch potaschen (\'pot ashes\'), because it was obtained from wood ash.', example:'Bananas are a well-known source of potassium, a mineral vital for heart and muscle function.', isNoun:true },
+  { word:'potentate', pronunciation:'POH-tun-tayt', ipa:'/ˈpoʊtənˌteɪt/', pos:'noun', def:'A monarch or ruler, especially an autocratic one; a person who possesses great power.', lang:'Latin, from potentatus (\'rule, dominion\'), from potens (\'powerful\'), present participle of posse (\'to be able\').', example:'The ancient potentate ruled his vast empire with absolute authority from his palace in the capital.', isNoun:true },
+  { word:'potoroo', pronunciation:'POT-uh-roo', ipa:'/ˌpɒtəˈruː/', pos:'noun', def:'A small, rat-sized marsupial of the kangaroo family, native to Australia.', lang:'Dharuk (Aboriginal Australian language), from badaru or similar form.', example:'The long-nosed potoroo is an endangered marsupial found in the forests of southeastern Australia.', isNoun:true },
+  { word:'poultice', pronunciation:'POHL-tis', ipa:'/ˈpoʊltɪs/', pos:'noun', def:'A soft, moist mass of material, typically heated and applied to the body to relieve soreness and inflammation.', lang:'Latin, from pultes (plural of puls, \'porridge, thick pap\'), via Old French.', example:'Grandmother applied a warm poultice of herbs and clay to the swollen ankle to reduce the inflammation.', isNoun:true },
+  { word:'prehensile', pronunciation:'pree-HEN-syl', ipa:'/priːˈhɛnsaɪl/', pos:'adjective', def:'Capable of grasping, especially by wrapping around; adapted for seizing or holding.', lang:'French, from Latin prehensilis, from prehendere (\'to grasp, seize\'), from prae (\'before\') + hendere (\'to grasp\').', example:'The spider monkey used its prehensile tail as a fifth limb to swing effortlessly through the forest canopy.', isNoun:false },
+  { word:'prelapsarian', pronunciation:'PREE-lap-SAIR-ee-un', ipa:'/ˌpriːlæpˈsɛəriən/', pos:'adjective', def:'Relating to or characteristic of the time before the Fall of Man; innocent, unspoiled.', lang:'English, from pre- (Latin prae, \'before\') + Latin lapsus (\'fall\') + -arian.', example:'The poet described the garden in prelapsarian terms, a place of unspoiled beauty untouched by human corruption.', isNoun:false },
+  { word:'preponderance', pronunciation:'prih-PON-dur-uns', ipa:'/prɪˈpɒndərəns/', pos:'noun', def:'The quality or fact of being greater in number, quantity, or importance; superiority of weight or influence.', lang:'Latin, from praeponderantia, from praeponderare (\'to outweigh\'), from prae (\'before\') + ponderare (\'to weigh\').', example:'The preponderance of evidence pointed toward the defendant\'s guilt, leaving little room for doubt.', isNoun:true },
+  { word:'preposterous', pronunciation:'prih-POS-tur-us', ipa:'/prɪˈpɒstərəs/', pos:'adjective', def:'Contrary to reason or common sense; utterly absurd or ridiculous.', lang:'Latin, from praeposterus (\'reversed, absurd\'), from prae (\'before\') + posterus (\'coming after\').', example:'The idea that the earth is flat is so preposterous that no credible scientist entertains it.', isNoun:false },
+  { word:'preprandial', pronunciation:'pree-PRAN-dee-ul', ipa:'/priːˈprændiəl/', pos:'adjective', def:'Done or taken before dinner or lunch; occurring before a meal.', lang:'Latin, from prae (\'before\') + prandium (\'meal, lunch\').', example:'The doctor recommended a preprandial walk to help regulate blood sugar levels before meals.', isNoun:false },
+  { word:'prerequisite', pronunciation:'pree-REK-wuh-zit', ipa:'/priːˈrɛkwɪzɪt/', pos:'noun', def:'A thing that is required as a prior condition for something else to happen or exist.', lang:'Latin, from prae (\'before\') + requisitum (\'required thing\'), from requirere (\'to require\').', example:'Calculus is a prerequisite for the advanced physics course, so students must pass it first.', isNoun:true },
+  { word:'prerogative', pronunciation:'prih-ROG-uh-tiv', ipa:'/prɪˈrɒɡətɪv/', pos:'noun', def:'A right or privilege exclusive to a particular individual or class; a special right or authority.', lang:'Latin, from praerogativus (\'asked first for a vote\'), from prae (\'before\') + rogare (\'to ask\').', example:'It is the manager\'s prerogative to assign tasks as she sees fit.', isNoun:true },
+  { word:'presentient', pronunciation:'pree-SEN-shunt', ipa:'/priːˈsɛnʃənt/', pos:'adjective', def:'Having a premonition or foreboding; sensing something before it happens.', lang:'Latin, from praesentiens, present participle of praesentire (\'to feel beforehand\'), from prae (\'before\') + sentire (\'to feel\').', example:'She had a presentient feeling that something was about to go terribly wrong with the expedition.', isNoun:false },
+  { word:'prespinous', pronunciation:'pree-SPY-nus', ipa:'/priːˈspaɪnəs/', pos:'adjective', def:'Situated in front of or anterior to a spine or spinous process.', lang:'English, from pre- (Latin prae, \'before\') + spinous (Latin spinosus, \'thorny, spiny\').', example:'The anatomist identified the prespinous tissue during the dissection of the vertebral region.', isNoun:false },
+  { word:'prevalence', pronunciation:'PREV-uh-luns', ipa:'/ˈprɛvələns/', pos:'noun', def:'The fact or condition of being widespread or common; the degree to which something is prevalent.', lang:'Latin, from praevalentia (\'superiority\'), from praevalere (\'to be stronger\'), from prae (\'before\') + valere (\'to be strong\').', example:'The prevalence of diabetes has increased dramatically worldwide over the past several decades.', isNoun:true },
+  { word:'prevenient', pronunciation:'prih-VEE-nee-unt', ipa:'/prɪˈviːniənt/', pos:'adjective', def:'Coming before; preceding or anticipating. In theology, (of divine grace) preceding and preparing the way for conversion.', lang:'Latin, from praeveniens, present participle of praevenire (\'to come before\'), from prae (\'before\') + venire (\'to come\').', example:'In Wesleyan theology, prevenient grace is the divine influence that precedes human decision and enables free will.', isNoun:false },
+  { word:'prima donna', pronunciation:'PREE-muh DON-uh', ipa:'/ˌpriːmə ˈdɒnə/', pos:'noun', def:'The chief female singer in an opera; a very temperamental person with an inflated view of their own talent or importance.', lang:'Italian, literally \'first lady\', from prima (\'first\', from Latin primus) + donna (\'lady\', from Latin domina).', example:'The lead actress was a talented performer but behaved like a prima donna, making unreasonable demands backstage.', isNoun:true },
+  { word:'primeval', pronunciation:'pry-MEE-vul', ipa:'/praɪˈmiːvəl/', pos:'adjective', def:'Of or resembling the earliest ages in the history of the world; ancient, primitive.', lang:'Latin, from primaevus (\'of the first age\'), from primus (\'first\') + aevum (\'age\').', example:'The hikers ventured deep into the primeval forest, where towering ancient trees blocked out the sunlight.', isNoun:false },
+  { word:'primogeniture', pronunciation:'PRY-moh-JEN-ih-chur', ipa:'/ˌpraɪmoʊˈdʒɛnɪtʃər/', pos:'noun', def:'The right of the firstborn child, especially the eldest son, to inherit the entire estate of a parent.', lang:'Latin, from primogenitus (\'firstborn\'), from primus (\'first\') + genitus (\'born\'), past participle of gignere (\'to beget\').', example:'Under the rule of primogeniture, the eldest son inherited the family\'s entire estate, leaving nothing for his siblings.', isNoun:true },
+  { word:'princeps', pronunciation:'PRIN-seps', ipa:'/ˈprɪnsɛps/', pos:'noun', def:'The first in order or rank; used especially as a title by Roman emperors beginning with Augustus.', lang:'Latin, from princeps (\'first man, chief\'), from primus (\'first\') + capere (\'to take\').', example:'Augustus styled himself as princeps, or \'first citizen,\' to maintain the illusion of republican government in Rome.', isNoun:true },
+  { word:'priory', pronunciation:'PRY-ur-ee', ipa:'/ˈpraɪəri/', pos:'noun', def:'A small religious house or monastery governed by a prior or prioress, subordinate to an abbey.', lang:'Latin, from prior (\'former, earlier, superior\'), via Old French priorié.', example:'The medieval priory, now in ruins, once housed a community of Benedictine monks devoted to prayer and scholarship.', isNoun:true },
+  { word:'privatim', pronunciation:'pry-VAY-tim', ipa:'/praɪˈveɪtɪm/', pos:'adverb', def:'Privately; in a private manner or capacity.', lang:'Latin, from privatus (\'private\') + -im (adverbial suffix).', example:'The sensitive matter was discussed privatim between the two diplomats, away from the press and public.', isNoun:false },
+  { word:'privet', pronunciation:'PRIV-it', ipa:'/ˈprɪvɪt/', pos:'noun', def:'A shrub of the olive family, with small white flowers, widely used for hedges.', lang:'English, of unknown origin; first recorded in the mid-16th century.', example:'The gardener carefully trimmed the privet hedge into a smooth, uniform wall of green.', isNoun:true },
+  { word:'probative', pronunciation:'PROH-buh-tiv', ipa:'/ˈproʊbətɪv/', pos:'adjective', def:'Affording proof or evidence; having the quality of proving something.', lang:'Latin, from probativus, from probare (\'to test, prove\'), from probus (\'good\').', example:'The judge ruled that the DNA evidence was highly probative and could be presented to the jury.', isNoun:false },
+  { word:'procrustean', pronunciation:'proh-KRUS-tee-un', ipa:'/proʊˈkrʌstiən/', pos:'adjective', def:'Enforcing uniformity or conformity without regard for natural variation or individuality.', lang:'Greek, from Prokroustēs (\'the Stretcher\'), a mythical robber who stretched or cut victims to fit his iron bed.', example:'The school\'s procrustean approach to education forced all students into the same rigid curriculum regardless of their abilities.', isNoun:false },
+  { word:'procurement', pronunciation:'proh-KYOOR-munt', ipa:'/prəˈkjʊərmənt/', pos:'noun', def:'The action of obtaining or procuring something, especially supplies, equipment, or services for an organization.', lang:'French, from procurer (\'to obtain\'), from Latin procurare (\'to take care of\'), from pro (\'on behalf of\') + curare (\'to care for\').', example:'The company streamlined its procurement process to reduce costs and improve supply chain efficiency.', isNoun:true },
+  { word:'prodigious', pronunciation:'pruh-DIJ-us', ipa:'/prəˈdɪdʒəs/', pos:'adjective', def:'Remarkably great in extent, size, or degree; impressively large; marvelous or wonderful.', lang:'Latin, from prodigiosus (\'marvelous\'), from prodigium (\'omen, portent\').', example:'The young pianist displayed prodigious talent, performing concertos that would challenge seasoned professionals.', isNoun:false },
+  { word:'proem', pronunciation:'PROH-em', ipa:'/ˈproʊɛm/', pos:'noun', def:'A preface or introduction, especially to a book or speech; a preliminary discourse.', lang:'Greek, from prooimion (\'prelude\'), from pro (\'before\') + oimē (\'song, way\').', example:'The author\'s proem set the stage for the epic narrative that followed, explaining the world and its history.', isNoun:true },
+  { word:'profligacy', pronunciation:'PROF-lih-guh-see', ipa:'/ˈprɒflɪɡəsi/', pos:'noun', def:'Reckless extravagance or wastefulness in the use of resources; shameless immorality or dissipation.', lang:'Latin, from profligatus (\'ruined, dissolute\'), past participle of profligare (\'to ruin, overthrow\'), from pro (\'forward\') + fligere (\'to strike\').', example:'The CEO\'s profligacy with company funds—private jets, lavish parties—led to his eventual dismissal.', isNoun:true },
+  { word:'profundity', pronunciation:'pruh-FUN-dih-tee', ipa:'/prəˈfʌndɪti/', pos:'noun', def:'Deep insight or great depth of intellect, meaning, or feeling.', lang:'Latin, from profunditas (\'depth\'), from profundus (\'deep\'), from pro (\'before, forward\') + fundus (\'bottom\').', example:'The philosopher\'s writings were admired for their profundity, exploring the deepest questions of human existence.', isNoun:true },
+  { word:'proletarian', pronunciation:'PROH-luh-TAIR-ee-un', ipa:'/ˌproʊlɪˈtɛəriən/', pos:'noun', def:'A member of the working class; a wage earner with little or no property.', lang:'Latin, from proletarius (\'a citizen of the lowest class\'), from proles (\'offspring\'), because their contribution to the state was seen as producing children.', example:'Karl Marx argued that proletarian workers would eventually overthrow the capitalist system and establish a classless society.', isNoun:true },
+  { word:'proliferate', pronunciation:'pruh-LIF-uh-rayt', ipa:'/prəˈlɪfəˌreɪt/', pos:'verb', def:'To increase rapidly in number; to reproduce or multiply; to spread or grow profusely.', lang:'Latin, from proles (\'offspring\') + ferre (\'to bear\'), via French proliférer.', example:'Social media platforms have proliferated over the past decade, transforming how people communicate worldwide.', isNoun:false },
+  { word:'prolix', pronunciation:'proh-LIKS', ipa:'/proʊˈlɪks/', pos:'adjective', def:'Using or containing too many words; tediously lengthy; long-winded.', lang:'Latin, from prolixus (\'poured forth, extended\'), from pro (\'forward\') + liquere (\'to flow\').', example:'The professor\'s prolix lectures often ran well past the scheduled time, testing students\' patience.', isNoun:false },
+  { word:'prolusory', pronunciation:'proh-LOO-suh-ree', ipa:'/proʊˈluːsəri/', pos:'adjective', def:'Of, relating to, or of the nature of a prelude; introductory, preliminary.', lang:'Latin, from prolusio (\'prelude\'), from proludere (\'to play beforehand\'), from pro (\'before\') + ludere (\'to play\').', example:'The speaker made a few prolusory remarks before launching into the main topic of her address.', isNoun:false },
+  { word:'promontory', pronunciation:'PROM-un-TOR-ee', ipa:'/ˈprɒmənˌtɔːri/', pos:'noun', def:'A point of high land that juts out into a large body of water; a headland or cliff.', lang:'Latin, from promunturium (\'mountain ridge, headland\'), possibly from prominere (\'to jut out\').', example:'The lighthouse stood on a rocky promontory overlooking the crashing waves of the Atlantic Ocean.', isNoun:true },
+  { word:'proprietary', pronunciation:'pruh-PRY-uh-TAIR-ee', ipa:'/prəˈpraɪəˌtɛri/', pos:'adjective', def:'Relating to an owner or ownership; manufactured and sold by a particular company under a trademark.', lang:'Latin, from proprietarius (\'owner\'), from proprietas (\'property\'), from proprius (\'one\'s own\').', example:'The company\'s proprietary software gave it a competitive advantage that rivals struggled to match.', isNoun:false },
+  { word:'proprioceptive', pronunciation:'PROH-pree-oh-SEP-tiv', ipa:'/ˌproʊpriəˈsɛptɪv/', pos:'adjective', def:'Relating to proprioception, the sense of the relative position and movement of one\'s own body parts.', lang:'Latin, from proprius (\'one\'s own\') + receptivus (\'capable of receiving\'), from recipere (\'to receive\').', example:'Gymnasts rely heavily on proprioceptive awareness to execute complex movements and maintain balance.', isNoun:false },
+  { word:'prorogue', pronunciation:'proh-ROHG', ipa:'/proʊˈroʊɡ/', pos:'verb', def:'To discontinue a session of a parliament or other legislative assembly without dissolving it.', lang:'Latin, from prorogare (\'to prolong, extend\'), from pro (\'before, publicly\') + rogare (\'to ask\').', example:'The prime minister decided to prorogue Parliament, delaying the vote on the controversial legislation.', isNoun:false },
+  { word:'prosody', pronunciation:'PROS-uh-dee', ipa:'/ˈprɒsədi/', pos:'noun', def:'The patterns of rhythm and sound used in poetry; the study of versification, including meter, rhyme, and stanza forms. Also, the patterns of stress and intonation in speech.', lang:'Greek, from prosōidia (\'song sung to music, accent\'), from pros (\'toward\') + ōidē (\'song\').', example:'Understanding prosody helps actors deliver Shakespeare\'s lines with the proper rhythm and emphasis.', isNoun:true },
+  { word:'protean', pronunciation:'PROH-tee-un', ipa:'/ˈproʊtiən/', pos:'adjective', def:'Tending or able to change frequently or easily; versatile; variable.', lang:'Greek, from Prōteus, a Greek sea god who could change shape at will.', example:'The protean actor was equally convincing as a Shakespearean king and a modern-day comedian.', isNoun:false },
+  { word:'protectorate', pronunciation:'pruh-TEK-tur-ut', ipa:'/prəˈtɛktərɪt/', pos:'noun', def:'A state that is controlled and protected by another; the relationship between a strong state and a weaker one under its protection.', lang:'Latin, from protector (\'one who protects\'), from protegere (\'to cover in front\'), from pro (\'in front\') + tegere (\'to cover\').', example:'The small island nation became a protectorate of the larger power, receiving military defense in exchange for political concessions.', isNoun:true },
+  { word:'protuberant', pronunciation:'proh-TOO-bur-unt', ipa:'/proʊˈtjuːbərənt/', pos:'adjective', def:'Protruding; bulging outward beyond the surrounding surface.', lang:'Latin, from protuberant- (\'swelling out\'), present participle of protuberare, from pro (\'forward\') + tuber (\'lump, swelling\').', example:'The frog\'s protuberant eyes gave it an almost comical appearance as it sat motionless on the lily pad.', isNoun:false },
+  { word:'provenance', pronunciation:'PROV-uh-nuns', ipa:'/ˈprɒvənəns/', pos:'noun', def:'The place of origin or earliest known history of something; a record of ownership used as a guide to authenticity.', lang:'French, from provenir (\'to come from\'), from Latin provenire (\'to come forth\'), from pro (\'forth\') + venire (\'to come\').', example:'The auction house verified the painting\'s provenance, tracing its ownership back to a 17th-century French collector.', isNoun:true },
+  { word:'proviant', pronunciation:'PROH-vee-unt', ipa:'/ˈproʊviənt/', pos:'noun', def:'Provisions or supplies of food, especially for an army or expedition.', lang:'German, from Italian provianda (\'provisions\'), from Medieval Latin providenda (\'things to be provided\'), from Latin providere (\'to foresee, provide\').', example:'The soldiers loaded the wagons with proviant before embarking on the long march through enemy territory.', isNoun:true },
+  { word:'provincial', pronunciation:'pruh-VIN-shul', ipa:'/prəˈvɪnʃəl/', pos:'adjective', def:'Of or concerning a province or the provinces; unsophisticated or narrow-minded.', lang:'Latin, from provincialis (\'of a province\'), from provincia (\'province, territory\').', example:'Her provincial upbringing hadn\'t prepared her for the fast-paced, cosmopolitan lifestyle of the capital city.', isNoun:false },
+  { word:'proviso', pronunciation:'pruh-VY-zoh', ipa:'/prəˈvaɪzoʊ/', pos:'noun', def:'A condition or qualification attached to an agreement or statement; a stipulation or clause.', lang:'Latin, from proviso (quod) (\'it being provided (that)\'), ablative of provisus, past participle of providere (\'to provide\').', example:'The contract included a proviso that allowed either party to terminate the agreement with thirty days\' notice.', isNoun:true },
+  { word:'puchero', pronunciation:'poo-CHAIR-oh', ipa:'/puːˈtʃɛroʊ/', pos:'noun', def:'A traditional stew of Spanish and Latin American origin, made with meat, vegetables, and chickpeas.', lang:'Spanish, from puchero (\'cooking pot, stew\'), from Latin pultarius (\'pot for porridge\'), from puls (\'porridge\').', example:'The family gathered around a steaming pot of puchero, its rich broth fragrant with saffron and vegetables.', isNoun:true },
+  { word:'pueblo', pronunciation:'PWEB-loh', ipa:'/ˈpwɛbloʊ/', pos:'noun', def:'A type of communal dwelling of certain Native American peoples in the southwestern US, made of adobe or stone; a small town or village.', lang:'Spanish, from pueblo (\'people, village\'), from Latin populus (\'people\').', example:'The ancient pueblo at Mesa Verde was carved into the cliff face, sheltering its inhabitants for centuries.', isNoun:true },
+  { word:'pugilist', pronunciation:'PYOO-juh-list', ipa:'/ˈpjuːdʒɪlɪst/', pos:'noun', def:'A person who fights with the fists; a boxer, especially a professional one.', lang:'Latin, from pugil (\'boxer\'), from pugnus (\'fist\').', example:'The retired pugilist shared stories of his championship bouts and the discipline boxing had taught him.', isNoun:true },
+  { word:'pugnacious', pronunciation:'pug-NAY-shus', ipa:'/pʌɡˈneɪʃəs/', pos:'adjective', def:'Eager or quick to argue, quarrel, or fight; combative in nature.', lang:'Latin, from pugnax (\'combative\'), from pugnare (\'to fight\'), from pugnus (\'fist\').', example:'The pugnacious debater challenged every point raised by her opponents with fierce determination.', isNoun:false },
+  { word:'pulchritude', pronunciation:'PUL-krih-tood', ipa:'/ˈpʌlkrɪˌtjuːd/', pos:'noun', def:'Beauty; physical comeliness.', lang:'Latin, from pulchritudo (\'beauty\'), from pulcher (\'beautiful\').', example:'The Renaissance painters celebrated the pulchritude of the human form in their idealized portraits and sculptures.', isNoun:true },
+  { word:'pulka', pronunciation:'PUL-kuh', ipa:'/ˈpʊlkə/', pos:'noun', def:'A boat-shaped sled drawn by reindeer, used by the Sami people of Lapland; also used in modern sledge racing.', lang:'Finnish, from pulkka, borrowed from Northern Sami bulki (\'sled\').', example:'The Sami herder hitched his reindeer to the pulka and glided swiftly across the frozen tundra.', isNoun:true },
+  { word:'purga', pronunciation:'POOR-guh', ipa:'/ˈpʊərɡə/', pos:'noun', def:'A violent blizzard or snowstorm in the Russian Arctic and Siberian tundra.', lang:'Russian, from purga (\'blizzard, snowstorm\'), possibly of Karelian or Finnic origin.', example:'The expedition was forced to shelter in place for three days until the fierce purga finally subsided.', isNoun:true },
+  { word:'purvey', pronunciation:'pur-VAY', ipa:'/pɜːrˈveɪ/', pos:'verb', def:'To provide or supply food, provisions, or services, especially as a business; to spread or promote ideas or information.', lang:'Old French, from porveoir (\'to provide\'), from Latin providere (\'to foresee, provide\'), from pro (\'before\') + videre (\'to see\').', example:'The local bakery purveys artisanal breads and pastries to restaurants throughout the city.', isNoun:false },
+  { word:'pyrite', pronunciation:'PYE-ryte', ipa:'/ˈpaɪraɪt/', pos:'noun', def:'A brass-yellow mineral consisting of iron disulfide, commonly known as \'fool\'s gold\' because of its metallic luster.', lang:'Greek, from pyritēs (lithos) (\'stone that strikes fire\'), from pyr (\'fire\').', example:'The miner initially mistook the glittering pyrite for genuine gold, only to discover it was worthless fool\'s gold.', isNoun:true },
+  { word:'pyrope', pronunciation:'PYE-rohp', ipa:'/ˈpaɪroʊp/', pos:'noun', def:'A deep red variety of garnet, used as a gemstone, composed of magnesium aluminum silicate.', lang:'Greek, from pyrōpos (\'fiery-eyed\'), from pyr (\'fire\') + ōps (\'eye, face\').', example:'The antique ring featured a brilliant pyrope garnet that glowed like a crimson ember in the lamplight.', isNoun:true },
+  { word:'pyrotechnics', pronunciation:'PYE-roh-TEK-niks', ipa:'/ˌpaɪroʊˈtɛknɪks/', pos:'noun', def:'The art of making or displaying fireworks; a brilliant or spectacular display or performance.', lang:'Greek, from pyr (\'fire\') + tekhnē (\'art, skill\').', example:'The Fourth of July celebration ended with a dazzling display of pyrotechnics lighting up the night sky.', isNoun:true }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Dots - show window of ~25 around current
+  const dotsRow = document.getElementById("dotsRow");
+  const totalA = a.length;
+  const windowSize = 25;
+  let startD = Math.max(0, s - Math.floor(windowSize/2));
+  let endD = Math.min(totalA, startD + windowSize);
+  if(endD - startD < windowSize) startD = Math.max(0, endD - windowSize);
+  let dotsHtml = '';
+  for(let i=startD; i<endD; i++){
+    const cls = i===s ? 'active' : (Math.abs(i-s)<=2 ? 'nearby' : '');
+    dotsHtml += `<div class="dot ${cls}"></div>`;
+  }
+  dotsRow.innerHTML = dotsHtml;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>
