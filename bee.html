@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Spelling Bee - Complete Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #2d3561 0%, #4a3564 50%, #5e3a5f 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            touch-action: manipulation;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 48px;
+            font-weight: 400;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        .tagline {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 16px;
+            font-style: italic;
+            margin-bottom: 25px;
+        }
+
+        .progress-bar-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 15px 20px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .progress-text {
+            color: white;
+            font-size: 14px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .done-count {
+            color: #ffd700;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            background: rgba(255, 255, 255, 0.2);
+            height: 8px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: #ffd700;
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn.active {
+            background: #ffd700;
+            color: #2d3561;
+            border-color: #ffd700;
+        }
+
+        .card-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            perspective: 1000px;
+            margin-bottom: 15px;
+            max-height: calc(100vh - 380px);
+        }
+
+        .card {
+            width: 100%;
+            max-width: 500px;
+            height: 100%;
+            max-height: 480px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            cursor: pointer;
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            max-height: 480px;
+            backface-visibility: hidden;
+            border-radius: 16px;
+            padding: 25px 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            border: 5px solid #ffd700;
+            position: relative;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .card-front {
+            background: #f5f5f0;
+        }
+
+        .card-back {
+            background: #f5f5f0;
+            transform: rotateY(180deg);
+            justify-content: flex-start;
+            padding-top: 80px;
+        }
+
+        .card-back .spelling {
+            margin-bottom: 20px;
+        }
+
+        .tap-hint {
+            font-size: 12px;
+            color: rgba(45, 53, 97, 0.5);
+            text-align: center;
+            font-style: italic;
+            border-top: 1px dashed rgba(45, 53, 97, 0.2);
+            padding-top: 12px;
+            width: 100%;
+            margin-top: auto;
+        }
+
+        /* Corner decorations */
+        .card-face::before,
+        .card-face::after {
+            content: '';
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border: 2px solid #ffd700;
+        }
+
+        .card-face::before {
+            top: 15px;
+            left: 15px;
+            border-right: none;
+            border-bottom: none;
+        }
+
+        .card-face::after {
+            top: 15px;
+            right: 15px;
+            border-left: none;
+            border-bottom: none;
+        }
+
+        .card-corner-bottom-left,
+        .card-corner-bottom-right {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border: 2px solid #ffd700;
+        }
+
+        .card-corner-bottom-left {
+            bottom: 15px;
+            left: 15px;
+            border-right: none;
+            border-top: none;
+        }
+
+        .card-corner-bottom-right {
+            bottom: 15px;
+            right: 15px;
+            border-left: none;
+            border-top: none;
+        }
+
+        .pronunciation-badge {
+            background: #3d2f54;
+            color: white;
+            padding: 5px 16px;
+            border-radius: 16px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 12px;
+        }
+
+        .pronunciation {
+            font-size: 38px;
+            font-weight: 700;
+            color: #2d3561;
+            margin-bottom: 12px;
+            text-align: center;
+            line-height: 1.1;
+            font-family: 'Georgia', serif;
+        }
+
+        .listen-btn {
+            background: #ffd700;
+            border: none;
+            border-radius: 25px;
+            padding: 10px 28px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(255, 215, 0, 0.3);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #2d3561;
+            margin-bottom: 16px;
+        }
+
+        .listen-btn:active {
+            transform: scale(0.95);
+        }
+
+        .listen-btn.speaking {
+            animation: pulse 0.6s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .tap-hint {
+            font-size: 14px;
+            color: rgba(45, 53, 97, 0.5);
+            text-align: center;
+            font-style: italic;
+            border-top: 1px dashed rgba(45, 53, 97, 0.2);
+            padding-top: 30px;
+            width: 100%;
+        }
+
+        .word-info {
+            width: 100%;
+            text-align: left;
+            margin-top: 8px;
+        }
+
+        .info-section {
+            margin-bottom: 10px;
+        }
+
+        .info-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: rgba(45, 53, 97, 0.6);
+            margin-bottom: 3px;
+        }
+
+        .info-content {
+            font-size: 13px;
+            line-height: 1.4;
+            color: #2d3561;
+        }
+
+        .spelling {
+            font-size: 52px;
+            font-weight: 700;
+            color: #2d3561;
+            margin: auto;
+            text-align: center;
+            letter-spacing: 3px;
+            font-family: 'Georgia', serif;
+        }
+
+        .star-btn {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: none;
+            border: none;
+            font-size: 32px;
+            cursor: pointer;
+            z-index: 10;
+            transition: transform 0.2s;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        }
+
+        .star-btn:active {
+            transform: scale(1.2);
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .nav-btn {
+            padding: 14px 28px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s;
+            font-weight: 600;
+            min-width: 100px;
+        }
+
+        .nav-btn.flip-btn {
+            background: #ffd700;
+            color: #2d3561;
+            border-color: #ffd700;
+            min-width: 140px;
+        }
+
+        .nav-btn:active {
+            transform: scale(0.95);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .dot-indicator {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 15px;
+            max-height: 60px;
+            overflow-y: auto;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .dot:hover {
+            background: rgba(255, 215, 0, 0.6);
+            transform: scale(1.2);
+        }
+
+        .dot.active {
+            background: #ffd700;
+            transform: scale(1.3);
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 12px;
+            }
+
+            .header h1 {
+                font-size: 28px;
+            }
+
+            .tagline {
+                font-size: 13px;
+                margin-bottom: 20px;
+            }
+
+            .pronunciation {
+                font-size: 32px;
+            }
+
+            .spelling {
+                font-size: 44px;
+            }
+
+            .card-face {
+                padding: 20px 16px;
+            }
+
+            .nav-buttons {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .nav-btn {
+                flex: 1;
+                min-width: 65px;
+                padding: 10px 14px;
+                font-size: 13px;
+            }
+
+            .info-content {
+                font-size: 12px;
+            }
+
+            .card-container {
+                max-height: calc(100vh - 360px);
+            }
+
+            .card {
+                max-height: 450px;
+            }
+
+            .card-face {
+                max-height: 450px;
+            }
+
+            .star-btn {
+                font-size: 28px;
+                top: 20px;
+                right: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Spelling Bee</h1>
+        <div class="tagline">Master the art of spelling, one word at a time</div>
+    </div>
+
+    <div class="progress-bar-container">
+        <div class="progress-text">
+            <span id="progressText">Word 1 of 211</span>
+            <span class="done-count" id="doneCount">0 Done</span>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn" id="randomizeBtn">🔀 Randomize</button>
+        <button class="btn" id="starredBtn">⭐ Starred Only</button>
+    </div>
+
+    <div class="card-container">
+        <div class="card" id="card">
+            <div class="card-face card-front">
+                <div class="card-corner-bottom-left"></div>
+                <div class="card-corner-bottom-right"></div>
+                <button class="star-btn" id="starBtn">☆</button>
+                <div class="pronunciation-badge">PRONUNCIATION</div>
+                <div class="pronunciation" id="pronunciation">PAB-yuh-luhm</div>
+                <button class="listen-btn" id="listenBtn">
+                    <span>🔊</span>
+                    <span>Listen</span>
+                </button>
+                <div class="word-info">
+                    <div class="info-section">
+                        <div class="info-label">Part of Speech</div>
+                        <div class="info-content" id="partOfSpeech">noun</div>
+                    </div>
+                    <div class="info-section">
+                        <div class="info-label">Definition</div>
+                        <div class="info-content" id="definition">Food or nourishment; bland intellectual fare</div>
+                    </div>
+                    <div class="info-section">
+                        <div class="info-label">Origin</div>
+                        <div class="info-content" id="origin">From Latin pābulum "food"</div>
+                    </div>
+                    <div class="info-section">
+                        <div class="info-label">Example</div>
+                        <div class="info-content" id="example">The speech offered nothing but political _______ to the audience.</div>
+                    </div>
+                </div>
+                <div class="tap-hint">Tap anywhere to reveal spelling</div>
+            </div>
+            <div class="card-face card-back">
+                <div class="card-corner-bottom-left"></div>
+                <div class="card-corner-bottom-right"></div>
+                <button class="star-btn" id="starBtnBack">☆</button>
+                <div class="spelling" id="spelling">PABULUM</div>
+                <div class="tap-hint">Tap anywhere to flip back</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-buttons">
+        <button class="nav-btn" id="prevBtn">← Prev</button>
+        <button class="nav-btn flip-btn" id="flipBtn">Flip Card</button>
+        <button class="nav-btn" id="nextBtn">Next →</button>
+        <button class="nav-btn" id="resetBtn">↺ Reset</button>
+    </div>
+
+    <div class="dot-indicator" id="dotIndicator"></div>
+
+    <script>
+        const words = [
+            { word: "pabulum", pronunciation: "/PAB-yuh-luhm/", partOfSpeech: "noun", definition: "Food or nourishment; bland intellectual fare", origin: "Latin pābulum 'food'", example: "The speech offered nothing but political _______ to the audience." },
+            { word: "pagoda", pronunciation: "/puh-GOH-duh/", partOfSpeech: "noun", definition: "A tiered tower with multiple eaves, common in East Asian architecture", origin: "Portuguese pagode", example: "The ancient _______ stood majestically against the sunset." },
+            { word: "Paleozoic", pronunciation: "/pay-lee-uh-ZOH-ik/", partOfSpeech: "adjective", definition: "Relating to the geologic era from 542 to 251 million years ago", origin: "Greek palaios 'ancient' + zōē 'life'", example: "Trilobites are characteristic fossils of the _______ era." },
+            { word: "paletot", pronunciation: "/PAL-uh-toh/", partOfSpeech: "noun", definition: "A loose outer coat or jacket", origin: "French", example: "She wore an elegant _______ over her evening gown." },
+            { word: "palmate", pronunciation: "/PAL-mayt/", partOfSpeech: "adjective", definition: "Shaped like an open hand with spread fingers", origin: "Latin palmatus 'marked with palm'", example: "Maple trees have _______ leaves." },
+            { word: "palpebral", pronunciation: "/PAL-puh-bruhl/", partOfSpeech: "adjective", definition: "Relating to the eyelids", origin: "Latin palpebra 'eyelid'", example: "The _______ fissure is the opening between the eyelids." },
+            { word: "palpitant", pronunciation: "/PAL-pi-tuhnt/", partOfSpeech: "adjective", definition: "Throbbing or trembling; pulsating", origin: "Latin palpitare 'to throb'", example: "Her _______ heart raced with excitement." },
+            { word: "Panama", pronunciation: "/PAN-uh-mah/", partOfSpeech: "proper noun", definition: "A country in Central America; also a style of hat", origin: "Spanish Panamá", example: "He wore a classic _______ hat to the beach." },
+            { word: "panary", pronunciation: "/PAN-uh-ree/", partOfSpeech: "adjective", definition: "Relating to bread or baking", origin: "Latin panis 'bread'", example: "The _______ arts have been perfected over centuries." },
+            { word: "pancetta", pronunciation: "/pan-CHET-uh/", partOfSpeech: "noun", definition: "Italian bacon cured with salt and spices", origin: "Italian, diminutive of pancia 'belly'", example: "The recipe calls for diced _______ and garlic." },
+            { word: "panchreston", pronunciation: "/pan-KRES-ton/", partOfSpeech: "noun", definition: "A supposed universal remedy or solution", origin: "Greek pan 'all' + chrēstos 'useful'", example: "Technology is often touted as a _______ for society's ills." },
+            { word: "pancreas", pronunciation: "/PAN-kree-us/", partOfSpeech: "noun", definition: "A gland that produces insulin and digestive enzymes", origin: "Greek pan 'all' + kreas 'flesh'", example: "The _______ regulates blood sugar levels." },
+            { word: "panopticon", pronunciation: "/pan-OP-ti-kon/", partOfSpeech: "noun", definition: "A circular prison designed for total surveillance", origin: "Greek pan 'all' + optikon 'seeing'", example: "Bentham's _______ design influenced modern surveillance." },
+            { word: "pantomime", pronunciation: "/PAN-tuh-mym/", partOfSpeech: "noun", definition: "Dramatic entertainment using only gestures and expressions", origin: "Greek pantomimos 'imitator of all'", example: "The street performer's _______ drew a large crowd." },
+            { word: "papyrus", pronunciation: "/puh-PY-rus/", partOfSpeech: "noun", definition: "Ancient paper-like material made from reed plants", origin: "Greek papyros", example: "Ancient Egyptians wrote on _______ scrolls." },
+            { word: "par excellence", pronunciation: "/par ek-suh-LAHNSS/", partOfSpeech: "phrase", definition: "Being the best or most typical example of something", origin: "French 'by excellence'", example: "She is a diplomat _______, skilled in every aspect." },
+            { word: "parabola", pronunciation: "/puh-RAB-uh-luh/", partOfSpeech: "noun", definition: "A symmetrical U-shaped curve", origin: "Greek parabolē 'comparison'", example: "The path of a thrown ball follows a _______." },
+            { word: "parameters", pronunciation: "/puh-RAM-i-terz/", partOfSpeech: "noun", definition: "Limits or boundaries that define a system or activity", origin: "Greek para 'beside' + metron 'measure'", example: "We need to establish the _______ of this project." },
+            { word: "paraplegic", pronunciation: "/par-uh-PLEE-jik/", partOfSpeech: "noun/adjective", definition: "A person paralyzed in the lower half of the body", origin: "Greek para 'beside' + plēgē 'stroke'", example: "The _______ athlete competed in wheelchair racing." },
+            { word: "parasol", pronunciation: "/PAR-uh-sol/", partOfSpeech: "noun", definition: "A light umbrella used for sun protection", origin: "Italian parasole 'shield from sun'", example: "She carried a lace _______ to the garden party." },
+            { word: "parazonium", pronunciation: "/par-uh-ZOH-nee-um/", partOfSpeech: "noun", definition: "A triangular dagger used in ancient Rome", origin: "Greek para 'beside' + zōnē 'belt'", example: "Roman officers wore a _______ as a symbol of rank." },
+            { word: "parbuckle", pronunciation: "/PAR-buk-uhl/", partOfSpeech: "noun", definition: "A rope arrangement for raising or lowering cylindrical objects", origin: "Unknown origin", example: "They used a _______ to roll the barrel up the ramp." },
+            { word: "Parcheesi", pronunciation: "/par-CHEE-zee/", partOfSpeech: "proper noun", definition: "A board game derived from the Indian game pachisi", origin: "Hindi pachīsī 'twenty-five'", example: "The family gathered to play _______ on game night." },
+            { word: "parfleche", pronunciation: "/par-FLESH/", partOfSpeech: "noun", definition: "Rawhide with the hair removed, used by Native Americans", origin: "French parer 'prepare' + flèche 'arrow'", example: "The tribe stored food in _______ containers." },
+            { word: "pariah", pronunciation: "/puh-RY-uh/", partOfSpeech: "noun", definition: "An outcast; someone rejected by society", origin: "Tamil paraiyar, a drummer caste", example: "After the scandal, he became a social _______." },
+            { word: "parlay", pronunciation: "/PAR-lay/", partOfSpeech: "verb", definition: "To transform into something greater; to bet winnings on subsequent wagers", origin: "French paroli, a betting term", example: "She managed to _______ her small investment into a fortune." },
+            { word: "Parmesan", pronunciation: "/PAR-muh-zan/", partOfSpeech: "noun", definition: "A hard Italian cheese with a sharp flavor", origin: "Italian Parmigiano, from Parma", example: "Grate fresh _______ over the pasta." },
+            { word: "parochial", pronunciation: "/puh-ROH-kee-uhl/", partOfSpeech: "adjective", definition: "Having a limited or narrow outlook; relating to a church parish", origin: "Latin parochia 'parish'", example: "His _______ views prevented him from seeing the bigger picture." },
+            { word: "parodic", pronunciation: "/puh-ROD-ik/", partOfSpeech: "adjective", definition: "Relating to or characteristic of parody", origin: "Greek parōidia 'burlesque song'", example: "The film's _______ treatment of the genre was hilarious." },
+            { word: "parr", pronunciation: "/par/", partOfSpeech: "noun", definition: "A young salmon with dark crossbars", origin: "Unknown origin", example: "The _______ swam upstream in schools." },
+            { word: "parsec", pronunciation: "/PAR-sek/", partOfSpeech: "noun", definition: "A unit of astronomical distance equal to 3.26 light-years", origin: "Parallax + second", example: "The nearest star is just over one _______ away." },
+            { word: "parsimony", pronunciation: "/PAR-suh-moh-nee/", partOfSpeech: "noun", definition: "Extreme unwillingness to spend money or use resources", origin: "Latin parsimonia 'frugality'", example: "His _______ was legendary among his colleagues." },
+            { word: "partiality", pronunciation: "/par-shee-AL-i-tee/", partOfSpeech: "noun", definition: "Unfair bias in favor of one thing or person; a special liking", origin: "Latin partialis 'partial'", example: "The judge's _______ toward the defendant was obvious." },
+            { word: "particulate", pronunciation: "/par-TIK-yuh-lit/", partOfSpeech: "noun/adjective", definition: "A minute separate particle; consisting of particles", origin: "Latin particula 'small part'", example: "_______ matter in the air poses health risks." },
+            { word: "parturient", pronunciation: "/par-TOOR-ee-unt/", partOfSpeech: "adjective", definition: "About to give birth; bringing forth or about to produce", origin: "Latin parturire 'to be in labor'", example: "The _______ mare was moved to a birthing stall." },
+            { word: "parvo", pronunciation: "/PAR-voh/", partOfSpeech: "noun", definition: "Short for parvovirus, a contagious disease affecting dogs", origin: "Latin parvus 'small'", example: "Puppies should be vaccinated against _______." },
+            { word: "pashmina", pronunciation: "/pash-MEE-nuh/", partOfSpeech: "noun", definition: "Fine wool from Himalayan goats; a shawl made from this", origin: "Persian pašmīna 'woolen'", example: "She wrapped herself in a luxurious _______ shawl." },
+            { word: "passé", pronunciation: "/pa-SAY/", partOfSpeech: "adjective", definition: "No longer fashionable or current; outdated", origin: "French passé 'past'", example: "Bell-bottom jeans are considered _______ now." },
+            { word: "pasteurize", pronunciation: "/PAS-chuh-ryz/", partOfSpeech: "verb", definition: "To heat food or liquid to kill harmful bacteria", origin: "Named after Louis Pasteur", example: "Modern dairies _______ all their milk products." },
+            { word: "pastrami", pronunciation: "/puh-STRAH-mee/", partOfSpeech: "noun", definition: "Seasoned smoked beef, typically served in sandwiches", origin: "Yiddish pastrame, from Romanian", example: "The deli is famous for its _______ on rye." },
+            { word: "patella", pronunciation: "/puh-TEL-uh/", partOfSpeech: "noun", definition: "The kneecap", origin: "Latin patella 'small pan'", example: "She fractured her _______ while skiing." },
+            { word: "pathos", pronunciation: "/PAY-thos/", partOfSpeech: "noun", definition: "A quality that evokes pity or sadness", origin: "Greek pathos 'suffering'", example: "The film's ending was full of _______." },
+            { word: "patronymic", pronunciation: "/pat-ruh-NIM-ik/", partOfSpeech: "noun/adjective", definition: "A name derived from the name of a father or ancestor", origin: "Greek patronymikos", example: "Johnson is a _______ surname meaning 'son of John.'" },
+            { word: "paucity", pronunciation: "/PAW-si-tee/", partOfSpeech: "noun", definition: "The state of being scarce; smallness of quantity", origin: "Latin paucitas 'fewness'", example: "There was a _______ of evidence to support the claim." },
+            { word: "peacenik", pronunciation: "/PEES-nik/", partOfSpeech: "noun", definition: "A person who advocates peace, especially during war", origin: "Peace + -nik (Yiddish suffix)", example: "The _______ protesters marched against the war." },
+            { word: "peculate", pronunciation: "/PEK-yuh-layt/", partOfSpeech: "verb", definition: "To embezzle or steal money entrusted to one's care", origin: "Latin peculari 'to embezzle'", example: "The accountant was caught trying to _______ company funds." },
+            { word: "pecuniary", pronunciation: "/pih-KYOO-nee-er-ee/", partOfSpeech: "adjective", definition: "Relating to or consisting of money", origin: "Latin pecuniarius, from pecunia 'money'", example: "He received _______ compensation for his injuries." },
+            { word: "pedantry", pronunciation: "/PED-uhn-tree/", partOfSpeech: "noun", definition: "Excessive concern with minor details or rules", origin: "French pédanterie", example: "His _______ made every meeting tedious." },
+            { word: "pelagial", pronunciation: "/puh-LAY-jee-uhl/", partOfSpeech: "adjective", definition: "Relating to the open sea; oceanic", origin: "Greek pelagios 'of the sea'", example: "_______ fish live in the open ocean waters." },
+            { word: "pelerine", pronunciation: "/PEL-uh-reen/", partOfSpeech: "noun", definition: "A woman's cape with pointed ends in front", origin: "French pèlerine 'pilgrim's cape'", example: "The Victorian lady wore a lace _______ over her shoulders." },
+            { word: "pelf", pronunciation: "/pelf/", partOfSpeech: "noun", definition: "Money or wealth, especially when gained dishonestly", origin: "Old French pelfre 'spoils'", example: "The corrupt official amassed great _______ through bribes." },
+            { word: "Peloponnesian", pronunciation: "/pel-uh-puh-NEE-zhun/", partOfSpeech: "adjective", definition: "Relating to the Peloponnesus region of Greece", origin: "Greek Peloponnēsos", example: "The _______ War was fought between Athens and Sparta." },
+            { word: "pendentive", pronunciation: "/pen-DEN-tiv/", partOfSpeech: "noun", definition: "A curved triangle of vaulting formed by the intersection of a dome with its supporting arches", origin: "French pendentif 'hanging'", example: "The cathedral's dome rests on four massive _______s." },
+            { word: "pendragon", pronunciation: "/pen-DRAG-uhn/", partOfSpeech: "noun", definition: "A chief leader; title of ancient British or Welsh princes", origin: "Welsh pen 'head' + dragon", example: "King Arthur was known as Uther _______'s son." },
+            { word: "pendulous", pronunciation: "/PEN-juh-lus/", partOfSpeech: "adjective", definition: "Hanging down loosely; swinging freely", origin: "Latin pendulus 'hanging'", example: "The _______ branches swayed in the breeze." },
+            { word: "penitentiary", pronunciation: "/pen-i-TEN-shuh-ree/", partOfSpeech: "noun", definition: "A prison for people convicted of serious crimes", origin: "Latin paenitentia 'repentance'", example: "He was sentenced to twenty years in the state _______." },
+            { word: "penultimate", pronunciation: "/pih-NUL-tuh-mit/", partOfSpeech: "adjective", definition: "Next to last; second to last", origin: "Latin paene 'almost' + ultimus 'last'", example: "We're on the _______ chapter of the book." },
+            { word: "pepita", pronunciation: "/puh-PEE-tuh/", partOfSpeech: "noun", definition: "A roasted pumpkin seed; a gold nugget", origin: "Spanish, diminutive of pepa 'seed'", example: "She snacked on roasted _______s while reading." },
+            { word: "per se", pronunciation: "/per SAY/", partOfSpeech: "phrase", definition: "By or in itself; intrinsically", origin: "Latin 'by itself'", example: "Money, _______, does not guarantee happiness." },
+            { word: "peradventure", pronunciation: "/per-ad-VEN-chur/", partOfSpeech: "adverb", definition: "Perhaps; possibly; by chance", origin: "Middle English per aventure", example: "If _______ we meet again, we shall speak of this." },
+            { word: "perceptible", pronunciation: "/per-SEP-tuh-buhl/", partOfSpeech: "adjective", definition: "Able to be seen or noticed; perceivable", origin: "Latin perceptibilis", example: "There was a barely _______ change in her expression." },
+            { word: "periaktos", pronunciation: "/per-ee-AK-tos/", partOfSpeech: "noun", definition: "A tall revolving prism used as scenery in ancient Greek theater", origin: "Greek periaktos 'revolving'", example: "The _______ allowed for quick scene changes in ancient plays." },
+            { word: "perigynous", pronunciation: "/puh-RIJ-uh-nus/", partOfSpeech: "adjective", definition: "Having floral parts attached around the ovary", origin: "Greek peri 'around' + gynē 'woman'", example: "Roses have a _______ flower structure." },
+            { word: "periodontist", pronunciation: "/per-ee-oh-DON-tist/", partOfSpeech: "noun", definition: "A dentist specializing in gum disease and supporting structures", origin: "Greek peri 'around' + odont 'tooth'", example: "The _______ recommended gum surgery." },
+            { word: "peripheral", pronunciation: "/puh-RIF-er-uhl/", partOfSpeech: "adjective", definition: "Relating to or on the edge or boundary; of secondary importance", origin: "Greek periphereia 'circumference'", example: "The issue is _______ to our main concern." },
+            { word: "periwinkle", pronunciation: "/PER-i-wing-kuhl/", partOfSpeech: "noun", definition: "A trailing evergreen plant with blue flowers; a small edible sea snail", origin: "Old English perwince", example: "Blue _______ covered the garden border." },
+            { word: "permutation", pronunciation: "/per-myoo-TAY-shun/", partOfSpeech: "noun", definition: "A variation or different arrangement of things", origin: "Latin permutare 'to change thoroughly'", example: "There are six _______ of three letters." },
+            { word: "pernicious", pronunciation: "/per-NISH-us/", partOfSpeech: "adjective", definition: "Having a harmful effect, especially gradually", origin: "Latin perniciosus 'destructive'", example: "The _______ influence of propaganda spread rapidly." },
+            { word: "perpetrator", pronunciation: "/PER-puh-tray-ter/", partOfSpeech: "noun", definition: "A person who commits a harmful or illegal act", origin: "Latin perpetrare 'to accomplish'", example: "Police are searching for the _______ of the crime." },
+            { word: "perquisite", pronunciation: "/PER-kwuh-zit/", partOfSpeech: "noun", definition: "A benefit received in addition to regular salary; a privilege", origin: "Latin perquisitus 'diligently sought'", example: "A company car is one _______ of the position." },
+            { word: "perseverance", pronunciation: "/per-suh-VEER-unss/", partOfSpeech: "noun", definition: "Persistence in doing something despite difficulty", origin: "Latin perseverantia 'steadfastness'", example: "Her _______ through adversity was admirable." },
+            { word: "perspicacious", pronunciation: "/per-spi-KAY-shus/", partOfSpeech: "adjective", definition: "Having keen insight and understanding; perceptive", origin: "Latin perspicax 'seeing clearly'", example: "The _______ detective noticed every detail." },
+            { word: "persuasible", pronunciation: "/per-SWAY-zuh-buhl/", partOfSpeech: "adjective", definition: "Capable of being persuaded; open to persuasion", origin: "Latin persuadere 'to persuade'", example: "He proved quite _______ when presented with the facts." },
+            { word: "pertinacity", pronunciation: "/per-tuh-NAS-i-tee/", partOfSpeech: "noun", definition: "Persistent determination; stubbornness", origin: "Latin pertinacia 'perseverance'", example: "His _______ in pursuing his goals was remarkable." },
+            { word: "pertussal", pronunciation: "/per-TUS-uhl/", partOfSpeech: "adjective", definition: "Relating to whooping cough (pertussis)", origin: "Latin per 'intensive' + tussis 'cough'", example: "The _______ vaccine is given to infants." },
+            { word: "pervenche", pronunciation: "/per-VAHNSH/", partOfSpeech: "noun", definition: "A periwinkle blue color", origin: "French 'periwinkle'", example: "She painted the room a lovely _______ shade." },
+            { word: "pestilence", pronunciation: "/PES-tuh-lunss/", partOfSpeech: "noun", definition: "A deadly epidemic disease; a plague", origin: "Latin pestilentia 'plague'", example: "The medieval _______ claimed millions of lives." },
+            { word: "petroleum", pronunciation: "/puh-TROH-lee-um/", partOfSpeech: "noun", definition: "A liquid mixture of hydrocarbons obtained from beneath the earth", origin: "Latin petra 'rock' + oleum 'oil'", example: "_______ is refined to produce gasoline." },
+            { word: "phantasmagoria", pronunciation: "/fan-taz-muh-GOR-ee-uh/", partOfSpeech: "noun", definition: "A sequence of dreamlike images or events", origin: "French fantasmagorie", example: "The fever produced a _______ of strange visions." },
+            { word: "phenotype", pronunciation: "/FEE-noh-typ/", partOfSpeech: "noun", definition: "Observable characteristics resulting from genes and environment", origin: "German Phänotypus", example: "Eye color is part of an organism's _______." },
+            { word: "philosophize", pronunciation: "/fuh-LOS-uh-fyz/", partOfSpeech: "verb", definition: "To engage in philosophical reasoning or speculation", origin: "Greek philosophos 'lover of wisdom'", example: "They spent hours _______ about the meaning of life." },
+            { word: "philtrum", pronunciation: "/FIL-trum/", partOfSpeech: "noun", definition: "The vertical groove between the nose and upper lip", origin: "Latin, from Greek philtron 'love charm'", example: "The _______ is a distinctive facial feature." },
+            { word: "phishing", pronunciation: "/FISH-ing/", partOfSpeech: "noun", definition: "Fraudulent attempt to obtain sensitive information online", origin: "Variant of 'fishing'", example: "The email was a _______ scam trying to steal passwords." },
+            { word: "phlebotomy", pronunciation: "/fluh-BOT-uh-mee/", partOfSpeech: "noun", definition: "The practice of drawing blood from patients", origin: "Greek phleps 'vein' + tomē 'cutting'", example: "She trained in _______ to become a lab technician." },
+            { word: "phoenix", pronunciation: "/FEE-niks/", partOfSpeech: "noun", definition: "A mythical bird that rises from its own ashes; symbol of rebirth", origin: "Greek phoinix", example: "Like a _______, the company rose from bankruptcy." },
+            { word: "phonetician", pronunciation: "/foh-nuh-TISH-un/", partOfSpeech: "noun", definition: "An expert in phonetics; one who studies speech sounds", origin: "Greek phōnētikos 'vocal'", example: "The _______ analyzed the accent patterns." },
+            { word: "phosphorescent", pronunciation: "/fos-fuh-RES-unt/", partOfSpeech: "adjective", definition: "Emitting light without heat; luminous", origin: "Latin phosphorus 'light-bearing'", example: "The _______ algae glowed in the dark water." },
+            { word: "phraseology", pronunciation: "/fray-zee-OL-uh-jee/", partOfSpeech: "noun", definition: "The way in which words are used; manner of expression", origin: "Greek phrasis 'speech' + -ology", example: "Legal _______ can be difficult to understand." },
+            { word: "phycology", pronunciation: "/fy-KOL-uh-jee/", partOfSpeech: "noun", definition: "The scientific study of algae", origin: "Greek phykos 'seaweed' + -logy", example: "She specialized in marine _______ research." },
+            { word: "phylum", pronunciation: "/FY-lum/", partOfSpeech: "noun", definition: "A major taxonomic division of living organisms", origin: "Greek phylon 'race, stock'", example: "Vertebrates belong to the _______ Chordata." },
+            { word: "phyteral", pronunciation: "/FY-ter-uhl/", partOfSpeech: "adjective", definition: "Relating to plants; botanical", origin: "Greek phyton 'plant'", example: "The garden showcased diverse _______ specimens." },
+            { word: "pickerel", pronunciation: "/PIK-er-uhl/", partOfSpeech: "noun", definition: "A small North American pike fish", origin: "Diminutive of 'pike'", example: "We caught several _______ in the pond." },
+            { word: "Pierre", pronunciation: "/peer/", partOfSpeech: "proper noun", definition: "Capital city of South Dakota; French male name", origin: "French form of Peter", example: "_______ is located in central South Dakota." },
+            { word: "pilaster", pronunciation: "/puh-LAS-ter/", partOfSpeech: "noun", definition: "A rectangular column projecting from a wall", origin: "Italian pilastro", example: "The facade featured decorative _______s." },
+            { word: "pileus", pronunciation: "/PY-lee-us/", partOfSpeech: "noun", definition: "The cap of a mushroom; a brimless felt cap", origin: "Latin pileus 'felt cap'", example: "The mushroom's _______ was bright red." },
+            { word: "pilferer", pronunciation: "/PIL-fer-er/", partOfSpeech: "noun", definition: "A person who steals small items; petty thief", origin: "Old French pelfrer 'to plunder'", example: "The _______ took small items from the store." },
+            { word: "pilosity", pronunciation: "/py-LOS-i-tee/", partOfSpeech: "noun", definition: "The state of being hairy or having hair", origin: "Latin pilosus 'hairy'", example: "The plant's _______ helps it retain moisture." },
+            { word: "pilotage", pronunciation: "/PY-luh-tij/", partOfSpeech: "noun", definition: "The act or occupation of piloting ships; navigation fee", origin: "French pilotage", example: "The ship paid _______ fees to enter the harbor." },
+            { word: "pinnacle", pronunciation: "/PIN-uh-kuhl/", partOfSpeech: "noun", definition: "The highest point of achievement or development", origin: "Latin pinnaculum 'peak'", example: "Winning the championship was the _______ of her career." },
+            { word: "pinnate", pronunciation: "/PIN-ayt/", partOfSpeech: "adjective", definition: "Having leaflets arranged on either side of a stem", origin: "Latin pinnatus 'feathered'", example: "The fern has _______ leaves." },
+            { word: "pious", pronunciation: "/PY-us/", partOfSpeech: "adjective", definition: "Devoutly religious; showing reverence", origin: "Latin pius 'dutiful'", example: "She led a _______ and charitable life." },
+            { word: "Pisces", pronunciation: "/PY-seez/", partOfSpeech: "proper noun", definition: "The twelfth astrological sign; constellation of the fish", origin: "Latin 'fishes'", example: "Those born in March are often _______." },
+            { word: "pituitary", pronunciation: "/pih-TOO-i-ter-ee/", partOfSpeech: "noun/adjective", definition: "The master endocrine gland at the base of the brain", origin: "Latin pituita 'phlegm'", example: "The _______ gland regulates growth and metabolism." },
+            { word: "placoderm", pronunciation: "/PLAK-uh-derm/", partOfSpeech: "noun", definition: "An extinct class of armored prehistoric fish", origin: "Greek plax 'plate' + derma 'skin'", example: "_______ fossils date from the Paleozoic era." },
+            { word: "plagiarism", pronunciation: "/PLAY-juh-riz-um/", partOfSpeech: "noun", definition: "The act of using someone else's work without credit", origin: "Latin plagiarius 'kidnapper'", example: "The student was expelled for _______." },
+            { word: "plaintiff", pronunciation: "/PLAYN-tif/", partOfSpeech: "noun", definition: "A person who brings a case against another in court", origin: "Old French plaintif 'complaining'", example: "The _______ sued for damages." },
+            { word: "planetesimal", pronunciation: "/plan-i-TES-uh-muhl/", partOfSpeech: "noun", definition: "A small body that could coalesce to form a planet", origin: "Planet + infinitesimal", example: "_______ collisions formed the early planets." },
+            { word: "plangency", pronunciation: "/PLAN-jun-see/", partOfSpeech: "noun", definition: "The quality of being loud and resonant; mournfulness", origin: "Latin plangere 'to strike, lament'", example: "The bell's _______ filled the valley." },
+            { word: "planisphere", pronunciation: "/PLAN-i-sfeer/", partOfSpeech: "noun", definition: "A map of the celestial sphere projected onto a plane", origin: "Latin planus 'flat' + sphaera 'sphere'", example: "The _______ shows star positions throughout the year." },
+            { word: "planogram", pronunciation: "/PLAN-uh-gram/", partOfSpeech: "noun", definition: "A diagram showing product placement in retail", origin: "Plan + -gram", example: "The store follows a strict _______ for merchandise." },
+            { word: "plantain", pronunciation: "/PLAN-tin/", partOfSpeech: "noun", definition: "A starchy banana-like fruit; a common weed plant", origin: "Spanish plátano", example: "Fried _______ is a popular Caribbean dish." },
+            { word: "plantigrade", pronunciation: "/PLAN-ti-grayd/", partOfSpeech: "adjective", definition: "Walking on the sole with the heel touching the ground", origin: "Latin planta 'sole' + gradi 'to walk'", example: "Humans and bears are _______ animals." },
+            { word: "plaudits", pronunciation: "/PLAW-dits/", partOfSpeech: "noun", definition: "Enthusiastic approval or praise", origin: "Latin plaudite 'applaud'", example: "The performance received _______ from critics." },
+            { word: "plenitude", pronunciation: "/PLEN-i-tood/", partOfSpeech: "noun", definition: "An abundance; completeness", origin: "Latin plenitudo 'fullness'", example: "The garden offered a _______ of fresh vegetables." },
+            { word: "plentiful", pronunciation: "/PLEN-ti-fuhl/", partOfSpeech: "adjective", definition: "Existing in large quantities; abundant", origin: "Middle English plentee 'abundance'", example: "The harvest was _______ this year." },
+            { word: "plumbago", pronunciation: "/plum-BAY-goh/", partOfSpeech: "noun", definition: "Graphite; a flowering plant genus", origin: "Latin plumbum 'lead'", example: "Blue _______ flowers brighten the garden." },
+            { word: "Plumeria", pronunciation: "/ploo-MEER-ee-uh/", partOfSpeech: "proper noun", definition: "A genus of flowering plants; frangipani", origin: "Named after Charles Plumier", example: "_______ blossoms are used in Hawaiian leis." },
+            { word: "plutonomy", pronunciation: "/ploo-TON-uh-mee/", partOfSpeech: "noun", definition: "Political economy; the study of wealth production", origin: "Greek ploutos 'wealth' + nomos 'law'", example: "The economist specialized in _______." },
+            { word: "poblano", pronunciation: "/poh-BLAH-noh/", partOfSpeech: "noun", definition: "A mild variety of chili pepper", origin: "Spanish, from Puebla, Mexico", example: "Stuffed _______ peppers are a Mexican delicacy." },
+            { word: "pochard", pronunciation: "/POH-cherd/", partOfSpeech: "noun", definition: "A diving duck with a reddish-brown head", origin: "Unknown origin", example: "A flock of _______s landed on the lake." },
+            { word: "pococurante", pronunciation: "/poh-koh-koo-RAHN-tay/", partOfSpeech: "adjective", definition: "Indifferent or apathetic; nonchalant", origin: "Italian poco 'little' + curante 'caring'", example: "His _______ attitude frustrated his colleagues." },
+            { word: "podsnappery", pronunciation: "/pod-SNAP-uh-ree/", partOfSpeech: "noun", definition: "Complacent self-satisfaction; narrow-minded pomposity", origin: "From Dickens' character Mr. Podsnap", example: "The politician's _______ alienated voters." },
+            { word: "Podunk", pronunciation: "/POH-dunk/", partOfSpeech: "noun", definition: "A small, unimportant town", origin: "Algonquian place name", example: "He grew up in a _______ town with one traffic light." },
+            { word: "poinsettia", pronunciation: "/poin-SET-ee-uh/", partOfSpeech: "noun", definition: "A plant with bright red and green foliage", origin: "Named after Joel Poinsett", example: "_______ plants are popular Christmas decorations." },
+            { word: "pointelle", pronunciation: "/pwahn-TEL/", partOfSpeech: "noun", definition: "A knit fabric with decorative openwork", origin: "French, diminutive of point", example: "The sweater featured delicate _______ stitching." },
+            { word: "pointillage", pronunciation: "/PWAHN-tee-ahzh/", partOfSpeech: "noun", definition: "The technique of painting with small dots of color", origin: "French pointiller 'to mark with dots'", example: "Seurat's paintings exemplify _______." },
+            { word: "politick", pronunciation: "/POL-i-tik/", partOfSpeech: "verb", definition: "To engage in political activity; to campaign", origin: "From 'politic'", example: "The candidates began to _______ months before the election." },
+            { word: "pollutant", pronunciation: "/puh-LOO-tuhnt/", partOfSpeech: "noun", definition: "A substance that contaminates the environment", origin: "Latin polluere 'to soil'", example: "Carbon dioxide is a major atmospheric _______." },
+            { word: "polonaise", pronunciation: "/pol-uh-NAYZ/", partOfSpeech: "noun", definition: "A stately Polish dance; a woman's dress with draped overskirt", origin: "French 'Polish'", example: "The orchestra played a lively _______." },
+            { word: "polonium", pronunciation: "/puh-LOH-nee-um/", partOfSpeech: "noun", definition: "A rare radioactive metallic element", origin: "From Poland (Marie Curie's homeland)", example: "Marie Curie discovered _______ in 1898." },
+            { word: "polyester", pronunciation: "/pol-ee-ES-ter/", partOfSpeech: "noun", definition: "A synthetic resin or fabric", origin: "Greek poly 'many' + ester", example: "The shirt was made from _______ blend fabric." },
+            { word: "polygenous", pronunciation: "/puh-LIJ-uh-nus/", partOfSpeech: "adjective", definition: "Of or relating to polygenesis; having multiple origins", origin: "Greek poly 'many' + genos 'kind'", example: "The _______ theory suggested multiple human origins." },
+            { word: "polypeptide", pronunciation: "/pol-ee-PEP-tyd/", partOfSpeech: "noun", definition: "A chain of amino acids", origin: "Greek poly 'many' + peptide", example: "Proteins are made of _______ chains." },
+            { word: "polysemy", pronunciation: "/puh-LIS-uh-mee/", partOfSpeech: "noun", definition: "The coexistence of many meanings for a word", origin: "Greek poly 'many' + sēma 'sign'", example: "The word 'bank' demonstrates _______." },
+            { word: "polysyllabic", pronunciation: "/pol-ee-sih-LAB-ik/", partOfSpeech: "adjective", definition: "Having more than three syllables", origin: "Greek poly 'many' + syllabē 'syllable'", example: "_______ words are often harder to spell." },
+            { word: "pomato", pronunciation: "/poh-MAY-toh/", partOfSpeech: "noun", definition: "A hybrid of potato and tomato plants", origin: "Portmanteau of potato + tomato", example: "The _______ is a grafted plant curiosity." },
+            { word: "pomegranate", pronunciation: "/POM-uh-gran-it/", partOfSpeech: "noun", definition: "A fruit with many seeds in red pulp", origin: "Latin pomum 'apple' + granatum 'seeded'", example: "_______ juice is rich in antioxidants." },
+            { word: "Pomeranian", pronunciation: "/pom-uh-RAY-nee-un/", partOfSpeech: "noun", definition: "A small dog breed with fluffy coat", origin: "From Pomerania region", example: "The _______ was her constant companion." },
+            { word: "pomology", pronunciation: "/poh-MOL-uh-jee/", partOfSpeech: "noun", definition: "The science of fruit cultivation", origin: "Latin pomum 'fruit' + -logy", example: "He studied _______ to improve apple varieties." },
+            { word: "pomposity", pronunciation: "/pom-POS-i-tee/", partOfSpeech: "noun", definition: "The quality of being pompous; self-importance", origin: "Latin pompa 'solemn procession'", example: "His _______ made him unpopular at work." },
+            { word: "pongee", pronunciation: "/pon-JEE/", partOfSpeech: "noun", definition: "A soft thin fabric of Chinese origin", origin: "Mandarin běnjī 'own loom'", example: "The dress was made of silk _______." },
+            { word: "pontiff", pronunciation: "/PON-tif/", partOfSpeech: "noun", definition: "The Pope; a high priest", origin: "Latin pontifex 'bridge-maker'", example: "The _______ addressed the congregation." },
+            { word: "populace", pronunciation: "/POP-yuh-luss/", partOfSpeech: "noun", definition: "The general public; common people", origin: "Italian popolaccio 'rabble'", example: "The policy affected the entire _______." },
+            { word: "porcelain", pronunciation: "/POR-suh-lin/", partOfSpeech: "noun", definition: "A hard white translucent ceramic", origin: "Italian porcellana 'cowrie shell'", example: "Fine _______ tea sets were displayed." },
+            { word: "porosity", pronunciation: "/puh-ROS-i-tee/", partOfSpeech: "noun", definition: "The state of having pores or spaces", origin: "Latin porus 'pore'", example: "The rock's _______ allows water to pass through." },
+            { word: "portico", pronunciation: "/POR-ti-koh/", partOfSpeech: "noun", definition: "A porch with a roof supported by columns", origin: "Italian portico", example: "They sat under the shaded _______ of the mansion." },
+            { word: "posada", pronunciation: "/poh-SAH-duh/", partOfSpeech: "noun", definition: "An inn in Spanish-speaking countries", origin: "Spanish 'lodging'", example: "We stayed at a charming _______ in Mexico." },
+            { word: "posse", pronunciation: "/POS-ee/", partOfSpeech: "noun", definition: "A group summoned by a sheriff; a group of people", origin: "Latin posse 'to be able'", example: "The sheriff formed a _______ to track the outlaws." },
+            { word: "possessive", pronunciation: "/puh-ZES-iv/", partOfSpeech: "adjective", definition: "Showing ownership; unwilling to share", origin: "Latin possessivus", example: "The child was _______ of her toys." },
+            { word: "posterity", pronunciation: "/pos-TER-i-tee/", partOfSpeech: "noun", definition: "Future generations; descendants", origin: "Latin posteritas 'future'", example: "We must preserve the environment for _______." },
+            { word: "posthumous", pronunciation: "/POS-chuh-mus/", partOfSpeech: "adjective", definition: "Occurring after death", origin: "Latin postumus 'last'", example: "His _______ novel was published two years after he died." },
+            { word: "postural", pronunciation: "/POS-chur-uhl/", partOfSpeech: "adjective", definition: "Relating to posture or body position", origin: "Latin positura 'position'", example: "_______ problems can cause back pain." },
+            { word: "potassium", pronunciation: "/puh-TAS-ee-um/", partOfSpeech: "noun", definition: "A soft silvery-white metallic element", origin: "From potash", example: "Bananas are rich in _______." },
+            { word: "potentate", pronunciation: "/POH-ten-tayt/", partOfSpeech: "noun", definition: "A monarch or ruler with great power", origin: "Latin potentatus 'power'", example: "The _______ ruled the kingdom with absolute authority." },
+            { word: "potoroo", pronunciation: "/pot-uh-ROO/", partOfSpeech: "noun", definition: "A small Australian marsupial similar to a kangaroo", origin: "Dharug (Aboriginal language)", example: "The _______ is an endangered species." },
+            { word: "poultice", pronunciation: "/POHL-tis/", partOfSpeech: "noun", definition: "A soft heated mass applied to sore areas", origin: "Latin puls 'porridge'", example: "She applied a warm _______ to reduce swelling." },
+            { word: "prehensile", pronunciation: "/pree-HEN-syl/", partOfSpeech: "adjective", definition: "Capable of grasping; adapted for seizing", origin: "Latin prehendere 'to grasp'", example: "Monkeys have _______ tails for climbing." },
+            { word: "prelapsarian", pronunciation: "/pree-lap-SAIR-ee-un/", partOfSpeech: "adjective", definition: "Relating to the time before the Fall of Man; innocent", origin: "Pre- + Latin lapsus 'fall'", example: "The garden had a _______ beauty and peace." },
+            { word: "preponderance", pronunciation: "/pri-PON-der-unss/", partOfSpeech: "noun", definition: "The quality of being greater in weight, force, or influence", origin: "Latin praeponderare 'to outweigh'", example: "There is a _______ of evidence supporting the claim." },
+            { word: "preposterous", pronunciation: "/pri-POS-ter-us/", partOfSpeech: "adjective", definition: "Completely contrary to reason; absurd", origin: "Latin praeposterus 'reversed'", example: "The accusation was utterly _______." },
+            { word: "preprandial", pronunciation: "/pree-PRAN-dee-uhl/", partOfSpeech: "adjective", definition: "Before dinner or lunch", origin: "Pre- + Latin prandium 'meal'", example: "They enjoyed _______ cocktails on the terrace." },
+            { word: "prerequisite", pronunciation: "/pree-REK-wuh-zit/", partOfSpeech: "noun", definition: "Something required as a prior condition", origin: "Pre- + Latin requisitus 'required'", example: "Calculus is a _______ for this physics course." },
+            { word: "prerogative", pronunciation: "/pri-ROG-uh-tiv/", partOfSpeech: "noun", definition: "An exclusive right or privilege", origin: "Latin praerogativa 'voting first'", example: "It's the manager's _______ to make that decision." },
+            { word: "presentient", pronunciation: "/pri-ZEN-shunt/", partOfSpeech: "adjective", definition: "Having a premonition; prescient", origin: "Pre- + Latin sentire 'to feel'", example: "She had a _______ sense of the coming disaster." },
+            { word: "prespinous", pronunciation: "/pree-SPY-nus/", partOfSpeech: "adjective", definition: "Located in front of the spine", origin: "Pre- + Latin spina 'spine'", example: "The _______ muscles support the vertebral column." },
+            { word: "prevalence", pronunciation: "/PREV-uh-lunss/", partOfSpeech: "noun", definition: "The fact of being widespread or common", origin: "Latin praevalere 'to be stronger'", example: "The _______ of diabetes is increasing worldwide." },
+            { word: "prevenient", pronunciation: "/pri-VEE-nee-unt/", partOfSpeech: "adjective", definition: "Coming before; anticipatory; preceding", origin: "Latin praevenire 'to come before'", example: "_______ grace prepares the soul for salvation." },
+            { word: "prima donna", pronunciation: "/pree-muh DON-uh/", partOfSpeech: "phrase", definition: "Leading female opera singer; a temperamental person", origin: "Italian 'first lady'", example: "The _______ refused to rehearse with the chorus." },
+            { word: "primeval", pronunciation: "/pry-MEE-vuhl/", partOfSpeech: "adjective", definition: "Ancient; belonging to the earliest time", origin: "Latin primus 'first' + aevum 'age'", example: "The _______ forest had never been logged." },
+            { word: "primogeniture", pronunciation: "/pry-moh-JEN-i-chur/", partOfSpeech: "noun", definition: "The right of the firstborn to inherit", origin: "Latin primus 'first' + genitura 'birth'", example: "Under _______, the eldest son inherited the estate." },
+            { word: "princeps", pronunciation: "/PRIN-seps/", partOfSpeech: "noun", definition: "A first edition; a founder or leader", origin: "Latin 'first, chief'", example: "The _______ edition of the book is very rare." },
+            { word: "priory", pronunciation: "/PRY-uh-ree/", partOfSpeech: "noun", definition: "A religious house governed by a prior or prioress", origin: "Medieval Latin prioria", example: "The medieval _______ housed twelve monks." },
+            { word: "privatim", pronunciation: "/pry-VAY-tim/", partOfSpeech: "adverb", definition: "In private; privately", origin: "Latin 'privately'", example: "The matter was discussed _______ among the board." },
+            { word: "privet", pronunciation: "/PRIV-it/", partOfSpeech: "noun", definition: "A shrub used for hedges", origin: "Unknown origin", example: "The _______ hedge provided privacy around the garden." },
+            { word: "probative", pronunciation: "/PROH-buh-tiv/", partOfSpeech: "adjective", definition: "Serving to test or prove; providing evidence", origin: "Latin probativus 'proving'", example: "The fingerprint was highly _______ evidence." },
+            { word: "procrustean", pronunciation: "/proh-KRUS-tee-un/", partOfSpeech: "adjective", definition: "Enforcing uniformity without regard to individuality", origin: "From Greek Procrustes", example: "The _______ policy failed to account for special circumstances." },
+            { word: "procurement", pronunciation: "/proh-KYOOR-munt/", partOfSpeech: "noun", definition: "The action of obtaining or acquiring something", origin: "Latin procurare 'to take care of'", example: "The _______ department handles all purchasing." },
+            { word: "prodigious", pronunciation: "/pruh-DIJ-us/", partOfSpeech: "adjective", definition: "Remarkably or impressively great", origin: "Latin prodigiosus 'portentous'", example: "She has a _______ memory for details." },
+            { word: "proem", pronunciation: "/PROH-em/", partOfSpeech: "noun", definition: "A preface or preamble; introduction", origin: "Greek prooimion 'prelude'", example: "The _______ set the tone for the entire work." },
+            { word: "profligacy", pronunciation: "/PROF-li-guh-see/", partOfSpeech: "noun", definition: "Reckless extravagance or wastefulness", origin: "Latin profligatus 'dissolute'", example: "The government's _______ led to financial crisis." },
+            { word: "profundity", pronunciation: "/pruh-FUN-di-tee/", partOfSpeech: "noun", definition: "Deep insight or knowledge; great depth", origin: "Latin profundus 'deep'", example: "His lectures were known for their _______." },
+            { word: "proletarian", pronunciation: "/proh-li-TAIR-ee-un/", partOfSpeech: "adjective/noun", definition: "Relating to the working class; a worker", origin: "Latin proletarius 'citizen of lowest class'", example: "The _______ movement fought for workers' rights." },
+            { word: "proliferate", pronunciation: "/pruh-LIF-uh-rayt/", partOfSpeech: "verb", definition: "To increase rapidly in number; multiply", origin: "Latin proles 'offspring'", example: "Smartphones began to _______ in the 2000s." },
+            { word: "prolix", pronunciation: "/proh-LIKS/", partOfSpeech: "adjective", definition: "Using or containing too many words; tediously lengthy", origin: "Latin prolixus 'extended'", example: "His _______ speeches tested everyone's patience." },
+            { word: "prolusory", pronunciation: "/proh-LOO-suh-ree/", partOfSpeech: "adjective", definition: "Introductory; preliminary", origin: "Latin proludere 'to prelude'", example: "The _______ remarks prepared the audience for the lecture." },
+            { word: "promontory", pronunciation: "/PROM-un-tor-ee/", partOfSpeech: "noun", definition: "A high point of land jutting out into water", origin: "Latin promontorium", example: "The lighthouse stood on a rocky _______." },
+            { word: "proprietary", pronunciation: "/pruh-PRY-uh-ter-ee/", partOfSpeech: "adjective", definition: "Relating to an owner; protected by trademark", origin: "Latin proprietarius 'owner'", example: "The company's _______ technology gave them an advantage." },
+            { word: "proprioceptive", pronunciation: "/proh-pree-oh-SEP-tiv/", partOfSpeech: "adjective", definition: "Relating to stimuli produced within the body regarding position", origin: "Latin proprius 'one's own' + -ceptive", example: "_______ feedback helps us balance without looking." },
+            { word: "prorogue", pronunciation: "/proh-ROHG/", partOfSpeech: "verb", definition: "To discontinue a session of parliament without dissolving it", origin: "Latin prorogare 'to prolong'", example: "The government voted to _______ parliament until fall." },
+            { word: "prosody", pronunciation: "/PROS-uh-dee/", partOfSpeech: "noun", definition: "The patterns of rhythm and sound in poetry; intonation", origin: "Greek prosōidia 'accent'", example: "The poem's _______ creates a musical quality." },
+            { word: "protean", pronunciation: "/PROH-tee-un/", partOfSpeech: "adjective", definition: "Readily taking on different forms or characters; versatile", origin: "Greek Prōteus, a shape-shifting god", example: "The actor's _______ abilities impressed directors." },
+            { word: "protectorate", pronunciation: "/pruh-TEK-ter-it/", partOfSpeech: "noun", definition: "A state controlled and protected by another", origin: "From 'protector'", example: "The island became a British _______ in 1890." },
+            { word: "protuberant", pronunciation: "/proh-TOO-ber-unt/", partOfSpeech: "adjective", definition: "Bulging out; protruding", origin: "Latin protuberare 'to swell'", example: "The frog's _______ eyes gave it excellent vision." },
+            { word: "provenance", pronunciation: "/PROV-uh-nunss/", partOfSpeech: "noun", definition: "The place of origin; the history of ownership", origin: "French provenir 'to come from'", example: "The painting's _______ was traced to a royal collection." },
+            { word: "proviant", pronunciation: "/PROH-vee-unt/", partOfSpeech: "noun", definition: "Food supplies; provisions", origin: "German Proviant", example: "The expedition carried enough _______ for three months." },
+            { word: "provincial", pronunciation: "/pruh-VIN-shuhl/", partOfSpeech: "adjective", definition: "Relating to a province; unsophisticated or narrow-minded", origin: "Latin provincialis", example: "His _______ attitudes reflected his small-town upbringing." },
+            { word: "proviso", pronunciation: "/pruh-VY-zoh/", partOfSpeech: "noun", definition: "A condition or qualification attached to an agreement", origin: "Latin proviso quod 'it being provided that'", example: "The contract included a _______ about early termination." },
+            { word: "puchero", pronunciation: "/poo-CHAIR-oh/", partOfSpeech: "noun", definition: "A Spanish or Latin American stew", origin: "Spanish 'stewpot'", example: "The traditional _______ contained meat and vegetables." },
+            { word: "pueblo", pronunciation: "/PWEB-loh/", partOfSpeech: "noun", definition: "A Native American settlement in southwestern US; a town", origin: "Spanish 'village'", example: "The ancient _______ was built into the cliffside." },
+            { word: "pugilist", pronunciation: "/PYOO-juh-list/", partOfSpeech: "noun", definition: "A boxer or fighter", origin: "Latin pugil 'boxer'", example: "The champion _______ defended his title." },
+            { word: "pugnacious", pronunciation: "/pug-NAY-shus/", partOfSpeech: "adjective", definition: "Eager to fight; combative", origin: "Latin pugnare 'to fight'", example: "His _______ attitude often led to arguments." },
+            { word: "pulchritude", pronunciation: "/PUL-kri-tood/", partOfSpeech: "noun", definition: "Beauty", origin: "Latin pulchritudo 'beauty'", example: "The sunset's _______ left them speechless." },
+            { word: "pulka", pronunciation: "/PUL-kuh/", partOfSpeech: "noun", definition: "A Lappish boat-shaped sledge", origin: "Sami (Lappish)", example: "The reindeer pulled the _______ across the snow." },
+            { word: "purga", pronunciation: "/PUR-guh/", partOfSpeech: "noun", definition: "A blizzard in the Arctic regions of Russia", origin: "Russian 'snowstorm'", example: "The _______ made travel impossible for days." },
+            { word: "purvey", pronunciation: "/per-VAY/", partOfSpeech: "verb", definition: "To supply or provide food or goods", origin: "Latin providere 'to provide'", example: "The company _______ medical supplies to hospitals." },
+            { word: "pyrite", pronunciation: "/PY-ryt/", partOfSpeech: "noun", definition: "A shiny yellow mineral; fool's gold", origin: "Greek pyritēs 'of fire'", example: "The prospector was disappointed to find only _______." },
+            { word: "pyrope", pronunciation: "/PY-rohp/", partOfSpeech: "noun", definition: "A deep red variety of garnet", origin: "Greek pyrōpos 'fiery-eyed'", example: "The _______ gemstone sparkled in the ring." },
+            { word: "pyrotechnics", pronunciation: "/py-roh-TEK-niks/", partOfSpeech: "noun", definition: "A fireworks display; brilliant performance", origin: "Greek pyr 'fire' + tekhnē 'art'", example: "The Fourth of July _______ were spectacular." }
+        ];
+
+        let currentIndex = 0;
+        let displayWords = [...words];
+        let showingStarredOnly = false;
+        let starredWords = new Set();
+        let completedWords = new Set();
+
+        const card = document.getElementById('card');
+        const starBtn = document.getElementById('starBtn');
+        const starBtnBack = document.getElementById('starBtnBack');
+        const listenBtn = document.getElementById('listenBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const flipBtn = document.getElementById('flipBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const randomizeBtn = document.getElementById('randomizeBtn');
+        const starredBtn = document.getElementById('starredBtn');
+        const progressText = document.getElementById('progressText');
+        const doneCount = document.getElementById('doneCount');
+        const progressFill = document.getElementById('progressFill');
+        const dotIndicator = document.getElementById('dotIndicator');
+
+        // Speech synthesis setup
+        const synth = window.speechSynthesis;
+        let currentUtterance = null;
+
+        // Load saved data
+        const savedStarred = localStorage.getItem('spellingBeeStarred');
+        if (savedStarred) {
+            starredWords = new Set(JSON.parse(savedStarred));
+        }
+        const savedCompleted = localStorage.getItem('spellingBeeCompleted');
+        if (savedCompleted) {
+            completedWords = new Set(JSON.parse(savedCompleted));
+        }
+
+        function speakWord() {
+            if (synth.speaking) {
+                synth.cancel();
+            }
+
+            const word = displayWords[currentIndex].word;
+            currentUtterance = new SpeechSynthesisUtterance(word);
+            currentUtterance.rate = 0.75;
+            currentUtterance.pitch = 1;
+            currentUtterance.volume = 1;
+
+            listenBtn.classList.add('speaking');
+
+            currentUtterance.onend = () => {
+                listenBtn.classList.remove('speaking');
+            };
+
+            synth.speak(currentUtterance);
+        }
+
+        function createDotIndicators() {
+            dotIndicator.innerHTML = '';
+            displayWords.forEach((_, index) => {
+                const dot = document.createElement('div');
+                dot.className = 'dot';
+                if (index === currentIndex) {
+                    dot.classList.add('active');
+                }
+                
+                dot.addEventListener('click', () => {
+                    currentIndex = index;
+                    updateCard();
+                });
+                
+                dotIndicator.appendChild(dot);
+            });
+        }
+
+        function updateDotIndicators() {
+            const dots = dotIndicator.querySelectorAll('.dot');
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentIndex);
+            });
+        }
+
+        function updateCard() {
+            if (synth.speaking) {
+                synth.cancel();
+            }
+            listenBtn.classList.remove('speaking');
+
+            const word = displayWords[currentIndex];
+            card.classList.remove('flipped');
+            
+            const simplePronunciation = word.pronunciation
+                .replace(/[\/\[\]]/g, '')
+                .split(/[-\s]/)
+                .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+                .join('-');
+            
+            document.getElementById('pronunciation').textContent = simplePronunciation;
+            document.getElementById('partOfSpeech').textContent = word.partOfSpeech;
+            document.getElementById('definition').textContent = word.definition;
+            document.getElementById('origin').textContent = word.origin;
+            document.getElementById('example').textContent = word.example;
+            document.getElementById('spelling').textContent = word.word.toUpperCase();
+            
+            const isStarred = starredWords.has(word.word);
+            starBtn.textContent = isStarred ? '⭐' : '☆';
+            starBtnBack.textContent = isStarred ? '⭐' : '☆';
+            
+            progressText.textContent = `Word ${currentIndex + 1} of ${displayWords.length}`;
+            doneCount.textContent = `${completedWords.size} Done`;
+            const progressPercent = (completedWords.size / displayWords.length) * 100;
+            progressFill.style.width = `${progressPercent}%`;
+            
+            prevBtn.disabled = currentIndex === 0;
+            nextBtn.disabled = currentIndex === displayWords.length - 1;
+            
+            updateDotIndicators();
+            
+            setTimeout(() => {
+                speakWord();
+            }, 300);
+        }
+
+        function toggleFlip() {
+            card.classList.toggle('flipped');
+            
+            if (card.classList.contains('flipped')) {
+                completedWords.add(displayWords[currentIndex].word);
+                localStorage.setItem('spellingBeeCompleted', JSON.stringify([...completedWords]));
+                updateProgressBar();
+            }
+        }
+
+        function updateProgressBar() {
+            doneCount.textContent = `${completedWords.size} Done`;
+            const progressPercent = (completedWords.size / displayWords.length) * 100;
+            progressFill.style.width = `${progressPercent}%`;
+        }
+
+        function resetProgress() {
+            if (confirm('Reset all progress? This will clear completed words but keep your starred words.')) {
+                completedWords.clear();
+                localStorage.removeItem('spellingBeeCompleted');
+                updateProgressBar();
+            }
+        }
+
+        function toggleStar() {
+            const word = displayWords[currentIndex].word;
+            if (starredWords.has(word)) {
+                starredWords.delete(word);
+            } else {
+                starredWords.add(word);
+            }
+            localStorage.setItem('spellingBeeStarred', JSON.stringify([...starredWords]));
+            updateCard();
+        }
+
+        function randomize() {
+            const shuffled = [...displayWords];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            displayWords = shuffled;
+            currentIndex = 0;
+            createDotIndicators();
+            updateCard();
+        }
+
+        function toggleStarredOnly() {
+            showingStarredOnly = !showingStarredOnly;
+            
+            if (showingStarredOnly) {
+                displayWords = words.filter(w => starredWords.has(w.word));
+                starredBtn.classList.add('active');
+                
+                if (displayWords.length === 0) {
+                    alert('No starred words yet! Star some words to use this feature.');
+                    showingStarredOnly = false;
+                    displayWords = [...words];
+                    starredBtn.classList.remove('active');
+                }
+            } else {
+                displayWords = [...words];
+                starredBtn.classList.remove('active');
+            }
+            
+            currentIndex = 0;
+            createDotIndicators();
+            updateCard();
+        }
+
+        // Event listeners
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('button')) {
+                return;
+            }
+            toggleFlip();
+        });
+        flipBtn.addEventListener('click', toggleFlip);
+        resetBtn.addEventListener('click', resetProgress);
+        starBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleStar();
+        });
+        starBtnBack.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleStar();
+        });
+        listenBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            speakWord();
+        });
+        prevBtn.addEventListener('click', () => {
+            if (currentIndex > 0) {
+                currentIndex--;
+                updateCard();
+            }
+        });
+        nextBtn.addEventListener('click', () => {
+            if (currentIndex < displayWords.length - 1) {
+                currentIndex++;
+                updateCard();
+            }
+        });
+        randomizeBtn.addEventListener('click', randomize);
+        starredBtn.addEventListener('click', toggleStarredOnly);
+
+        // Swipe support for navigation
+        let touchStartX = 0;
+        let touchEndX = 0;
+        let touchStartY = 0;
+        let touchEndY = 0;
+
+        card.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        }, { passive: true });
+
+        card.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            touchEndY = e.changedTouches[0].screenY;
+            handleSwipe();
+        }, { passive: true });
+
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            const horizontalDiff = touchStartX - touchEndX;
+            const verticalDiff = Math.abs(touchStartY - touchEndY);
+            
+            // Only trigger horizontal swipe if vertical movement is minimal
+            if (verticalDiff < 100) {
+                if (horizontalDiff > swipeThreshold && currentIndex < displayWords.length - 1) {
+                    // Swipe left - next card
+                    currentIndex++;
+                    updateCard();
+                } else if (horizontalDiff < -swipeThreshold && currentIndex > 0) {
+                    // Swipe right - previous card
+                    currentIndex--;
+                    updateCard();
+                }
+            }
+        }
+
+        // Initialize
+        createDotIndicators();
+        updateCard();
+    </script>
+</body>
+</html>
