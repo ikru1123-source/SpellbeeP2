@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 900;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 18px; height: 18px; }
+.slider-area {
+  flex: 1; height: 32px; position: relative;
+  display: flex; align-items: center;
+  touch-action: none; cursor: pointer;
+}
+.slider-track-bg {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
+}
+.slider-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(212,175,55,0.5));
+  transition: width 0.15s ease;
+}
+.slider-dots {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; padding: 0 2px;
+}
+.slider-tick {
+  width: 2px; height: 8px; border-radius: 1px;
+  background: rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.slider-tick.major { height: 12px; background: rgba(255,255,255,0.12); }
+.slider-tick.active { background: var(--gold); height: 14px; width: 3px; border-radius: 1.5px; box-shadow: 0 0 6px rgba(212,175,55,0.4); }
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px solid #1a1528;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  cursor: grab; transition: left 0.12s ease;
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
+.slider-thumb.dragging { transition: none; transform: translate(-50%, -50%) scale(1.15); }
+.slider-counter {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.08em;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1>Spelling Bee</h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="slider-area" id="sliderArea">
+      <div class="slider-track-bg">
+        <div class="slider-fill" id="sliderFill"></div>
+      </div>
+      <div class="slider-dots" id="sliderDots"></div>
+      <div class="slider-thumb" id="sliderThumb"></div>
+    </div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'packet', pronunciation:'PAK-it', ipa:'/ˈpækɪt/', pos:'noun', def:'A small container or package; a block of data transmitted across a network.', lang:'English, from Anglo-French paquet (\'small pack\'), diminutive of Old French pac (\'bundle\'), of Germanic origin.', example:'She tore open the packet of seeds and scattered them evenly along the freshly tilled garden row.', isNoun:true },
+  { word:'pageantry', pronunciation:'PAJ-un-tree', ipa:'/ˈpædʒəntri/', pos:'noun', def:'Elaborate display or ceremony; the colorful and splendid spectacle of a public celebration.', lang:'English, from pageant + -ry. Pageant from Medieval Latin pagina (\'scene of a play\'), from Latin pagina (\'page\').', example:'The coronation was filled with pageantry, from the gilded carriages to the trumpeters lining the cathedral steps.', isNoun:true },
+  { word:'paginate', pronunciation:'PAJ-uh-nayt', ipa:'/ˈpædʒɪˌneɪt/', pos:'verb', def:'To assign numbers to the pages of a book, document, or other printed material.', lang:'Latin, from pagina (\'page\') + -ate.', example:'The editor asked the assistant to paginate the manuscript before sending it to the printer.', isNoun:false },
+  { word:'paisley', pronunciation:'PAYZ-lee', ipa:'/ˈpeɪzli/', pos:'noun', def:'A distinctive intricate pattern of curved, feather-shaped figures based on a pine-cone design of Indian origin.', lang:'English, named after Paisley, a town in Scotland that became a center for manufacturing shawls with this pattern.', example:'He wore a vintage paisley tie that added a splash of color to his otherwise plain navy suit.', isNoun:true },
+  { word:'palatial', pronunciation:'puh-LAY-shul', ipa:'/pəˈleɪʃəl/', pos:'adjective', def:'Resembling a palace in being spacious and splendid; impressively large and luxurious.', lang:'Latin, from palatium (\'palace\'), from Palatium, the Palatine Hill in Rome where emperors built their residences.', example:'The couple checked into a palatial suite overlooking the Mediterranean, complete with marble floors and a private terrace.', isNoun:false },
+  { word:'pallor', pronunciation:'PAL-ur', ipa:'/ˈpælər/', pos:'noun', def:'An unhealthy pale appearance; a lack of color in the face.', lang:'Latin, from pallor (\'paleness\'), from pallere (\'to be pale\').', example:'The doctor noted the patient\'s pallor and immediately ordered a blood test to check for anemia.', isNoun:true },
+  { word:'panelist', pronunciation:'PAN-ul-ist', ipa:'/ˈpænəlɪst/', pos:'noun', def:'A member of a panel, especially one taking part in a broadcast quiz show, discussion, or debate.', lang:'English, from panel + -ist. Panel from Old French panel (\'piece of cloth, section\'), from Latin pannus (\'cloth\').', example:'Each panelist was given three minutes to present their perspective on the proposed education reform.', isNoun:true },
+  { word:'parkour', pronunciation:'par-KOOR', ipa:'/pɑːrˈkʊər/', pos:'noun', def:'An athletic discipline in which practitioners move rapidly through an area, negotiating obstacles by running, jumping, and climbing.', lang:'French, alteration of parcours (\'course, route\'), from Latin percursus (\'a running through\'), from per (\'through\') + cursus (\'course\').', example:'The athlete leaped between rooftops and vaulted over railings, demonstrating the fluid grace of parkour.', isNoun:true },
+  { word:'parley', pronunciation:'PAR-lee', ipa:'/ˈpɑːrli/', pos:'noun', def:'A conference between opposing sides in a dispute, especially a discussion of terms for a truce.', lang:'French, from parler (\'to speak\'), from Latin parabolare (\'to speak\'), from parabola (\'comparison, speech\').', example:'The two generals met under a white flag to parley about the terms of surrender.', isNoun:true },
+  { word:'parlor', pronunciation:'PAR-lur', ipa:'/ˈpɑːrlər/', pos:'noun', def:'A sitting room in a private house; a shop or business providing specified goods or services.', lang:'Old French, from parloir (\'speaking room\'), from parler (\'to speak\'), from Latin parabolare.', example:'The old Victorian house had a cozy front parlor where the family gathered on Sunday afternoons.', isNoun:true },
+  { word:'partridge', pronunciation:'PAR-trij', ipa:'/ˈpɑːrtrɪdʒ/', pos:'noun', def:'A short-tailed game bird with mainly brown plumage, native to Europe, Asia, and Africa.', lang:'Old French, from pertriz, from Latin perdix, from Greek perdix (\'partridge\'), possibly imitative of the bird\'s whirring flight.', example:'A covey of partridges burst from the underbrush as the hikers made their way along the forest trail.', isNoun:true },
+  { word:'passage', pronunciation:'PAS-ij', ipa:'/ˈpæsɪdʒ/', pos:'noun', def:'A way through or along which someone or something may pass; a section of a piece of writing or music.', lang:'Old French, from passer (\'to pass\'), from Latin passus (\'step, pace\').', example:'The narrow passage between the two buildings led to a hidden courtyard filled with flowering vines.', isNoun:true },
+  { word:'pastime', pronunciation:'PAS-time', ipa:'/ˈpæstaɪm/', pos:'noun', def:'An activity done regularly for enjoyment rather than work; a hobby or recreation.', lang:'English, from pass + time, translating French passe-temps.', example:'Baseball has long been considered America\'s favorite pastime, drawing millions of fans to stadiums each summer.', isNoun:true },
+  { word:'patches', pronunciation:'PACH-iz', ipa:'/ˈpætʃɪz/', pos:'noun', def:'Pieces of material used to mend or strengthen a torn or weak area; small areas differing from their surroundings.', lang:'English, plural of patch, from Old French pieche (\'piece\'), possibly from Latin pittacium (\'piece of cloth\').', example:'The old quilt was covered in colorful patches, each one a scrap of fabric from a different family garment.', isNoun:true },
+  { word:'pathogen', pronunciation:'PATH-uh-jen', ipa:'/ˈpæθədʒən/', pos:'noun', def:'A bacterium, virus, or other microorganism that can cause disease.', lang:'Greek, from pathos (\'suffering, disease\') + -genēs (\'producing, born\').', example:'Scientists raced to identify the pathogen responsible for the outbreak and develop an effective treatment.', isNoun:true },
+  { word:'patience', pronunciation:'PAY-shuns', ipa:'/ˈpeɪʃəns/', pos:'noun', def:'The capacity to accept or tolerate delay, trouble, or suffering without getting angry or upset.', lang:'Latin, from patientia (\'endurance, submission\'), from patiens (\'suffering\'), present participle of pati (\'to suffer\').', example:'Teaching young children to read requires enormous patience and a willingness to repeat lessons many times.', isNoun:true },
+  { word:'pauper', pronunciation:'PAW-pur', ipa:'/ˈpɔːpər/', pos:'noun', def:'A very poor person; historically, a person who receives public charity or welfare.', lang:'Latin, from pauper (\'poor\'), from paucus (\'little\') + parare (\'to produce, get\').', example:'The novel tells the tale of a pauper who rises from the streets of London to become a respected merchant.', isNoun:true },
+  { word:'peat', pronunciation:'PEET', ipa:'/piːt/', pos:'noun', def:'A dark brown or black deposit of partially decomposed plant material found in bogs, used as fuel and in gardening.', lang:'English, from Medieval Latin peta (\'piece of peat\'), possibly of Celtic origin.', example:'The gardener mixed peat into the soil to improve its water retention and acidity for the blueberry plants.', isNoun:true },
+  { word:'peddle', pronunciation:'PED-ul', ipa:'/ˈpɛdəl/', pos:'verb', def:'To sell goods, typically by going from place to place; to promote an idea or view persistently.', lang:'English, a back-formation from peddler, from Middle English pedlere, of uncertain origin.', example:'The street vendor would peddle fresh flowers outside the train station every weekday morning.', isNoun:false },
+  { word:'pedigree', pronunciation:'PED-ih-gree', ipa:'/ˈpɛdɪˌɡriː/', pos:'noun', def:'The record of descent of an animal or plant, showing it to be purebred; a person\'s lineage or ancestry.', lang:'Old French, from pied de grue (\'crane\'s foot\'), from the branching lines of a genealogical chart resembling a bird\'s footprint.', example:'The breeder presented the puppy\'s pedigree, showing three generations of champion bloodlines.', isNoun:true },
+  { word:'pending', pronunciation:'PEN-ding', ipa:'/ˈpɛndɪŋ/', pos:'adjective', def:'Awaiting decision or settlement; about to happen; not yet resolved.', lang:'Latin, from pendere (\'to hang\'), suggesting something left hanging or unresolved.', example:'The building permit is still pending approval from the city council, delaying the start of construction.', isNoun:false },
+  { word:'penguin', pronunciation:'PEN-gwin', ipa:'/ˈpɛŋɡwɪn/', pos:'noun', def:'A large flightless seabird of the southern hemisphere, with black upper parts and white underparts, adapted for swimming.', lang:'English, of uncertain origin; possibly from Welsh pen gwyn (\'white head\') or from Latin pinguis (\'fat\').', example:'The colony of emperor penguins huddled together on the Antarctic ice to stay warm through the brutal winter.', isNoun:true },
+  { word:'peninsular', pronunciation:'puh-NIN-syuh-lur', ipa:'/pəˈnɪnsjʊlər/', pos:'adjective', def:'Relating to or situated on a peninsula; having the form of a peninsula.', lang:'Latin, from paeninsula (\'peninsula\'), from paene (\'almost\') + insula (\'island\').', example:'The peninsular region is known for its stunning coastline, with beaches on three sides and mountains in the center.', isNoun:false },
+  { word:'peony', pronunciation:'PEE-uh-nee', ipa:'/ˈpiːəni/', pos:'noun', def:'A herbaceous or shrubby plant of north temperate regions, known for its large, showy, fragrant flowers.', lang:'Greek, from paiōnia (\'plant of Paiōn\'), named after Paeon, physician of the gods in Greek mythology.', example:'The garden was bursting with lush pink peonies, their heavy blossoms nodding in the warm June breeze.', isNoun:true },
+  { word:'performance', pronunciation:'pur-FOR-muns', ipa:'/pərˈfɔːrməns/', pos:'noun', def:'An act of presenting a play, concert, or other form of entertainment; the execution or accomplishment of a task.', lang:'English, from perform + -ance. Perform from Old French parfournir (\'to carry out\'), from par (\'completely\') + fournir (\'to furnish\').', example:'Her performance in the school play was so convincing that the audience gave her a standing ovation.', isNoun:true },
+  { word:'peruse', pronunciation:'puh-ROOZ', ipa:'/pəˈruːz/', pos:'verb', def:'To read something, typically in a thorough or careful way; sometimes used informally to mean to glance over casually.', lang:'English, possibly from Anglo-French per- (\'thoroughly\') + Middle English usen (\'to use\').', example:'She perused the contract carefully, making notes in the margins before signing on the final page.', isNoun:false },
+  { word:'pervasive', pronunciation:'pur-VAY-siv', ipa:'/pərˈveɪsɪv/', pos:'adjective', def:'Spreading widely throughout an area or a group of people; prevalent and difficult to avoid.', lang:'Latin, from pervasus, past participle of pervadere (\'to spread through\'), from per (\'through\') + vadere (\'to go\').', example:'The pervasive smell of baking bread drifted through the entire neighborhood from the corner bakery.', isNoun:false },
+  { word:'photogenic', pronunciation:'FOH-tuh-JEN-ik', ipa:'/ˌfoʊtəˈdʒɛnɪk/', pos:'adjective', def:'Looking attractive in photographs or on film.', lang:'Greek, from phōs (genitive phōtos, \'light\') + -genēs (\'producing, born\').', example:'The kitten was incredibly photogenic, looking adorable in every snapshot regardless of the angle.', isNoun:false },
+  { word:'physical', pronunciation:'FIZ-ih-kul', ipa:'/ˈfɪzɪkəl/', pos:'adjective', def:'Relating to the body as opposed to the mind; relating to things perceived through the senses rather than the mind.', lang:'Latin, from physicalis (\'of nature\'), from physica (\'natural science\'), from Greek physikē (\'natural things\'), from physis (\'nature\').', example:'Regular physical exercise is essential for maintaining good health and managing stress levels.', isNoun:false },
+  { word:'physicists', pronunciation:'FIZ-ih-sists', ipa:'/ˈfɪzɪsɪsts/', pos:'noun', def:'Scientists who study the nature and properties of matter and energy.', lang:'Latin/Greek, from physica (\'natural science\'), from Greek physikē, from physis (\'nature\') + -ist.', example:'Physicists at the research laboratory announced a breakthrough in quantum computing technology.', isNoun:true },
+  { word:'pitiful', pronunciation:'PIT-ih-ful', ipa:'/ˈpɪtɪfəl/', pos:'adjective', def:'Deserving or arousing pity; very small or poor; inadequate.', lang:'English, from pity + -ful. Pity from Old French pité, from Latin pietas (\'piety, compassion\').', example:'The stray dog gave them a pitiful look through the rain-streaked window, and they couldn\'t resist bringing it inside.', isNoun:false },
+  { word:'placards', pronunciation:'PLAK-ardz', ipa:'/ˈplækɑːrdz/', pos:'noun', def:'Signs or notices for public display, either posted on a wall or carried during a demonstration.', lang:'Old French, from plaquier (\'to lay flat, plaster\'), from Middle Dutch placke (\'patch, piece\').', example:'The protesters marched through the city center carrying placards demanding cleaner air and water.', isNoun:true },
+  { word:'placate', pronunciation:'PLAY-kayt', ipa:'/ˈpleɪkeɪt/', pos:'verb', def:'To make someone less angry or hostile; to calm or appease.', lang:'Latin, from placatus, past participle of placare (\'to calm, appease\'), from placere (\'to please\').', example:'The manager offered a full refund to placate the frustrated customer who had been waiting for over an hour.', isNoun:false },
+  { word:'platinum', pronunciation:'PLAT-ih-num', ipa:'/ˈplætɪnəm/', pos:'noun', def:'A precious silvery-white metallic element, highly resistant to corrosion, used in jewelry, catalytic converters, and laboratory equipment.', lang:'Spanish, from platina (\'little silver\'), diminutive of plata (\'silver\'), from Provençal plata (\'metal plate\').', example:'Her engagement ring featured a brilliant diamond set in a band of polished platinum.', isNoun:true },
+  { word:'pliant', pronunciation:'PLY-unt', ipa:'/ˈplaɪənt/', pos:'adjective', def:'Easily bent; flexible. Also, easily influenced or directed; yielding.', lang:'French, present participle of plier (\'to bend, fold\'), from Latin plicare (\'to fold\').', example:'The pliant willow branches swayed gracefully in the breeze without snapping.', isNoun:false },
+  { word:'plover', pronunciation:'PLUV-ur', ipa:'/ˈplʌvər/', pos:'noun', def:'A short-billed wading bird, typically found by water and often with a distinctive black and white head pattern.', lang:'Old French, from plovier (\'rain bird\'), from Latin pluvia (\'rain\'), possibly because plovers were said to appear before rain.', example:'A piping plover scurried along the shoreline, its quick little legs carrying it just ahead of the incoming waves.', isNoun:true },
+  { word:'plummet', pronunciation:'PLUM-it', ipa:'/ˈplʌmɪt/', pos:'verb', def:'To fall or drop straight down at high speed; to decrease rapidly in value or amount.', lang:'Old French, from plommet (\'ball of lead\'), diminutive of plomb (\'lead\'), from Latin plumbum (\'lead\').', example:'Stock prices plummeted after the company announced unexpectedly poor quarterly earnings.', isNoun:false },
+  { word:'poised', pronunciation:'POYZD', ipa:'/pɔɪzd/', pos:'adjective', def:'Having a calm, graceful, and self-assured manner; balanced and ready for action.', lang:'Old French, from peser (\'to weigh, balance\'), from Latin pensare (\'to weigh, consider\').', example:'Despite the pressure of the final exam, she remained poised and confident throughout the presentation.', isNoun:false },
+  { word:'polarized', pronunciation:'POH-luh-ryzd', ipa:'/ˈpoʊləˌraɪzd/', pos:'adjective', def:'Divided into two sharply contrasting groups or sets of opinions; restricted to vibrate in one direction (of light waves).', lang:'French, from polariser, from Latin polaris (\'of a pole\'), from polus (\'pole\'), from Greek polos (\'axis\').', example:'The debate over the new policy has left the community deeply polarized, with neither side willing to compromise.', isNoun:false },
+  { word:'policy', pronunciation:'POL-ih-see', ipa:'/ˈpɒlɪsi/', pos:'noun', def:'A course or principle of action adopted or proposed by a government, party, or organization; a contract of insurance.', lang:'Old French, from policie (\'civil administration\'), from Latin politia (\'the state\'), from Greek politeia (\'citizenship, government\'), from polis (\'city\').', example:'The school implemented a new policy requiring all students to wear uniforms starting in the fall semester.', isNoun:true },
+  { word:'portal', pronunciation:'POR-tul', ipa:'/ˈpɔːrtəl/', pos:'noun', def:'A doorway, gate, or entrance, especially a large and imposing one; a website providing access to other sites or services.', lang:'Latin, from porta (\'gate, door\'), via Old French portal.', example:'The stone portal of the medieval cathedral was adorned with intricate carvings depicting scenes from the Bible.', isNoun:true },
+  { word:'portrait', pronunciation:'POR-trit', ipa:'/ˈpɔːrtrɪt/', pos:'noun', def:'A painting, drawing, photograph, or engraving of a person, especially one depicting only the face or head and shoulders.', lang:'French, from Old French portraire (\'to portray\'), from Latin protrahere (\'to draw forth\'), from pro (\'forth\') + trahere (\'to draw\').', example:'The artist spent months working on the portrait, capturing every detail of the subject\'s expression.', isNoun:true },
+  { word:'portrayal', pronunciation:'por-TRAY-ul', ipa:'/pɔːrˈtreɪəl/', pos:'noun', def:'A depiction or representation of someone or something in a particular way; a performance of a character in a play or film.', lang:'English, from portray + -al. Portray from Old French portraire (\'to draw forth\').', example:'Her portrayal of the queen in the historical drama earned her a nomination for best actress.', isNoun:true },
+  { word:'praise', pronunciation:'PRAYZ', ipa:'/preɪz/', pos:'noun', def:'The expression of approval or admiration for someone or something; the act of giving glory or thanks, especially to a deity.', lang:'Old French, from preisier (\'to prize, value\'), from Latin pretium (\'price, value, reward\').', example:'The teacher\'s praise for her creative essay gave the shy student a much-needed boost of confidence.', isNoun:true },
+  { word:'preacher', pronunciation:'PREE-chur', ipa:'/ˈpriːtʃər/', pos:'noun', def:'A person who preaches, especially a minister of religion.', lang:'Old French, from prechier (\'to preach\'), from Latin praedicare (\'to proclaim publicly\'), from prae (\'before\') + dicare (\'to declare\').', example:'The preacher delivered a powerful sermon that moved many in the congregation to tears.', isNoun:true },
+  { word:'preclude', pronunciation:'prih-KLOOD', ipa:'/prɪˈkluːd/', pos:'verb', def:'To prevent from happening; to make impossible.', lang:'Latin, from praecludere (\'to shut off, close\'), from prae (\'before\') + claudere (\'to close\').', example:'The heavy snowfall precluded any possibility of traveling to the airport for the morning flight.', isNoun:false },
+  { word:'predator', pronunciation:'PRED-uh-tur', ipa:'/ˈprɛdətər/', pos:'noun', def:'An animal that naturally preys on others; a person who ruthlessly exploits others.', lang:'Latin, from praedator (\'plunderer\'), from praedari (\'to rob, plunder\'), from praeda (\'booty, prey\').', example:'The hawk is a fierce predator, circling high above the field before diving to catch its prey.', isNoun:true },
+  { word:'predicament', pronunciation:'prih-DIK-uh-munt', ipa:'/prɪˈdɪkəmənt/', pos:'noun', def:'A difficult, unpleasant, or embarrassing situation from which there is no easy escape.', lang:'Latin, from praedicamentum (\'something predicated, category\'), from praedicare (\'to proclaim\'), but the modern sense evolved in English.', example:'The hikers found themselves in a serious predicament when the bridge they needed to cross had washed away.', isNoun:true },
+  { word:'premonition', pronunciation:'PREM-uh-NISH-un', ipa:'/ˌprɛməˈnɪʃən/', pos:'noun', def:'A strong feeling that something is about to happen, especially something unpleasant; a forewarning.', lang:'Latin, from praemonitio (\'forewarning\'), from praemonere (\'to forewarn\'), from prae (\'before\') + monere (\'to warn\').', example:'She had an uneasy premonition that something was wrong and decided to call home to check on her family.', isNoun:true },
+  { word:'previous', pronunciation:'PREE-vee-us', ipa:'/ˈpriːviəs/', pos:'adjective', def:'Existing or occurring before in time or order; coming before something else.', lang:'Latin, from praevius (\'going before\'), from prae (\'before\') + via (\'way, road\').', example:'The detective compared the evidence from the current case with files from previous investigations.', isNoun:false },
+  { word:'primitive', pronunciation:'PRIM-ih-tiv', ipa:'/ˈprɪmɪtɪv/', pos:'adjective', def:'Relating to or denoting the earliest stage of development; very basic or unsophisticated.', lang:'Latin, from primitivus (\'first of its kind\'), from primitus (\'at first\'), from primus (\'first\').', example:'The explorers discovered primitive tools and cave paintings that dated back over thirty thousand years.', isNoun:false },
+  { word:'primrose', pronunciation:'PRIM-rohz', ipa:'/ˈprɪmroʊz/', pos:'noun', def:'A plant of the genus Primula, bearing pale yellow flowers in early spring.', lang:'Old French, from primerole, from Medieval Latin prima rosa (\'first rose\'), from Latin primus (\'first\') + rosa (\'rose\').', example:'The woodland path was lined with delicate primroses, their soft yellow petals signaling the arrival of spring.', isNoun:true },
+  { word:'principality', pronunciation:'PRIN-sih-PAL-ih-tee', ipa:'/ˌprɪnsɪˈpælɪti/', pos:'noun', def:'A state ruled by a prince; a territory under the authority of a prince or princess.', lang:'Latin, from principalitas (\'first place, rule\'), from principalis (\'first, chief\'), from princeps (\'first man, chief\').', example:'Monaco is a tiny principality on the French Riviera, famous for its casino, yacht-filled harbor, and Grand Prix.', isNoun:true },
+  { word:'prism', pronunciation:'PRIZ-um', ipa:'/ˈprɪzəm/', pos:'noun', def:'A transparent optical element with flat, polished surfaces that refract light, typically triangular, separating white light into a spectrum of colors.', lang:'Greek, from prisma (\'something sawed\'), from prizein (\'to saw\').', example:'When sunlight passed through the prism, it split into a beautiful rainbow of colors across the classroom wall.', isNoun:true },
+  { word:'privy', pronunciation:'PRIV-ee', ipa:'/ˈprɪvi/', pos:'adjective', def:'Sharing in the knowledge of something secret or private; informed about or having access to.', lang:'Old French, from privé (\'private, intimate\'), from Latin privatus (\'set apart, private\'), from privare (\'to deprive\').', example:'Only a handful of senior executives were privy to the details of the upcoming merger.', isNoun:false },
+  { word:'procedure', pronunciation:'pruh-SEE-jur', ipa:'/prəˈsiːdʒər/', pos:'noun', def:'An established or official way of doing something; a series of actions conducted in a certain order.', lang:'French, from procédure (\'a proceeding\'), from procéder (\'to proceed\'), from Latin procedere (\'to go forward\').', example:'The nurse explained the surgical procedure in detail so the patient would know exactly what to expect.', isNoun:true },
+  { word:'procrastinate', pronunciation:'proh-KRAS-tih-nayt', ipa:'/proʊˈkræstɪˌneɪt/', pos:'verb', def:'To delay or postpone action; to put off doing something, especially out of laziness or habitual carelessness.', lang:'Latin, from procrastinatus, past participle of procrastinare (\'to put off until tomorrow\'), from pro (\'forward\') + crastinus (\'of tomorrow\'), from cras (\'tomorrow\').', example:'He tended to procrastinate on his homework, always waiting until the night before it was due.', isNoun:false },
+  { word:'profiteer', pronunciation:'PROF-ih-TEER', ipa:'/ˌprɒfɪˈtɪər/', pos:'noun', def:'A person who makes an excessive or unfair profit, especially illegally or during a time of emergency.', lang:'English, from profit + -eer. Profit from Old French prufit, from Latin profectus (\'progress, profit\'), from proficere (\'to advance\').', example:'During the shortage, profiteers hoarded essential supplies and sold them at outrageous prices.', isNoun:true },
+  { word:'prone', pronunciation:'PROHN', ipa:'/proʊn/', pos:'adjective', def:'Likely or liable to suffer from, do, or experience something unpleasant; lying face downward.', lang:'Latin, from pronus (\'leaning forward, inclined\'), related to pro (\'forward\').', example:'The coastal region is prone to flooding during hurricane season, so residents always prepare evacuation plans.', isNoun:false },
+  { word:'proposal', pronunciation:'pruh-POH-zul', ipa:'/prəˈpoʊzəl/', pos:'noun', def:'A plan or suggestion put forward for consideration by others; an offer of marriage.', lang:'English, from propose + -al. Propose from Old French proposer, from Latin proponere (\'to put forward\'), from pro (\'forward\') + ponere (\'to place\').', example:'The architect presented a detailed proposal for the new community center, including blueprints and cost estimates.', isNoun:true },
+  { word:'propulsion', pronunciation:'pruh-PUL-shun', ipa:'/prəˈpʌlʃən/', pos:'noun', def:'The action of driving or pushing forward; the force that moves something forward.', lang:'Latin, from propulsio, from propellere (\'to drive forward\'), from pro (\'forward\') + pellere (\'to drive\').', example:'Engineers are developing new forms of spacecraft propulsion that could dramatically reduce travel time to Mars.', isNoun:true },
+  { word:'prosperous', pronunciation:'PROS-pur-us', ipa:'/ˈprɒspərəs/', pos:'adjective', def:'Successful in material terms; flourishing financially; bringing wealth and success.', lang:'Latin, from prosperus (\'favorable, fortunate\'), from pro spe (\'according to hope\'), from spes (\'hope\').', example:'The prosperous merchant donated generously to local charities, funding schools and hospitals throughout the region.', isNoun:false },
+  { word:'protein', pronunciation:'PROH-teen', ipa:'/ˈproʊtiːn/', pos:'noun', def:'A large molecule composed of amino acid chains, essential for the structure, function, and regulation of the body\'s tissues and organs.', lang:'French, from protéine, coined by Dutch chemist Mulder, from Greek prōteios (\'of the first quality\'), from prōtos (\'first\').', example:'Athletes often increase their protein intake to help build and repair muscle tissue after intense workouts.', isNoun:true },
+  { word:'proxy', pronunciation:'PROK-see', ipa:'/ˈprɒksi/', pos:'noun', def:'The authority to represent someone else, especially in voting; a person authorized to act on behalf of another.', lang:'English, contraction of procuracy, from Medieval Latin procuratia (\'management\'), from Latin procurare (\'to take care of\').', example:'Since she couldn\'t attend the shareholders\' meeting, she appointed her attorney to vote by proxy on her behalf.', isNoun:true },
+  { word:'puckish', pronunciation:'PUK-ish', ipa:'/ˈpʌkɪʃ/', pos:'adjective', def:'Playful, especially in a mischievous way; impish.', lang:'English, from Puck, the mischievous sprite in English folklore and Shakespeare\'s A Midsummer Night\'s Dream, + -ish.', example:'The comedian\'s puckish grin hinted that another clever joke was about to follow.', isNoun:false },
+  { word:'pulpit', pronunciation:'PUL-pit', ipa:'/ˈpʊlpɪt/', pos:'noun', def:'A raised platform or lectern in a church from which the preacher delivers a sermon.', lang:'Latin, from pulpitum (\'platform, stage\').', example:'The minister stepped up to the pulpit, adjusted the microphone, and began the Sunday sermon.', isNoun:true },
+  { word:'pummel', pronunciation:'PUM-ul', ipa:'/ˈpʌməl/', pos:'verb', def:'To strike repeatedly, typically with the fists; to beat or batter.', lang:'English, variant of pommel, from Old French pomel (\'knob\'), from Latin pomellum, diminutive of pomum (\'fruit, apple\').', example:'The boxer continued to pummel his opponent with a relentless series of jabs and hooks.', isNoun:false },
+  { word:'punctuation', pronunciation:'PUNK-choo-AY-shun', ipa:'/ˌpʌŋktʃuˈeɪʃən/', pos:'noun', def:'The marks, such as periods, commas, and parentheses, used in writing to separate sentences and clarify meaning.', lang:'Latin, from punctuatio, from punctuare (\'to mark with points\'), from punctum (\'point\'), from pungere (\'to prick\').', example:'Proper punctuation is essential for clear writing, as a misplaced comma can completely change the meaning of a sentence.', isNoun:true },
+  { word:'punily', pronunciation:'PYOO-nuh-lee', ipa:'/ˈpjuːnɪli/', pos:'adverb', def:'In a weak, small, or inferior manner.', lang:'English, from puny + -ly. Puny from Old French puisné (\'born after\'), from puis (\'afterward\') + né (\'born\').', example:'The seedling grew punily in the shade, barely reaching a few inches before the stronger plants overshadowed it.', isNoun:false },
+  { word:'puniness', pronunciation:'PYOO-nee-nus', ipa:'/ˈpjuːninɪs/', pos:'noun', def:'The quality or state of being puny; weakness or insignificance in size or strength.', lang:'English, from puny + -ness. Puny from Old French puisné (\'born after\').', example:'Despite the puniness of their budget, the small theater troupe managed to produce a critically acclaimed play.', isNoun:true },
+  { word:'pupil', pronunciation:'PYOO-pul', ipa:'/ˈpjuːpəl/', pos:'noun', def:'A student in school; also, the dark circular opening in the center of the iris of the eye that controls light entering.', lang:'Latin, from pupillus (\'orphan, ward\'), diminutive of pupus (\'boy\'), and pupilla (\'little doll\'), referring to the tiny reflection seen in the eye.', example:'The pupil raised her hand eagerly, ready to answer the teacher\'s question about the water cycle.', isNoun:true },
+  { word:'purification', pronunciation:'PYOOR-ih-fih-KAY-shun', ipa:'/ˌpjʊərɪfɪˈkeɪʃən/', pos:'noun', def:'The process of removing contaminants or unwanted elements from something to make it pure or clean.', lang:'Latin, from purificatio (\'a cleansing\'), from purificare (\'to make pure\'), from purus (\'pure\') + facere (\'to make\').', example:'The water purification plant treats millions of gallons daily, ensuring safe drinking water for the entire city.', isNoun:true },
+  { word:'puritan', pronunciation:'PYOOR-ih-tun', ipa:'/ˈpjʊərɪtən/', pos:'noun', def:'A person with censorious moral beliefs, especially about pleasure and self-indulgence; historically, a member of a group of English Protestants seeking to simplify worship.', lang:'Latin, from puritas (\'purity\'), from purus (\'pure\') + -an.', example:'Her grandmother was a puritan who disapproved of dancing, card games, and any form of idle entertainment.', isNoun:true },
+  { word:'putrid', pronunciation:'PYOO-trid', ipa:'/ˈpjuːtrɪd/', pos:'adjective', def:'Decaying or rotting and emitting a fetid smell; extremely unpleasant or disgusting.', lang:'Latin, from putridus (\'rotten\'), from putrere (\'to rot\'), from puter (\'rotten\').', example:'The putrid smell of the forgotten leftovers in the back of the refrigerator made everyone gag.', isNoun:false },
+  { word:'pyramid', pronunciation:'PEER-uh-mid', ipa:'/ˈpɪrəmɪd/', pos:'noun', def:'A monumental structure with a square or triangular base and sloping sides that meet at a point at the top, especially one built of stone as a royal tomb in ancient Egypt.', lang:'Greek, from pyramis (genitive pyramidos), probably from Egyptian, possibly related to per-em-us (\'height of a pyramid\').', example:'The Great Pyramid of Giza is the oldest of the Seven Wonders of the Ancient World and the only one still largely intact.', isNoun:true }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Slider
+  const totalA = a.length;
+  const pct = totalA > 1 ? s / (totalA - 1) * 100 : 0;
+  document.getElementById("sliderFill").style.width = pct + "%";
+  const sliderArea = document.getElementById("sliderArea");
+  const areaW = sliderArea.offsetWidth || 200;
+  const pad = 10;
+  const thumbLeft = pad + (pct / 100) * (areaW - pad * 2);
+  const thumb = document.getElementById("sliderThumb");
+  if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
+
+  // Ticks - show ~20 evenly spaced markers
+  const tickCount = Math.min(totalA, 20);
+  let ticksHtml = '';
+  for(let t=0; t<tickCount; t++){
+    const ti = Math.round(t / (tickCount-1) * (totalA-1));
+    const cls = ti===s ? 'active' : (t % 5 === 0 ? 'major' : '');
+    ticksHtml += `<div class="slider-tick ${cls}"></div>`;
+  }
+  document.getElementById("sliderDots").innerHTML = ticksHtml;
+  document.getElementById("sliderCounter").textContent = `${s+1} / ${totalA}`;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Slider drag
+const slArea=document.getElementById("sliderArea");
+const slThumb=document.getElementById("sliderThumb");
+let slDragging=false;
+function sliderFromX(cx){
+  const r=slArea.getBoundingClientRect();
+  const pad=10;
+  const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
+  const a=aw(),idx=Math.round(p*(a.length-1));
+  // Move thumb immediately for smooth feel
+  const thumbLeft=pad+(p)*(r.width-pad*2);
+  slThumb.style.left=thumbLeft+"px";
+  if(idx!==si()){
+    const g=WORDS.findIndex(w=>w.word===a[idx].word);
+    flipped=false; currentIndex=g; render();
+  }
+}
+slArea.addEventListener("touchstart",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(slDragging) sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    // Speak the word after releasing
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+slArea.addEventListener("mousedown",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.clientX); e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(slDragging) sliderFromX(e.clientX);
+});
+document.addEventListener("mouseup",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>
