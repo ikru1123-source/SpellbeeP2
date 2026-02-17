@@ -149,13 +149,22 @@ body{
 </div>
 
 <script>
-/* Prevent accidental new-tab behavior */
-document.addEventListener("click", function(e){
-  const link = e.target.closest("a");
-  if(!link) return;
-  e.preventDefault();
-  window.location.assign(link.getAttribute("href"));
-});
+(function () {
+  const isStandalone =
+    window.navigator.standalone === true ||
+    window.matchMedia("(display-mode: standalone)").matches;
+
+  document.addEventListener("click", function (e) {
+    const a = e.target.closest("a");
+    if (!a) return;
+
+    // Only intercept navigation if running as Home Screen web app
+    if (isStandalone) {
+      e.preventDefault();
+      window.location.href = a.getAttribute("href");
+    }
+  }, { capture: true });
+})();
 </script>
 
 </body>
