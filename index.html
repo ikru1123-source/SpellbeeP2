@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Makes it behave like a Home Screen web app -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Spellbee" />
+
+  <title>SpellingBee Launcher</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, system-ui, sans-serif;
+      background: #f6f6f7;
+      color: #111;
+    }
+    .wrap {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 24px 16px;
+    }
+    h1 {
+      font-size: 22px;
+      margin: 0 0 14px;
+    }
+    .card {
+      background: white;
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 1px 8px rgba(0,0,0,.06);
+    }
+    a.btn {
+      display: block;
+      text-decoration: none;
+      background: #007aff;
+      color: white;
+      padding: 14px 16px;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 600;
+      margin: 12px 0;
+      text-align: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    a.btn:active {
+      transform: scale(0.99);
+      opacity: 0.95;
+    }
+    .note {
+      font-size: 13px;
+      color: #555;
+      margin-top: 12px;
+      line-height: 1.35;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <h1>Spelling Bee</h1>
+
+    <div class="card">
+      <!-- IMPORTANT: no target="_blank" -->
+      <a class="btn" href="https://ikru1123-source.github.io/SpellbeeP2/P1.html">P1</a>
+      <a class="btn" href="https://ikru1123-source.github.io/SpellbeeP2/P1.html">P2</a>
+      <a class="btn" href="https://ikru1123-source.github.io/SpellbeeP2/P1.html">P3</a>
+
+      <div class="note">
+        Tip: For this to stay inside the Web App, make sure you launch it from the Home Screen
+        (Share → <b>Add to Home Screen</b>) and keep navigation in the same tab (no “open in new tab” links).
+      </div>
+    </div>
+  </div>
+</body>
+</html>
