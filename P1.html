@@ -296,6 +296,7 @@ body {
 </div>
 
 <script>
+  console.log("standalone?", window.navigator.standalone, window.matchMedia("(display-mode: standalone)").matches);
 const WORDS = [
   { word:'packet', pronunciation:'PAK-it', ipa:'/ˈpækɪt/', pos:'noun', def:'A small container or package; a block of data transmitted across a network.', lang:'English, from Anglo-French paquet (\'small pack\'), diminutive of Old French pac (\'bundle\'), of Germanic origin.', example:'She tore open the packet of seeds and scattered them evenly along the freshly tilled garden row.', isNoun:true },
   { word:'pageantry', pronunciation:'PAJ-un-tree', ipa:'/ˈpædʒəntri/', pos:'noun', def:'Elaborate display or ceremony; the colorful and splendid spectacle of a public celebration.', lang:'English, from pageant + -ry. Pageant from Medieval Latin pagina (\'scene of a play\'), from Latin pagina (\'page\').', example:'The coronation was filled with pageantry, from the gilded carriages to the trumpeters lining the cathedral steps.', isNoun:true },
