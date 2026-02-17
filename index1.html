@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport"
+      content="width=device-width,
+               initial-scale=1,
+               maximum-scale=1,
+               user-scalable=no,
+               viewport-fit=cover" />
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Spelling Bee">
+<meta name="theme-color" content="#0c0a13">
+
+<title>Spelling Bee</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --gold:#d4af37;
+  --bg:#0c0a13;
+  --card:#1e1a2e;
+  --text:#f0ece2;
+  --safe-top:env(safe-area-inset-top);
+  --safe-bottom:env(safe-area-inset-bottom);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+html,body{
+  height:100%;
+  overflow:hidden;
+  background:
+    radial-gradient(900px 600px at 20% -10%, rgba(212,175,55,0.12), transparent 60%),
+    radial-gradient(900px 600px at 110% 15%, rgba(130,110,255,0.10), transparent 55%),
+    var(--bg);
+  font-family:'DM Sans',-apple-system,system-ui,sans-serif;
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+}
+
+body{
+  padding-top:var(--safe-top);
+  padding-bottom:var(--safe-bottom);
+  display:flex;
+  flex-direction:column;
+}
+
+.header{
+  padding:16px;
+}
+
+.title{
+  font-family:'Playfair Display',serif;
+  font-size:22px;
+  font-weight:800;
+  letter-spacing:.03em;
+}
+
+.subtitle{
+  font-size:12px;
+  opacity:.5;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+.card-area{
+  flex:1;
+  padding:12px;
+}
+
+.card{
+  background:linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius:22px;
+  border:1px solid rgba(212,175,55,0.15);
+  padding:18px;
+  height:100%;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  box-shadow:0 20px 50px rgba(0,0,0,0.5);
+}
+
+.section-title{
+  font-family:'Playfair Display',serif;
+  font-size:18px;
+  margin-bottom:12px;
+}
+
+.launch-btn{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px 16px;
+  margin:12px 0;
+  border-radius:18px;
+  border:1px solid rgba(212,175,55,.35);
+  background:rgba(212,175,55,.08);
+  color:var(--gold);
+  font-weight:600;
+  font-size:16px;
+  text-decoration:none;
+  transition:.15s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+
+.launch-btn:active{
+  transform:scale(.97);
+  background:rgba(212,175,55,.2);
+}
+
+.chev{
+  opacity:.6;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <div class="title">Spelling Bee</div>
+  <div class="subtitle">Launcher</div>
+</div>
+
+<div class="card-area">
+  <div class="card">
+    <div class="section-title">Select Page</div>
+
+    <!-- DOMAIN RELATIVE LINKS -->
+    <a class="launch-btn" href="./P1.html">
+      P1
+      <span class="chev">›</span>
+    </a>
+
+    <a class="launch-btn" href="./P2.html">
+      P2
+      <span class="chev">›</span>
+    </a>
+
+    <a class="launch-btn" href="./P3.html">
+      P3
+      <span class="chev">›</span>
+    </a>
+
+  </div>
+</div>
+
+<script>
+/* Prevent accidental new-tab behavior */
+document.addEventListener("click", function(e){
+  const link = e.target.closest("a");
+  if(!link) return;
+  e.preventDefault();
+  window.location.assign(link.getAttribute("href"));
+});
+</script>
+
+</body>
+</html>
