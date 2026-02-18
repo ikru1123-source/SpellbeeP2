@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 900;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 18px; height: 18px; }
+.slider-area {
+  flex: 1; height: 32px; position: relative;
+  display: flex; align-items: center;
+  touch-action: none; cursor: pointer;
+}
+.slider-track-bg {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
+}
+.slider-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(212,175,55,0.5));
+  transition: width 0.15s ease;
+}
+.slider-dots {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; padding: 0 2px;
+}
+.slider-tick {
+  width: 2px; height: 8px; border-radius: 1px;
+  background: rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.slider-tick.major { height: 12px; background: rgba(255,255,255,0.12); }
+.slider-tick.active { background: var(--gold); height: 14px; width: 3px; border-radius: 1.5px; box-shadow: 0 0 6px rgba(212,175,55,0.4); }
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px solid #1a1528;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  cursor: grab; transition: left 0.12s ease;
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
+.slider-thumb.dragging { transition: none; transform: translate(-50%, -50%) scale(1.15); }
+.slider-counter {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.08em;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1>Spelling Bee</h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="slider-area" id="sliderArea">
+      <div class="slider-track-bg">
+        <div class="slider-fill" id="sliderFill"></div>
+      </div>
+      <div class="slider-dots" id="sliderDots"></div>
+      <div class="slider-thumb" id="sliderThumb"></div>
+    </div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'daft', pronunciation:'DAFT', ipa:'/dæft/', pos:'adjective', def:'Silly; foolish; crazy or eccentric in an endearing way.', lang:'Old English, from gedæfte (\'mild, gentle\'), of Germanic origin; the sense shifted from \'gentle\' to \'foolish\' over time.', example:'The children came up with a daft plan to build a spaceship out of cardboard boxes and tin foil.', isNoun:false },
+  { word:'daisy', pronunciation:'DAY-zee', ipa:'/ˈdeɪzi/', pos:'noun', def:'A small grassland plant with composite flowers having a yellow center and white petals.', lang:'Old English, from dæges ēage (\'day\'s eye\'), because the flower opens at dawn and closes at dusk.', example:'She wove a crown of daisies while sitting in the meadow, placing it on her little sister\'s head.', isNoun:true },
+  { word:'dawdle', pronunciation:'DAW-dul', ipa:'/ˈdɔːdəl/', pos:'verb', def:'To waste time; to move slowly and idly; to take longer than necessary.', lang:'English, possibly related to dialect daddle (\'to walk unsteadily\'), of uncertain origin.', example:'Stop dawdling and get ready for school, or you\'ll miss the bus again!', isNoun:false },
+  { word:'debris', pronunciation:'duh-BREE', ipa:'/dəˈbriː/', pos:'noun', def:'Scattered pieces of waste or remains; rubble or wreckage left after destruction.', lang:'French, from débris (\'remains, rubble\'), from débriser (\'to break down\'), from dé- (\'down\') + briser (\'to break\'), of Celtic origin.', example:'After the tornado, volunteers helped clear debris from the streets so emergency vehicles could reach the damaged homes.', isNoun:true },
+  { word:'debunk', pronunciation:'dee-BUNK', ipa:'/diːˈbʌŋk/', pos:'verb', def:'To expose the falseness or hollowness of a myth, idea, or belief; to disprove.', lang:'English, from de- (\'remove\') + bunk (\'nonsense\'), coined in 1923 by American novelist W.E. Woodward.', example:'The scientist\'s research helped debunk the popular myth that humans only use ten percent of their brains.', isNoun:false },
+  { word:'decor', pronunciation:'day-KOR', ipa:'/deɪˈkɔːr/', pos:'noun', def:'The furnishing and decoration of a room or building; the style of interior design.', lang:'French, from décor (\'decoration, scenery\'), from décorer (\'to decorate\'), from Latin decorare (\'to adorn\'), from decus (\'ornament, grace\').', example:'The restaurant\'s rustic decor featured exposed brick walls, vintage light fixtures, and reclaimed wood tables.', isNoun:true },
+  { word:'definitely', pronunciation:'DEF-ih-nit-lee', ipa:'/ˈdɛfɪnɪtli/', pos:'adverb', def:'Without doubt; certainly; in a clear and definite manner.', lang:'Latin, from definitus (\'defined, limited\'), past participle of definire (\'to limit, define\'), from de- (\'completely\') + finire (\'to bound, limit\'), + -ly.', example:'She will definitely be at the party tonight — she already confirmed with the host twice.', isNoun:false },
+  { word:'delta', pronunciation:'DEL-tuh', ipa:'/ˈdɛltə/', pos:'noun', def:'A triangular area of land where a river divides into smaller streams before entering the sea; the fourth letter of the Greek alphabet.', lang:'Greek, from delta, the fourth letter (Δ), named for the triangular shape of river deposits resembling the letter.', example:'The Nile Delta is one of the most fertile regions in the world, supporting agriculture for millions of people.', isNoun:true },
+  { word:'demand', pronunciation:'dih-MAND', ipa:'/dɪˈmænd/', pos:'noun', def:'An insistent and peremptory request; the desire of consumers for a particular product or service.', lang:'Old French, from demander (\'to ask, request\'), from Latin demandare (\'to entrust\'), from de- (\'completely\') + mandare (\'to order, commit\').', example:'The demand for electric vehicles has surged as more consumers look for environmentally friendly transportation options.', isNoun:true },
+  { word:'demonetize', pronunciation:'dee-MON-uh-tyze', ipa:'/diːˈmɒnɪˌtaɪz/', pos:'verb', def:'To deprive currency of its status as legal tender; to strip something of its monetary value or revenue-generating ability.', lang:'French, from démonétiser, from dé- (\'remove\') + monétiser (\'to monetize\'), from Latin moneta (\'mint, money\').', example:'The government\'s decision to demonetize certain banknotes caused long lines at banks as citizens rushed to exchange their old bills.', isNoun:false },
+  { word:'demothball', pronunciation:'dee-MOTH-bawl', ipa:'/diːˈmɒθbɔːl/', pos:'verb', def:'To bring back into active use something that has been stored or kept in reserve; the opposite of mothball.', lang:'English, from de- (\'reverse\') + mothball (\'to put into storage\'), from the practice of using mothballs to preserve stored clothing.', example:'The navy decided to demothball the retired destroyer and return it to active service after the fleet expansion was approved.', isNoun:false },
+  { word:'deployment', pronunciation:'dih-PLOY-munt', ipa:'/dɪˈplɔɪmənt/', pos:'noun', def:'The movement of troops or equipment to a place or position for military action; the bringing of resources into effective action.', lang:'French, from déploiement, from déployer (\'to unfold, deploy\'), from dé- (\'un-\') + ployer (\'to fold\'), from Latin plicare (\'to fold\').', example:'The deployment of peacekeeping forces to the region helped stabilize the area and allow aid workers safe access.', isNoun:true },
+  { word:'derby', pronunciation:'DUR-bee', ipa:'/ˈdɜːrbi/', pos:'noun', def:'An annual horse race; any race or contest open to all comers; a stiff felt hat with a rounded crown.', lang:'English, named after the 12th Earl of Derby, who founded the famous horse race at Epsom in 1780.', example:'The Kentucky Derby is one of the most celebrated horse races in the world, drawing spectators in elaborate hats and finery.', isNoun:true },
+  { word:'descent', pronunciation:'dih-SENT', ipa:'/dɪˈsɛnt/', pos:'noun', def:'An act of moving downward; the origin or background of a person in terms of family or nationality; a downward slope.', lang:'Old French, from descente (\'a going down\'), from descendre (\'to descend\'), from Latin descendere, from de- (\'down\') + scandere (\'to climb\').', example:'The airplane began its gradual descent through the clouds, and passengers caught their first glimpse of the city below.', isNoun:true },
+  { word:'detail', pronunciation:'dih-TAYL', ipa:'/dɪˈteɪl/', pos:'noun', def:'An individual feature, fact, or item; a small part of something considered separately; thorough treatment of small items.', lang:'French, from détail (\'a cutting in pieces\'), from détailler (\'to cut in pieces\'), from dé- (\'apart\') + tailler (\'to cut\'), from Latin taliare.', example:'The architect\'s blueprints included every detail, from the placement of light switches to the type of doorknobs.', isNoun:true },
+  { word:'detestable', pronunciation:'dih-TEST-uh-bul', ipa:'/dɪˈtɛstəbəl/', pos:'adjective', def:'Deserving intense dislike; thoroughly unpleasant or hateful; abominable.', lang:'Latin, from detestabilis (\'abominable\'), from detestari (\'to curse, denounce\'), from de- (\'down\') + testari (\'to bear witness\'), from testis (\'witness\').', example:'The villain\'s detestable behavior throughout the story made the audience cheer loudly when he was finally defeated.', isNoun:false },
+  { word:'dialect', pronunciation:'DY-uh-lekt', ipa:'/ˈdaɪəˌlɛkt/', pos:'noun', def:'A particular form of a language specific to a region or social group, differing in vocabulary, grammar, and pronunciation.', lang:'Greek, from dialektos (\'discourse, way of speaking\'), from dialegesthai (\'to converse\'), from dia (\'through, across\') + legein (\'to speak\').', example:'The linguist recorded speakers of the local dialect to preserve the unique expressions and pronunciations before they disappeared.', isNoun:true },
+  { word:'dicey', pronunciation:'DY-see', ipa:'/ˈdaɪsi/', pos:'adjective', def:'Unpredictable and potentially dangerous; risky or uncertain.', lang:'English, from dice + -y, alluding to the uncertain outcome of a roll of dice.', example:'The mountain road became dicey after the rainstorm, with loose gravel and poor visibility making driving treacherous.', isNoun:false },
+  { word:'digression', pronunciation:'dy-GRESH-un', ipa:'/daɪˈɡrɛʃən/', pos:'noun', def:'A temporary departure from the main subject in speech or writing; a wandering from the topic.', lang:'Latin, from digressio (\'a going away\'), from digredi (\'to go aside\'), from di- (\'aside\') + gradi (\'to step, walk\').', example:'The professor\'s entertaining digression about his travels in Peru lasted ten minutes before he returned to the lecture topic.', isNoun:true },
+  { word:'dillydally', pronunciation:'DIL-ee-DAL-ee', ipa:'/ˈdɪliˌdæli/', pos:'verb', def:'To waste time through aimless wandering or indecision; to dawdle or procrastinate.', lang:'English, a reduplication of dally (\'to waste time\'), from Anglo-French dalier (\'to amuse oneself\').', example:'We can\'t dillydally any longer — the movie starts in fifteen minutes and the theater is a ten-minute drive away.', isNoun:false },
+  { word:'disaster', pronunciation:'dih-ZAS-tur', ipa:'/dɪˈzæstər/', pos:'noun', def:'A sudden event causing great damage or suffering; a catastrophe; an utter failure.', lang:'Italian, from disastro (\'ill-starred event\'), from dis- (\'away, without\') + astro (\'star\'), from Latin astrum, from Greek astron (\'star\').', example:'The earthquake was a devastating disaster that left thousands homeless and caused billions of dollars in damage.', isNoun:true },
+  { word:'dispatch', pronunciation:'dih-SPACH', ipa:'/dɪˈspætʃ/', pos:'verb', def:'To send off to a destination or for a purpose; to deal with a task quickly and efficiently.', lang:'Italian, from dispacciare (\'to hurry\'), from dis- (\'away\') + the root of impacciare (\'to hinder\'), or from Spanish despachar (\'to expedite\').', example:'The manager dispatched a team of technicians to repair the power lines that had been knocked down by the storm.', isNoun:false },
+  { word:'disposition', pronunciation:'DIS-puh-ZIH-shun', ipa:'/ˌdɪspəˈzɪʃən/', pos:'noun', def:'A person\'s inherent qualities of mind and character; a natural tendency or inclination.', lang:'Latin, from dispositio (\'arrangement, management\'), from disponere (\'to arrange\'), from dis- (\'apart\') + ponere (\'to place\').', example:'The golden retriever\'s gentle disposition made it the perfect therapy dog for visiting patients in the hospital.', isNoun:true },
+  { word:'distinctive', pronunciation:'dih-STINK-tiv', ipa:'/dɪˈstɪŋktɪv/', pos:'adjective', def:'Characteristic of one person or thing, and so serving to distinguish it from others; uniquely recognizable.', lang:'Latin, from distinctivus, from distinguere (\'to separate, distinguish\'), from dis- (\'apart\') + stinguere (\'to prick, quench\').', example:'The chef\'s distinctive cooking style blended traditional Japanese techniques with bold Latin American flavors.', isNoun:false },
+  { word:'distinguish', pronunciation:'dih-STING-gwish', ipa:'/dɪˈstɪŋɡwɪʃ/', pos:'verb', def:'To recognize or treat as different; to perceive or point out a difference; to make oneself prominent or worthy of attention.', lang:'Latin, from distinguere (\'to separate, divide\'), from dis- (\'apart\') + stinguere (\'to prick\').', example:'It can be difficult to distinguish between the two species of butterfly because their wing patterns are so similar.', isNoun:false },
+  { word:'districts', pronunciation:'DIS-trikts', ipa:'/ˈdɪstrɪkts/', pos:'noun', def:'Areas of a country or city, especially ones with particular features or regarded as a distinct unit for administrative purposes.', lang:'French, from district, from Medieval Latin districtus (\'jurisdiction\'), from Latin distringere (\'to pull apart\'), from dis- (\'apart\') + stringere (\'to draw tight\').', example:'The city is divided into twelve districts, each with its own elected council member and unique neighborhood character.', isNoun:true },
+  { word:'diva', pronunciation:'DEE-vuh', ipa:'/ˈdiːvə/', pos:'noun', def:'A famous female opera singer; a woman regarded as temperamental or demanding; a celebrated female performer.', lang:'Italian, from diva (\'goddess\'), from Latin diva (\'goddess\'), feminine of divus (\'divine, god\').', example:'The diva\'s powerful soprano voice filled the opera house, earning thunderous applause after her final aria.', isNoun:true },
+  { word:'diverge', pronunciation:'dy-VURJ', ipa:'/daɪˈvɜːrdʒ/', pos:'verb', def:'To separate from another route and go in a different direction; to differ or deviate from a standard or expectation.', lang:'Latin, from divergere (\'to go in different directions\'), from di- (\'apart\') + vergere (\'to turn, incline\').', example:'The two hiking trails diverge at the top of the ridge, one heading toward the lake and the other toward the summit.', isNoun:false },
+  { word:'diversion', pronunciation:'dy-VUR-zhun', ipa:'/daɪˈvɜːrʒən/', pos:'noun', def:'An alternative route when the usual road is temporarily closed; an activity that diverts the mind from tedious or serious concerns.', lang:'Latin, from diversio (\'a turning aside\'), from divertere (\'to turn aside\'), from di- (\'aside\') + vertere (\'to turn\').', example:'The magician used a flashy diversion with his left hand while secretly palming the coin with his right.', isNoun:true },
+  { word:'diversity', pronunciation:'dy-VUR-sih-tee', ipa:'/daɪˈvɜːrsɪti/', pos:'noun', def:'The state of being diverse; a range of different things; the inclusion of people of different backgrounds and identities.', lang:'Latin, from diversitas (\'contrariety, disagreement, difference\'), from diversus (\'turned different ways\'), from divertere (\'to turn aside\').', example:'The school celebrated diversity by hosting a cultural fair where students shared food, music, and traditions from their heritage.', isNoun:true },
+  { word:'divisive', pronunciation:'dih-VY-siv', ipa:'/dɪˈvaɪsɪv/', pos:'adjective', def:'Tending to cause disagreement or hostility between people; creating division.', lang:'Latin, from divisivus, from divisus, past participle of dividere (\'to divide, separate\').', example:'The controversial proposal proved deeply divisive, splitting the community into two passionate and opposing camps.', isNoun:false },
+  { word:'docket', pronunciation:'DOK-it', ipa:'/ˈdɒkɪt/', pos:'noun', def:'A calendar or list of cases for trial in a court; an agenda or list of things to be done or discussed.', lang:'English, possibly from dock (the enclosure in a court) + -et, or from a diminutive of doc (\'document\').', example:'The judge reviewed the docket for the week and scheduled the most urgent cases for Monday morning.', isNoun:true },
+  { word:'domino', pronunciation:'DOM-ih-noh', ipa:'/ˈdɒmɪˌnoʊ/', pos:'noun', def:'A small, flat, rectangular block marked with dots used in a table game; a loose cloak with a mask, worn at masquerades.', lang:'French, from domino, possibly from Latin dominus (\'lord, master\'), perhaps from the phrase benedicamus Domino said by the winner.', example:'The children lined up dozens of dominoes in an elaborate pattern, then watched in delight as they toppled one by one.', isNoun:true },
+  { word:'donatee', pronunciation:'DOH-nuh-TEE', ipa:'/ˌdoʊnəˈtiː/', pos:'noun', def:'A person who receives a donation; the recipient of a gift or contribution.', lang:'English, from donate + -ee (suffix denoting a recipient), from Latin donare (\'to give\'), from donum (\'gift\').', example:'Each donatee at the charity event received a care package filled with warm clothing and essential supplies.', isNoun:true },
+  { word:'doneness', pronunciation:'DUN-nus', ipa:'/ˈdʌnnɪs/', pos:'noun', def:'The degree to which food, especially meat, has been cooked; the state of being done or finished.', lang:'English, from done + -ness. Done from Old English gedōn, past participle of dōn (\'to do\').', example:'The chef checked the doneness of the steak by pressing it with her finger, confirming it was perfectly medium-rare.', isNoun:true },
+  { word:'doomed', pronunciation:'DOOMD', ipa:'/duːmd/', pos:'adjective', def:'Likely to have an unfortunate and inescapable outcome; destined to fail or be destroyed.', lang:'Old English, from dōm (\'judgment, decree, fate\'), of Germanic origin.', example:'The expedition was doomed from the start, as the team lacked proper supplies and underestimated the harsh terrain.', isNoun:false },
+  { word:'downcast', pronunciation:'DOWN-kast', ipa:'/ˈdaʊnˌkæst/', pos:'adjective', def:'Feeling sad or dejected; looking downward, especially of the eyes.', lang:'English, from down + cast (\'to throw\'), suggesting eyes thrown or directed downward in sadness.', example:'The player walked off the field with a downcast expression after missing the penalty kick in the final minute.', isNoun:false },
+  { word:'dramatization', pronunciation:'DRAM-uh-tih-ZAY-shun', ipa:'/ˌdræmətɪˈzeɪʃən/', pos:'noun', def:'The adaptation of a novel, event, or narrative into a dramatic form for stage, film, or television; an exaggerated portrayal.', lang:'Greek, from drama (\'action, play\'), from dran (\'to do, act\') + -ization.', example:'The television dramatization of the famous trial captivated millions of viewers over its eight-episode run.', isNoun:true },
+  { word:'dreadlocks', pronunciation:'DRED-loks', ipa:'/ˈdrɛdˌlɒks/', pos:'noun', def:'A hairstyle in which the hair is washed but not combed, forming matted, rope-like strands.', lang:'English, from dread (\'fear, awe\') + locks (\'strands of hair\'), associated with Rastafarian culture where the style symbolizes spiritual devotion.', example:'He had been growing his dreadlocks for over five years, and they now reached well past his shoulders.', isNoun:true },
+  { word:'dribbles', pronunciation:'DRIB-ulz', ipa:'/ˈdrɪbəlz/', pos:'noun', def:'Thin streams of liquid; small drops or amounts; in sports, acts of bouncing or moving a ball with repeated small kicks or bounces.', lang:'English, frequentative of drip, from Middle English drippen, of Germanic origin.', example:'The baby left dribbles of juice across the high chair tray, smiling as she played with her sippy cup.', isNoun:true },
+  { word:'drivel', pronunciation:'DRIV-ul', ipa:'/ˈdrɪvəl/', pos:'noun', def:'Silly, nonsensical talk or writing; foolish or senseless speech.', lang:'Old English, from dreflian (\'to dribble, run at the nose\'), of uncertain origin; the sense shifted from literal drooling to figurative nonsense.', example:'The editorial dismissed the politician\'s speech as empty drivel that offered no real solutions to the city\'s problems.', isNoun:true },
+  { word:'dualism', pronunciation:'DOO-ul-iz-um', ipa:'/ˈdjuːəlɪzəm/', pos:'noun', def:'The division of something into two opposed or contrasting aspects; in philosophy, the theory that mind and body are distinct substances.', lang:'Latin, from dualis (\'containing two\'), from duo (\'two\') + -ism.', example:'The philosopher explored the dualism between mind and body, questioning whether consciousness could exist without a physical brain.', isNoun:true },
+  { word:'Dudley', pronunciation:'DUD-lee', ipa:'/ˈdʌdli/', pos:'noun', def:'A town in the West Midlands of England; a given name of English origin meaning \'people\'s field.\'', lang:'Old English, from Dudda (a personal name) + lēah (\'woodland clearing, meadow\').', example:'The Dudley Zoo and Castle is one of the most popular attractions in the West Midlands region of England.', isNoun:true },
+  { word:'duress', pronunciation:'doo-RES', ipa:'/djʊˈrɛs/', pos:'noun', def:'Threats, violence, constraints, or other actions used to coerce someone into doing something against their will.', lang:'Old French, from duresse (\'hardship, cruelty\'), from Latin duritia (\'hardness\'), from durus (\'hard\').', example:'The confession was thrown out of court because the defendant proved it had been obtained under duress.', isNoun:true },
+  { word:'dynamite', pronunciation:'DY-nuh-myte', ipa:'/ˈdaɪnəˌmaɪt/', pos:'noun', def:'A high explosive made of nitroglycerin mixed with an absorbent material; informally, something extremely impressive or exciting.', lang:'Swedish, coined by Alfred Nobel in 1867, from Greek dynamis (\'power, force\'), from dynasthai (\'to be able\').', example:'The construction crew used dynamite to blast through the solid rock and make way for the new highway tunnel.', isNoun:true }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Slider
+  const totalA = a.length;
+  const pct = totalA > 1 ? s / (totalA - 1) * 100 : 0;
+  document.getElementById("sliderFill").style.width = pct + "%";
+  const sliderArea = document.getElementById("sliderArea");
+  const areaW = sliderArea.offsetWidth || 200;
+  const pad = 10;
+  const thumbLeft = pad + (pct / 100) * (areaW - pad * 2);
+  const thumb = document.getElementById("sliderThumb");
+  if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
+
+  // Ticks - show ~20 evenly spaced markers
+  const tickCount = Math.min(totalA, 20);
+  let ticksHtml = '';
+  for(let t=0; t<tickCount; t++){
+    const ti = Math.round(t / (tickCount-1) * (totalA-1));
+    const cls = ti===s ? 'active' : (t % 5 === 0 ? 'major' : '');
+    ticksHtml += `<div class="slider-tick ${cls}"></div>`;
+  }
+  document.getElementById("sliderDots").innerHTML = ticksHtml;
+  document.getElementById("sliderCounter").textContent = `${s+1} / ${totalA}`;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Slider drag
+const slArea=document.getElementById("sliderArea");
+const slThumb=document.getElementById("sliderThumb");
+let slDragging=false;
+function sliderFromX(cx){
+  const r=slArea.getBoundingClientRect();
+  const pad=10;
+  const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
+  const a=aw(),idx=Math.round(p*(a.length-1));
+  // Move thumb immediately for smooth feel
+  const thumbLeft=pad+(p)*(r.width-pad*2);
+  slThumb.style.left=thumbLeft+"px";
+  if(idx!==si()){
+    const g=WORDS.findIndex(w=>w.word===a[idx].word);
+    flipped=false; currentIndex=g; render();
+  }
+}
+slArea.addEventListener("touchstart",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(slDragging) sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    // Speak the word after releasing
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+slArea.addEventListener("mousedown",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.clientX); e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(slDragging) sliderFromX(e.clientX);
+});
+document.addEventListener("mouseup",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>

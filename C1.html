@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 900;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 18px; height: 18px; }
+.slider-area {
+  flex: 1; height: 32px; position: relative;
+  display: flex; align-items: center;
+  touch-action: none; cursor: pointer;
+}
+.slider-track-bg {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
+}
+.slider-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(212,175,55,0.5));
+  transition: width 0.15s ease;
+}
+.slider-dots {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; padding: 0 2px;
+}
+.slider-tick {
+  width: 2px; height: 8px; border-radius: 1px;
+  background: rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.slider-tick.major { height: 12px; background: rgba(255,255,255,0.12); }
+.slider-tick.active { background: var(--gold); height: 14px; width: 3px; border-radius: 1.5px; box-shadow: 0 0 6px rgba(212,175,55,0.4); }
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px solid #1a1528;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  cursor: grab; transition: left 0.12s ease;
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
+.slider-thumb.dragging { transition: none; transform: translate(-50%, -50%) scale(1.15); }
+.slider-counter {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.08em;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1>Spelling Bee</h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="slider-area" id="sliderArea">
+      <div class="slider-track-bg">
+        <div class="slider-fill" id="sliderFill"></div>
+      </div>
+      <div class="slider-dots" id="sliderDots"></div>
+      <div class="slider-thumb" id="sliderThumb"></div>
+    </div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'cabbage', pronunciation:'KAB-ij', ipa:'/ˈkæbɪdʒ/', pos:'noun', def:'A cultivated plant with thick green or purple leaves forming a round head, eaten as a vegetable.', lang:'Old French, from caboche (\'head\'), from Latin caput (\'head\').', example:'She shredded fresh cabbage for the coleslaw, mixing it with carrots and a tangy vinaigrette dressing.', isNoun:true },
+  { word:'cadence', pronunciation:'KAY-dunce', ipa:'/ˈkeɪdəns/', pos:'noun', def:'The rise and fall of the voice in speaking; a rhythmic flow of sounds or words; a sequence of chords marking the end of a musical phrase.', lang:'Italian, from cadenza (\'cadence\'), from Latin cadentia (\'a falling\'), from cadere (\'to fall\').', example:'The poet\'s reading had a beautiful cadence, each line rising and falling like waves along the shore.', isNoun:true },
+  { word:'calendar', pronunciation:'KAL-un-dur', ipa:'/ˈkæləndər/', pos:'noun', def:'A system of organizing days for social, religious, or administrative purposes; a chart showing the days, weeks, and months of a year.', lang:'Latin, from calendarium (\'account book\'), from calendae (\'calends, first day of the month\'), related to calare (\'to call, proclaim\').', example:'She marked the date of the science fair on the kitchen calendar so the whole family would remember.', isNoun:true },
+  { word:'camcorder', pronunciation:'KAM-kor-dur', ipa:'/ˈkæmˌkɔːrdər/', pos:'noun', def:'A portable combined video camera and recorder.', lang:'English, a blend of camera + recorder, coined in the 1980s.', example:'He brought a camcorder to the school play so grandparents who couldn\'t attend could watch the performance later.', isNoun:true },
+  { word:'canary', pronunciation:'kuh-NAIR-ee', ipa:'/kəˈnɛəri/', pos:'noun', def:'A small, typically bright yellow songbird native to the Canary Islands, popular as a cage bird for its singing.', lang:'Spanish, from canario, from the Canary Islands (Islas Canarias), from Latin Canariae Insulae (\'Islands of the Dogs\'), from canis (\'dog\').', example:'The canary sang cheerfully from its perch by the window, filling the room with its sweet, warbling melody.', isNoun:true },
+  { word:'candid', pronunciation:'KAN-did', ipa:'/ˈkændɪd/', pos:'adjective', def:'Truthful and straightforward; frank. Also, of a photograph taken informally without the subject\'s knowledge.', lang:'Latin, from candidus (\'white, pure, sincere\'), from candere (\'to shine, glow\').', example:'The interviewer appreciated her candid answers, which were refreshingly honest compared to the usual rehearsed responses.', isNoun:false },
+  { word:'canoe', pronunciation:'kuh-NOO', ipa:'/kəˈnuː/', pos:'noun', def:'A narrow, lightweight boat with pointed ends, propelled by one or more paddles.', lang:'Spanish, from canoa, borrowed from Arawak (Caribbean indigenous language) canaoua.', example:'They paddled the canoe across the glassy lake at dawn, watching the mist rise from the still water.', isNoun:true },
+  { word:'cantor', pronunciation:'KAN-tur', ipa:'/ˈkæntər/', pos:'noun', def:'A person who leads liturgical singing in a synagogue or church; the chief singer in a choir.', lang:'Latin, from cantor (\'singer\'), from canere (\'to sing\').', example:'The cantor\'s powerful voice led the congregation through the hymns, each note resonating through the vaulted ceiling.', isNoun:true },
+  { word:'capacity', pronunciation:'kuh-PAS-ih-tee', ipa:'/kəˈpæsɪti/', pos:'noun', def:'The maximum amount that something can contain or produce; the ability or power to do or understand something.', lang:'Latin, from capacitas (\'breadth, capacity\'), from capax (\'able to hold much\'), from capere (\'to take, hold\').', example:'The stadium has a capacity of sixty thousand spectators, and every seat was filled for the championship game.', isNoun:true },
+  { word:'capitalist', pronunciation:'KAP-ih-tul-ist', ipa:'/ˈkæpɪtəlɪst/', pos:'noun', def:'A person who uses their wealth to invest in trade and industry for profit; a supporter of the capitalist economic system.', lang:'Latin, from capitalis (\'of the head, chief\'), from caput (\'head\'), + -ist.', example:'The young capitalist invested her savings in a small tech startup that eventually grew into a thriving company.', isNoun:true },
+  { word:'captivated', pronunciation:'KAP-tih-vay-tid', ipa:'/ˈkæptɪˌveɪtɪd/', pos:'adjective', def:'Attracted and held the attention or interest of someone; charmed or enchanted.', lang:'Latin, from captivatus, past participle of captivare (\'to take captive\'), from captivus (\'prisoner\'), from capere (\'to take\').', example:'The audience was completely captivated by the storyteller\'s vivid descriptions of faraway lands and daring adventures.', isNoun:false },
+  { word:'capture', pronunciation:'KAP-chur', ipa:'/ˈkæptʃər/', pos:'verb', def:'To take into one\'s possession or control by force; to record or preserve accurately in a lasting form.', lang:'Latin, from captura (\'a catching\'), from captus, past participle of capere (\'to take, seize\').', example:'The photographer managed to capture the exact moment the eagle swooped down and snatched a fish from the river.', isNoun:false },
+  { word:'caramel', pronunciation:'KAIR-uh-mel', ipa:'/ˈkærəˌmɛl/', pos:'noun', def:'Sugar or syrup heated until it turns brown, used as a flavoring or coating; a soft, chewy candy made with sugar and butter.', lang:'French, from caramel, from Spanish caramelo, from Portuguese caramelo, possibly from Latin calamus (\'cane, reed\') or from Arabic kurat al-milh (\'ball of sweet salt\').', example:'She drizzled warm caramel over the apple slices, creating a simple but irresistible autumn dessert.', isNoun:true },
+  { word:'carnation', pronunciation:'kar-NAY-shun', ipa:'/kɑːrˈneɪʃən/', pos:'noun', def:'A cultivated plant with sweet-smelling double flowers in a variety of colors, widely used in bouquets and arrangements.', lang:'Latin, from coronation or from caro (genitive carnis, \'flesh\'), referring to the original pink flesh color of the flower.', example:'She pinned a white carnation to his lapel before the ceremony, a tradition that dated back to their first dance.', isNoun:true },
+  { word:'carnival', pronunciation:'KAR-nuh-vul', ipa:'/ˈkɑːrnɪvəl/', pos:'noun', def:'A traveling amusement show or circus with rides and games; a festive season before Lent involving processions and celebrations.', lang:'Italian, from carnevale (\'Shrovetide\'), from Medieval Latin carnelevarium, from Latin caro (genitive carnis, \'flesh\') + levare (\'to remove\'), referring to abstaining from meat during Lent.', example:'The annual carnival filled the town square with colorful rides, cotton candy vendors, and the sound of cheerful music.', isNoun:true },
+  { word:'carriage', pronunciation:'KAIR-ij', ipa:'/ˈkærɪdʒ/', pos:'noun', def:'A four-wheeled passenger vehicle pulled by horses; a wheeled support for moving heavy objects; a person\'s bearing or posture.', lang:'Old French, from cariage (\'transport\'), from carier (\'to carry\'), from Latin carrus (\'wheeled vehicle\'), of Celtic origin.', example:'The horse-drawn carriage clip-clopped through the park, giving tourists a charming tour of the historic district.', isNoun:true },
+  { word:'casserole', pronunciation:'KAS-uh-rohl', ipa:'/ˈkæsəˌroʊl/', pos:'noun', def:'A large, deep dish used for cooking food slowly in an oven; the type of food cooked and served in such a dish.', lang:'French, from casserole (\'saucepan\'), from casse (\'ladle, pan\'), from Provençal cassa, from Latin cattia (\'ladle, pan\'), from Greek kyathion (\'small cup\').', example:'The bubbling chicken casserole filled the kitchen with a savory aroma that drew everyone to the dinner table.', isNoun:true },
+  { word:'casualty', pronunciation:'KAZH-oo-ul-tee', ipa:'/ˈkæʒuəlti/', pos:'noun', def:'A person killed or injured in a war or accident; a person or thing badly affected by an event or situation.', lang:'Latin, from casualis (\'by chance\'), from casus (\'fall, chance\'), from cadere (\'to fall\'), + -ty.', example:'The first casualty of the budget cuts was the after-school arts program, which lost all its funding.', isNoun:true },
+  { word:'catchall', pronunciation:'KACH-awl', ipa:'/ˈkætʃˌɔːl/', pos:'noun', def:'A container or category for miscellaneous items; something that includes a wide variety of different possibilities.', lang:'English, from catch + all, suggesting something that catches or encompasses everything.', example:'The junk drawer in the kitchen served as a catchall for batteries, rubber bands, takeout menus, and old keys.', isNoun:true },
+  { word:'caterpillar', pronunciation:'KAT-ur-PIL-ur', ipa:'/ˈkætərˌpɪlər/', pos:'noun', def:'The larval stage of a butterfly or moth, typically having a segmented, wormlike body with legs.', lang:'Old French, from chatepelose (\'hairy cat\'), from chat (\'cat\') + pelose (\'hairy\'), from Latin pilosus (\'hairy\').', example:'The children watched in fascination as the green caterpillar inched along the leaf, munching tiny bites with each step.', isNoun:true },
+  { word:'cathedral', pronunciation:'kuh-THEE-drul', ipa:'/kəˈθiːdrəl/', pos:'noun', def:'The principal church of a diocese, containing the bishop\'s throne; a large and imposing church.', lang:'Latin, from cathedra (\'seat, chair\'), from Greek kathedra (\'seat\'), from kata (\'down\') + hedra (\'seat\').', example:'The Gothic cathedral\'s towering spires and stained-glass windows have drawn visitors from around the world for centuries.', isNoun:true },
+  { word:'catnap', pronunciation:'KAT-nap', ipa:'/ˈkætˌnæp/', pos:'noun', def:'A short sleep during the day; a brief, light nap.', lang:'English, from cat + nap, referring to the way cats frequently take short, light sleeps.', example:'She took a quick catnap on the couch between meetings, waking up refreshed and ready for the afternoon.', isNoun:true },
+  { word:'celebratory', pronunciation:'SEL-uh-bruh-TOR-ee', ipa:'/ˈsɛləbrəˌtɔːri/', pos:'adjective', def:'Feeling or expressing celebration and rejoicing; done in honor of a special occasion.', lang:'Latin, from celebratus, past participle of celebrare (\'to honor, celebrate\'), from celeber (\'frequented, famous\'), + -ory.', example:'The team shared a celebratory dinner after winning the regional championship for the first time in a decade.', isNoun:false },
+  { word:'celestial', pronunciation:'suh-LES-chul', ipa:'/sɪˈlɛstʃəl/', pos:'adjective', def:'Positioned in or relating to the sky or outer space; belonging or relating to heaven; supremely good or beautiful.', lang:'Latin, from caelestis (\'heavenly\'), from caelum (\'sky, heaven\').', example:'The astronomer mapped the positions of celestial bodies, tracking planets and stars across the night sky.', isNoun:false },
+  { word:'cello', pronunciation:'CHEL-oh', ipa:'/ˈtʃɛloʊ/', pos:'noun', def:'A large stringed instrument of the violin family, held upright between the player\'s knees, producing a rich, deep tone.', lang:'Italian, shortened from violoncello, diminutive of violone (\'large viol\'), from viola (\'viol\') + -one (augmentative) + -cello (diminutive).', example:'The cello\'s warm, resonant tone filled the concert hall as the soloist performed a hauntingly beautiful sonata.', isNoun:true },
+  { word:'census', pronunciation:'SEN-sus', ipa:'/ˈsɛnsəs/', pos:'noun', def:'An official count or survey of a population, typically recording details of individuals such as age, sex, and occupation.', lang:'Latin, from census (\'registration of citizens and property\'), from censere (\'to assess, estimate\').', example:'The national census conducted every ten years helps the government allocate resources and plan for future needs.', isNoun:true },
+  { word:'centipede', pronunciation:'SEN-tih-peed', ipa:'/ˈsɛntɪˌpiːd/', pos:'noun', def:'A predatory arthropod with a flattened, elongated body composed of many segments, most of which bear one pair of legs.', lang:'Latin, from centipeda, from centum (\'hundred\') + pes (genitive pedis, \'foot\').', example:'The centipede scurried across the basement floor, its many legs moving in a mesmerizing wave-like pattern.', isNoun:true },
+  { word:'charitable', pronunciation:'CHAR-ih-tuh-bul', ipa:'/ˈtʃærɪtəbəl/', pos:'adjective', def:'Relating to the assistance of those in need; generous in giving to good causes; lenient in judging others.', lang:'Old French, from charitable, from charité (\'charity\'), from Latin caritas (\'dearness, love\'), from carus (\'dear\').', example:'The charitable organization provided meals, clothing, and shelter to hundreds of families displaced by the hurricane.', isNoun:false },
+  { word:'chastise', pronunciation:'chas-TYZE', ipa:'/tʃæsˈtaɪz/', pos:'verb', def:'To rebuke or reprimand severely; to punish, especially by beating.', lang:'Old French, from chastier (\'to punish, correct\'), from Latin castigare (\'to correct, chasten\'), from castus (\'pure\') + agere (\'to drive\').', example:'The coach chastised the players for their lack of effort during practice, reminding them that the playoffs were approaching.', isNoun:false },
+  { word:'cheddar', pronunciation:'CHED-ur', ipa:'/ˈtʃɛdər/', pos:'noun', def:'A firm, smooth-textured cheese, originally made in the village of Cheddar in Somerset, England.', lang:'English, named after the village of Cheddar in Somerset, England, where the cheese was originally produced.', example:'She sliced a thick wedge of sharp cheddar to pair with crackers and apple slices for an afternoon snack.', isNoun:true },
+  { word:'chief', pronunciation:'CHEEF', ipa:'/tʃiːf/', pos:'noun', def:'A leader or ruler of a people or clan; the person with the highest rank in an organization.', lang:'Old French, from chief (\'leader, head\'), from Latin caput (\'head\').', example:'The fire chief coordinated the emergency response, directing crews to evacuate residents from the flooded neighborhood.', isNoun:true },
+  { word:'chortle', pronunciation:'CHOR-tul', ipa:'/ˈtʃɔːrtəl/', pos:'verb', def:'To laugh in a gleeful, breathy way; a combination of a chuckle and a snort.', lang:'English, coined by Lewis Carroll in Through the Looking-Glass (1871), probably a blend of chuckle + snort.', example:'The grandfather chortled with delight as his grandchildren performed their silly puppet show in the living room.', isNoun:false },
+  { word:'chowder', pronunciation:'CHOW-dur', ipa:'/ˈtʃaʊdər/', pos:'noun', def:'A thick soup typically made with seafood or corn, cream, and potatoes.', lang:'French, from chaudière (\'cooking pot\'), from Latin caldaria (\'cooking pot\'), from calidus (\'warm, hot\').', example:'The seaside restaurant was famous for its creamy clam chowder, served in a hollowed-out sourdough bread bowl.', isNoun:true },
+  { word:'churlish', pronunciation:'CHUR-lish', ipa:'/ˈtʃɜːrlɪʃ/', pos:'adjective', def:'Rude in a mean-spirited and surly way; ungracious or ill-mannered.', lang:'Old English, from ceorl (\'peasant, man of low rank\') + -ish. Ceorl originally meant a free man of the lowest rank.', example:'It would be churlish to refuse such a generous invitation, so she accepted with a grateful smile.', isNoun:false },
+  { word:'cidery', pronunciation:'SY-dur-ee', ipa:'/ˈsaɪdəri/', pos:'noun', def:'A place where cider is made; an establishment that produces and often serves hard or soft cider.', lang:'English, from cider + -y. Cider from Old French sidre, from Latin sicera, from Greek sikera, from Hebrew shēkār (\'strong drink\').', example:'The family-owned cidery offered tastings of a dozen varieties, from crisp dry ciders to sweet, fruit-infused blends.', isNoun:true },
+  { word:'cinderella', pronunciation:'SIN-dur-EL-uh', ipa:'/ˌsɪndəˈrɛlə/', pos:'noun', def:'A person or thing of unrecognized merit or beauty that achieves sudden recognition or success; from the fairy tale character.', lang:'English, from cinder + -ella (diminutive suffix), translating French Cendrillon, from cendre (\'cinder, ash\').', example:'The small-town team became the cinderella story of the tournament, defeating every favored opponent on their way to the finals.', isNoun:true },
+  { word:'citation', pronunciation:'sy-TAY-shun', ipa:'/saɪˈteɪʃən/', pos:'noun', def:'A quotation from or reference to a source; an official summons to appear in court; a mention in recognition of merit.', lang:'Latin, from citatio (\'a calling, summoning\'), from citare (\'to summon, call forward\'), from ciere (\'to set in motion\').', example:'The research paper included over fifty citations from peer-reviewed journals to support its conclusions.', isNoun:true },
+  { word:'clarinet', pronunciation:'KLAIR-ih-NET', ipa:'/ˌklærɪˈnɛt/', pos:'noun', def:'A woodwind instrument with a single-reed mouthpiece, a cylindrical tube, and a flared end, producing warm, rich tones.', lang:'French, from clarinette, diminutive of clarine (\'a kind of bell\'), from Latin clarus (\'clear\'), referring to its clear tone.', example:'The clarinet player\'s smooth, mellow solo added a touch of elegance to the jazz ensemble\'s evening performance.', isNoun:true },
+  { word:'classified', pronunciation:'KLAS-ih-fyd', ipa:'/ˈklæsɪˌfaɪd/', pos:'adjective', def:'Arranged in classes or categories; officially designated as secret and available only to authorized people.', lang:'Latin, from classis (\'class, division\') + facere (\'to make\'), + -ed.', example:'The documents were stamped classified and locked in a secure vault accessible only to senior intelligence officers.', isNoun:false },
+  { word:'clearance', pronunciation:'KLEER-uns', ipa:'/ˈklɪərəns/', pos:'noun', def:'The action of clearing or being cleared; official authorization for something to proceed; the space between objects.', lang:'English, from clear + -ance. Clear from Old French cler, from Latin clarus (\'bright, clear\').', example:'The pilot received clearance from air traffic control and began the final approach to the runway.', isNoun:true },
+  { word:'cleave', pronunciation:'KLEEV', ipa:'/kliːv/', pos:'verb', def:'To split or sever something along a natural line; paradoxically, also to cling or adhere closely to.', lang:'Old English, from cleofan (\'to split\') and clifian (\'to stick, adhere\'), two separate words that merged in modern English.', example:'The lumberjack raised the axe and brought it down with enough force to cleave the log cleanly in two.', isNoun:false },
+  { word:'cliché', pronunciation:'klee-SHAY', ipa:'/kliːˈʃeɪ/', pos:'noun', def:'A phrase or opinion that is overused and betrays a lack of original thought; a stereotype or unoriginal idea.', lang:'French, from cliché (\'stereotype block\'), past participle of clicher (\'to click\'), of imitative origin, referring to the sound of a printing plate.', example:'The teacher asked students to avoid clichés like \'it was a dark and stormy night\' and find more original openings.', isNoun:true },
+  { word:'clickbait', pronunciation:'KLIK-bayt', ipa:'/ˈklɪkˌbeɪt/', pos:'noun', def:'Online content whose main purpose is to attract attention and encourage visitors to click on a link, often with misleading headlines.', lang:'English, from click (referring to a mouse click) + bait (\'something used to lure\').', example:'The article\'s headline was pure clickbait, promising shocking revelations but delivering only recycled gossip.', isNoun:true },
+  { word:'clinician', pronunciation:'klih-NISH-un', ipa:'/klɪˈnɪʃən/', pos:'noun', def:'A health professional, such as a doctor or nurse, who works directly with patients in diagnosing and treating illness.', lang:'French, from clinique (\'clinic\'), from Greek klinikē (tekhnē) (\'practice at the sickbed\'), from klinē (\'bed\'), from klinein (\'to lean, recline\').', example:'The clinician carefully reviewed the patient\'s symptoms and medical history before recommending a course of treatment.', isNoun:true },
+  { word:'closure', pronunciation:'KLOH-zhur', ipa:'/ˈkloʊʒər/', pos:'noun', def:'The act or process of closing something; a feeling of finality or resolution at the end of a difficult experience.', lang:'Latin, from clausura (\'a closing, enclosure\'), from clausus, past participle of claudere (\'to close\').', example:'Visiting her childhood home one last time gave her the closure she needed to move forward with her life.', isNoun:true },
+  { word:'clowder', pronunciation:'KLOU-dur', ipa:'/ˈklaʊdər/', pos:'noun', def:'A group or cluster of cats; the collective noun for a gathering of cats.', lang:'English, variant of clutter, possibly from Middle English clodder (\'to clot, huddle together\').', example:'A clowder of stray cats gathered on the porch each evening, waiting for the kind neighbor to set out food.', isNoun:true },
+  { word:'coach', pronunciation:'KOHCH', ipa:'/koʊtʃ/', pos:'noun', def:'A person who trains or directs athletes or a team; a large, comfortable bus for longer journeys; a horse-drawn carriage.', lang:'Hungarian, from kocsi (szekér) (\'wagon of Kocs\'), named after the town of Kocs where such carriages were first made.', example:'The basketball coach gathered the team at halftime and drew up a new play that turned the game around.', isNoun:true },
+  { word:'coalition', pronunciation:'KOH-uh-LISH-un', ipa:'/ˌkoʊəˈlɪʃən/', pos:'noun', def:'An alliance for combined action, especially a temporary alliance of political parties forming a government.', lang:'Latin, from coalitio (\'a growing together\'), from coalescere (\'to grow together\'), from co- (\'together\') + alescere (\'to grow\').', example:'The two rival parties formed a coalition government to pass the critical infrastructure legislation.', isNoun:true },
+  { word:'coastal', pronunciation:'KOHS-tul', ipa:'/ˈkoʊstəl/', pos:'adjective', def:'Of, relating to, or near a coast; situated along the shoreline.', lang:'Latin, from costa (\'rib, side, wall\'), which came to mean \'coast\' in reference to the side of a landmass, + -al.', example:'The coastal town depended on fishing and tourism, with colorful boats lining the harbor and sandy beaches nearby.', isNoun:false },
+  { word:'cockles', pronunciation:'KOK-ulz', ipa:'/ˈkɒkəlz/', pos:'noun', def:'Small, edible saltwater clams with ribbed shells; used in the phrase \'warm the cockles of one\'s heart\' meaning to give a feeling of warmth.', lang:'Old French, from coquille (\'shell\'), from Latin conchylium, from Greek konchylion (\'shellfish\'), diminutive of konchē (\'mussel, shell\').', example:'The street vendor sold paper cones of freshly steamed cockles seasoned with vinegar and white pepper.', isNoun:true },
+  { word:'collaboration', pronunciation:'kuh-LAB-uh-RAY-shun', ipa:'/kəˌlæbəˈreɪʃən/', pos:'noun', def:'The action of working with someone to produce or create something; a joint effort or partnership.', lang:'Latin, from collaborare (\'to labor together\'), from com- (\'together\') + laborare (\'to work\').', example:'The album was a collaboration between two legendary musicians whose styles blended together beautifully.', isNoun:true },
+  { word:'collar', pronunciation:'KOL-ur', ipa:'/ˈkɒlər/', pos:'noun', def:'The part of a garment that encircles the neck; a band placed around the neck of a pet for identification or restraint.', lang:'Old French, from colier (\'necklace, collar\'), from Latin collare (\'band for the neck\'), from collum (\'neck\').', example:'The puppy wore a bright red collar with a shiny tag engraved with its name and the family\'s phone number.', isNoun:true },
+  { word:'collie', pronunciation:'KOL-ee', ipa:'/ˈkɒli/', pos:'noun', def:'A breed of sheepdog with a long, pointed nose, a thick coat, and known for its intelligence and herding ability.', lang:'Scottish English, possibly from col (\'black\'), referring to the black-faced sheep the dogs herded, or from the Gaelic word for \'useful\'.', example:'The border collie sprinted across the field, expertly herding the sheep into the pen with precise, quick movements.', isNoun:true },
+  { word:'collision', pronunciation:'kuh-LIH-zhun', ipa:'/kəˈlɪʒən/', pos:'noun', def:'An instance of one moving object or person striking violently against another; a conflict of opposing ideas or interests.', lang:'Latin, from collisio (\'a striking together\'), from collidere (\'to strike together\'), from com- (\'together\') + laedere (\'to injure by striking\').', example:'The collision between the two ships in the foggy harbor caused significant damage but fortunately no injuries.', isNoun:true },
+  { word:'combustible', pronunciation:'kum-BUS-tih-bul', ipa:'/kəmˈbʌstɪbəl/', pos:'adjective', def:'Able to catch fire and burn easily; excitable or easily angered.', lang:'Latin, from combustibilis, from combustus, past participle of comburere (\'to burn up\'), from com- (\'together\') + urere (\'to burn\').', example:'The fire marshal warned that storing combustible materials near the furnace created a serious safety hazard.', isNoun:false },
+  { word:'commandeer', pronunciation:'KOM-un-DEER', ipa:'/ˌkɒmənˈdɪər/', pos:'verb', def:'To officially take possession of something, especially for military purposes; to take something for one\'s own use without permission.', lang:'Afrikaans, from kommanderen (\'to command\'), from Dutch commanderen, from French commander, from Latin commandare.', example:'The general ordered his troops to commandeer the abandoned warehouse and use it as a temporary headquarters.', isNoun:false },
+  { word:'commercial', pronunciation:'kuh-MUR-shul', ipa:'/kəˈmɜːrʃəl/', pos:'noun', def:'A television or radio advertisement; relating to or engaged in commerce or trade.', lang:'Latin, from commercium (\'trade, commerce\'), from com- (\'together\') + merx (genitive mercis, \'merchandise\').', example:'The funny commercial featuring a talking dog during the Super Bowl became the most-watched advertisement of the year.', isNoun:true },
+  { word:'comparison', pronunciation:'kum-PAIR-ih-sun', ipa:'/kəmˈpærɪsən/', pos:'noun', def:'The act of evaluating two or more things by determining the similarities and differences between them.', lang:'Old French, from comparaison, from Latin comparatio (\'a comparing\'), from comparare (\'to pair together\'), from com- (\'together\') + parare (\'to make equal\').', example:'A side-by-side comparison of the two phones revealed that the newer model had a significantly better camera.', isNoun:true },
+  { word:'compass', pronunciation:'KUM-pus', ipa:'/ˈkʌmpəs/', pos:'noun', def:'An instrument containing a magnetized pointer that shows the direction of magnetic north; the range or scope of something.', lang:'Old French, from compas (\'circle, pair of compasses\'), from compasser (\'to go around, measure\'), from Latin com- (\'together\') + passus (\'step, pace\').', example:'The hikers relied on a compass and a paper map to navigate through the dense forest when their phones lost signal.', isNoun:true },
+  { word:'compatriots', pronunciation:'kum-PAY-tree-uts', ipa:'/kəmˈpeɪtriəts/', pos:'noun', def:'Fellow citizens or nationals of a country; people from the same country.', lang:'French, from compatriote, from Latin compatriota, from com- (\'together\') + patriota (\'fellow countryman\'), from Greek patriōtēs.', example:'The athletes were cheered on by their compatriots in the stands, who waved flags and chanted the national anthem.', isNoun:true },
+  { word:'compelling', pronunciation:'kum-PEL-ing', ipa:'/kəmˈpɛlɪŋ/', pos:'adjective', def:'Evoking interest, attention, or admiration in a powerfully irresistible way; not able to be refuted or resisted.', lang:'Latin, from compellere (\'to drive together, urge\'), from com- (\'together\') + pellere (\'to drive\').', example:'The documentary presented such compelling evidence that it changed the minds of even the most skeptical viewers.', isNoun:false },
+  { word:'complementary', pronunciation:'KOM-pluh-MEN-tuh-ree', ipa:'/ˌkɒmplɪˈmɛntəri/', pos:'adjective', def:'Combining in such a way as to enhance or emphasize the qualities of each other; forming a complete whole together.', lang:'Latin, from complementum (\'that which fills up\'), from complere (\'to fill up\'), from com- (\'together\') + plere (\'to fill\').', example:'The two singers had complementary voices, one deep and rich, the other high and clear, blending together perfectly.', isNoun:false },
+  { word:'complex', pronunciation:'KOM-pleks', ipa:'/ˈkɒmplɛks/', pos:'adjective', def:'Consisting of many different and connected parts; not easy to analyze or understand; intricate.', lang:'Latin, from complexus (\'surrounding, encompassing\'), past participle of complecti (\'to embrace, comprise\'), from com- (\'together\') + plectere (\'to weave, braid\').', example:'The human brain is the most complex organ in the body, containing billions of interconnected neurons.', isNoun:false },
+  { word:'composite', pronunciation:'kum-POZ-it', ipa:'/kəmˈpɒzɪt/', pos:'adjective', def:'Made up of various parts or elements; combining different materials or qualities.', lang:'Latin, from compositus (\'put together\'), past participle of componere (\'to put together\'), from com- (\'together\') + ponere (\'to place\').', example:'The artist created a composite image by blending photographs from different seasons into a single stunning landscape.', isNoun:false },
+  { word:'concrete', pronunciation:'KON-kreet', ipa:'/ˈkɒnkriːt/', pos:'noun', def:'A heavy building material made from a mixture of cement, sand, gravel, and water; existing in a material or physical form.', lang:'Latin, from concretus (\'condensed, hardened\'), past participle of concrescere (\'to grow together\'), from com- (\'together\') + crescere (\'to grow\').', example:'The workers poured concrete for the foundation of the new building, smoothing it carefully before it set.', isNoun:true },
+  { word:'condiments', pronunciation:'KON-dih-munts', ipa:'/ˈkɒndɪmənts/', pos:'noun', def:'Substances such as salt, mustard, or ketchup used to add flavor to food.', lang:'Latin, from condimentum (\'spice, seasoning\'), from condire (\'to pickle, preserve, season\').', example:'The hot dog stand offered a variety of condiments, including mustard, relish, sauerkraut, and spicy onion sauce.', isNoun:true },
+  { word:'conference', pronunciation:'KON-fur-uns', ipa:'/ˈkɒnfərəns/', pos:'noun', def:'A formal meeting for discussion or exchange of information; an association of sports teams that play each other.', lang:'Latin, from conferentia (\'a bringing together\'), from conferre (\'to bring together\'), from com- (\'together\') + ferre (\'to bring, carry\').', example:'Scientists from around the world gathered at the conference to share their latest research on climate change.', isNoun:true },
+  { word:'confirmation', pronunciation:'KON-fur-MAY-shun', ipa:'/ˌkɒnfərˈmeɪʃən/', pos:'noun', def:'The action of confirming something or the state of being confirmed; verification or proof.', lang:'Latin, from confirmatio (\'a strengthening, establishing\'), from confirmare (\'to make firm\'), from com- (\'together\') + firmare (\'to strengthen\').', example:'She received email confirmation that her flight reservation had been successfully booked for the following Tuesday.', isNoun:true },
+  { word:'considerable', pronunciation:'kun-SID-ur-uh-bul', ipa:'/kənˈsɪdərəbəl/', pos:'adjective', def:'Notably large in size, amount, or extent; worthy of consideration or attention.', lang:'Latin, from considerabilis, from considerare (\'to look at closely, observe\'), from com- (\'together\') + sidus (\'star\'), originally meaning to observe the stars.', example:'The renovation required a considerable investment, but the results transformed the outdated kitchen into a modern showpiece.', isNoun:false },
+  { word:'consideration', pronunciation:'kun-SID-ur-AY-shun', ipa:'/kənˌsɪdəˈreɪʃən/', pos:'noun', def:'Careful thought; a fact or motive taken into account in deciding something; thoughtful regard for others.', lang:'Latin, from consideratio (\'contemplation\'), from considerare (\'to look at closely\'), from com- (\'together\') + sidus (\'star\').', example:'After careful consideration of all the options, the committee voted to approve the proposal for a new park.', isNoun:true },
+  { word:'constraints', pronunciation:'kun-STRAYNTS', ipa:'/kənˈstreɪnts/', pos:'noun', def:'Limitations or restrictions placed on something; factors that limit or restrict actions or decisions.', lang:'Old French, from constraindre (\'to compel\'), from Latin constringere (\'to draw together, bind\'), from com- (\'together\') + stringere (\'to draw tight\').', example:'Budget constraints forced the school to cut several extracurricular programs, disappointing students and parents alike.', isNoun:true },
+  { word:'contemporary', pronunciation:'kun-TEM-puh-RAIR-ee', ipa:'/kənˈtɛmpəˌrɛri/', pos:'adjective', def:'Living or occurring at the same time; belonging to or occurring in the present; modern in style.', lang:'Latin, from contemporarius, from com- (\'together\') + temporarius (\'of a time\'), from tempus (\'time\').', example:'The museum\'s contemporary art wing featured bold installations by artists pushing the boundaries of creative expression.', isNoun:false },
+  { word:'contested', pronunciation:'kun-TEST-id', ipa:'/kənˈtɛstɪd/', pos:'adjective', def:'Disputed; subject to disagreement or argument; having the outcome challenged or fought over.', lang:'Latin, from contestari (\'to call to witness, bring action\'), from com- (\'together\') + testari (\'to bear witness\'), from testis (\'witness\').', example:'The closely contested election went to a recount, with only a few hundred votes separating the two candidates.', isNoun:false },
+  { word:'context', pronunciation:'KON-tekst', ipa:'/ˈkɒntɛkst/', pos:'noun', def:'The circumstances that form the setting for an event, statement, or idea, and in terms of which it can be fully understood.', lang:'Latin, from contextus (\'a joining together\'), from contexere (\'to weave together\'), from com- (\'together\') + texere (\'to weave\').', example:'Without proper context, the quote seemed offensive, but in the full speech it was clearly meant as a compliment.', isNoun:true },
+  { word:'contraction', pronunciation:'kun-TRAK-shun', ipa:'/kənˈtrækʃən/', pos:'noun', def:'The process of becoming smaller; a shortening of a word or group of words by omitting certain letters or sounds.', lang:'Latin, from contractio (\'a drawing together\'), from contrahere (\'to draw together\'), from com- (\'together\') + trahere (\'to draw\').', example:'The English teacher explained that \'can\'t\' is a contraction of \'cannot,\' formed by replacing the second \'n\' and \'o\' with an apostrophe.', isNoun:true },
+  { word:'contradictory', pronunciation:'KON-truh-DIK-tuh-ree', ipa:'/ˌkɒntrəˈdɪktəri/', pos:'adjective', def:'Mutually opposed or inconsistent; containing elements that are in conflict with each other.', lang:'Latin, from contradictorius, from contradictus, past participle of contradicere (\'to speak against\'), from contra (\'against\') + dicere (\'to speak\').', example:'The witness gave contradictory statements, claiming to have been at home and at the store at the same time.', isNoun:false },
+  { word:'contrite', pronunciation:'kun-TRYTE', ipa:'/kənˈtraɪt/', pos:'adjective', def:'Feeling or expressing remorse or penitence; deeply sorry for wrongdoing.', lang:'Latin, from contritus (\'worn out, ground to pieces\'), past participle of conterere (\'to grind\'), from com- (\'together\') + terere (\'to rub, grind\').', example:'The contrite student apologized to the teacher for disrupting class and promised it would not happen again.', isNoun:false },
+  { word:'contusion', pronunciation:'kun-TOO-zhun', ipa:'/kənˈtuːʒən/', pos:'noun', def:'A region of injured tissue in which blood capillaries have been ruptured; a bruise.', lang:'Latin, from contusio (\'a crushing, bruising\'), from contundere (\'to crush, bruise\'), from com- (\'together\') + tundere (\'to beat, strike\').', example:'The doctor examined the contusion on his arm and determined it was a minor bruise that would heal within a week.', isNoun:true },
+  { word:'conundrum', pronunciation:'kuh-NUN-drum', ipa:'/kəˈnʌndrəm/', pos:'noun', def:'A confusing and difficult problem or question; a riddle whose answer involves a pun or play on words.', lang:'English, of unknown origin; first appeared in the late 16th century, possibly as Oxford University slang.', example:'The detective faced a conundrum: the only suspect had an airtight alibi, yet all the evidence pointed to him.', isNoun:true },
+  { word:'convention', pronunciation:'kun-VEN-shun', ipa:'/kənˈvɛnʃən/', pos:'noun', def:'A way in which something is usually done; a large meeting or conference; a formal agreement between countries.', lang:'Latin, from conventio (\'a meeting, agreement\'), from convenire (\'to come together\'), from com- (\'together\') + venire (\'to come\').', example:'Thousands of comic book fans descended on the convention center for the annual pop culture convention.', isNoun:true },
+  { word:'convocation', pronunciation:'KON-vuh-KAY-shun', ipa:'/ˌkɒnvəˈkeɪʃən/', pos:'noun', def:'A large formal assembly of people, especially one convened for a ceremony or official purpose.', lang:'Latin, from convocatio (\'a calling together\'), from convocare (\'to call together\'), from com- (\'together\') + vocare (\'to call\').', example:'The university\'s convocation ceremony welcomed incoming freshmen with speeches from faculty and student leaders.', isNoun:true },
+  { word:'convoy', pronunciation:'KON-voy', ipa:'/ˈkɒnvɔɪ/', pos:'noun', def:'A group of vehicles or ships traveling together, typically accompanied by armed troops or warships for protection.', lang:'French, from convoyer (\'to escort\'), from Medieval Latin conviare (\'to accompany on the way\'), from com- (\'together\') + via (\'way, road\').', example:'A convoy of trucks carrying humanitarian aid made its way through the mountain pass to the remote village.', isNoun:true },
+  { word:'cookie-cutter', pronunciation:'KOO-kee-KUT-ur', ipa:'/ˈkʊkiˌkʌtər/', pos:'adjective', def:'Having the same appearance or qualities as many others of the same type; mass-produced and lacking individuality.', lang:'English, from cookie + cutter, referring to a device that stamps out identical shapes from dough.', example:'The suburb was filled with cookie-cutter houses that all looked exactly the same, right down to the mailboxes.', isNoun:false },
+  { word:'cooperate', pronunciation:'koh-OP-uh-rayt', ipa:'/koʊˈɒpəˌreɪt/', pos:'verb', def:'To act jointly with others; to work together toward the same end; to comply with a request.', lang:'Latin, from cooperatus, past participle of cooperari (\'to work together\'), from co- (\'together\') + operari (\'to work\').', example:'The two schools agreed to cooperate on the science project, sharing resources and combining their students\' talents.', isNoun:false },
+  { word:'copperhead', pronunciation:'KOP-ur-hed', ipa:'/ˈkɒpərˌhɛd/', pos:'noun', def:'A venomous North American pit viper with a copper-colored head and hourglass-patterned body.', lang:'English, from copper + head, referring to the distinctive copper or reddish-brown color of the snake\'s head.', example:'The hiker froze when she spotted a copperhead coiled on the trail, its copper-colored head blending with the fallen leaves.', isNoun:true },
+  { word:'corgi', pronunciation:'KOR-gee', ipa:'/ˈkɔːrɡi/', pos:'noun', def:'A small breed of dog with short legs and a foxlike head, originating from Wales, including the Pembroke and Cardigan varieties.', lang:'Welsh, from cor (\'dwarf\') + gi (soft mutation of ci, \'dog\').', example:'The playful corgi bounded across the yard, its stubby legs carrying it with surprising speed and enthusiasm.', isNoun:true },
+  { word:'corkscrew', pronunciation:'KORK-skroo', ipa:'/ˈkɔːrkˌskruː/', pos:'noun', def:'A device for pulling corks from bottles, typically with a pointed metal spiral and a handle; something with a spiral shape.', lang:'English, from cork + screw. Cork from Spanish alcorque (\'cork sole\'), from Arabic al-qurq, from Latin quercus (\'oak\').', example:'He rummaged through the kitchen drawer for a corkscrew to open the bottle of wine for dinner.', isNoun:true },
+  { word:'cornily', pronunciation:'KOR-nih-lee', ipa:'/ˈkɔːrnɪli/', pos:'adverb', def:'In a corny manner; in a way that is trite, sentimental, or excessively old-fashioned.', lang:'English, from corny + -ly. Corny from corn, originally meaning \'rustic\' or \'countrified,\' later \'tiresomely old-fashioned\'.', example:'He cornily declared his love with a handmade card covered in glitter hearts, but she found it endearing.', isNoun:false },
+  { word:'cranium', pronunciation:'KRAY-nee-um', ipa:'/ˈkreɪniəm/', pos:'noun', def:'The skull, especially the part enclosing the brain.', lang:'Latin, from cranium, from Greek kranion (\'skull, upper part of the head\'), related to kara (\'head\').', example:'The anthropologist carefully measured the ancient cranium, hoping to learn about the diet and health of early humans.', isNoun:true },
+  { word:'creed', pronunciation:'KREED', ipa:'/kriːd/', pos:'noun', def:'A system of Christian or other religious belief; a faith. Also, a set of beliefs or aims that guide someone\'s actions.', lang:'Old English, from crēda, from Latin credo (\'I believe\'), the first word of the Apostles\' Creed and Nicene Creed.', example:'The organization\'s creed emphasized kindness, integrity, and service to the community above all else.', isNoun:true },
+  { word:'criteria', pronunciation:'kry-TEER-ee-uh', ipa:'/kraɪˈtɪəriə/', pos:'noun', def:'The plural of criterion; standards or principles by which something may be judged or decided.', lang:'Greek, plural of criterion (\'a means of judging\'), from krinein (\'to judge, decide\').', example:'The scholarship committee evaluated each applicant based on strict criteria including grades, leadership, and community service.', isNoun:true },
+  { word:'criticized', pronunciation:'KRIT-ih-syzd', ipa:'/ˈkrɪtɪˌsaɪzd/', pos:'verb', def:'Indicated the faults of someone or something in a disapproving way; evaluated in a detailed and analytical way.', lang:'Greek, from kritizein (\'to judge\'), from kritēs (\'judge\'), from krinein (\'to judge, decide\'), + -ize + -ed.', example:'The proposal was heavily criticized by environmental groups who argued it would damage the local ecosystem.', isNoun:false },
+  { word:'crocodile', pronunciation:'KROK-uh-dyle', ipa:'/ˈkrɒkəˌdaɪl/', pos:'noun', def:'A large predatory semiaquatic reptile with a long snout, powerful jaws, and a heavy, armored body, found in tropical regions.', lang:'Greek, from krokodilos (\'lizard\'), from krokē (\'pebbles\') + drilos (\'worm\'), referring to the creature basking on pebbly riverbanks.', example:'The crocodile lay motionless in the shallow water, only its eyes and nostrils visible above the murky surface.', isNoun:true },
+  { word:'crucial', pronunciation:'KROO-shul', ipa:'/ˈkruːʃəl/', pos:'adjective', def:'Of great importance; decisive or critical, especially in the success or failure of something.', lang:'French, from crucial (\'cross-shaped\'), from Latin crux (genitive crucis, \'cross\'), used figuratively to mean a decisive point or crossroads.', example:'The final exam is crucial to your grade, so make sure to study all the material covered this semester.', isNoun:false },
+  { word:'crux', pronunciation:'KRUKS', ipa:'/krʌks/', pos:'noun', def:'The decisive or most important point at issue; the central or essential part of a matter.', lang:'Latin, from crux (\'cross\'), used figuratively to mean a puzzling or difficult point.', example:'The crux of the argument was whether the city should spend its limited budget on roads or schools.', isNoun:true },
+  { word:'curator', pronunciation:'kyoo-RAY-tur', ipa:'/kjʊˈreɪtər/', pos:'noun', def:'A keeper or custodian of a museum or other collection; a person who selects and organizes content.', lang:'Latin, from curator (\'guardian, overseer\'), from curare (\'to take care of\'), from cura (\'care\').', example:'The museum curator arranged the new exhibition with great care, placing each artifact to tell a compelling historical story.', isNoun:true },
+  { word:'curfew', pronunciation:'KUR-fyoo', ipa:'/ˈkɜːrfjuː/', pos:'noun', def:'A regulation requiring people to remain indoors between specified hours, typically at night; the time at which such a restriction begins.', lang:'Old French, from couvre-feu (\'cover fire\'), from couvrir (\'to cover\') + feu (\'fire\'), originally a signal to extinguish fires at night.', example:'The city imposed a ten o\'clock curfew for teenagers during the summer to keep the streets safe at night.', isNoun:true },
+  { word:'curtail', pronunciation:'kur-TAYL', ipa:'/kɜːrˈteɪl/', pos:'verb', def:'To reduce in extent or quantity; to impose a restriction on; to cut short.', lang:'Old French, from courtauld (\'having a shortened tail\'), from court (\'short\'), from Latin curtus (\'cut short\').', example:'The company was forced to curtail production when supply chain disruptions delayed the delivery of raw materials.', isNoun:false },
+  { word:'cyclone', pronunciation:'SY-klohn', ipa:'/ˈsaɪkloʊn/', pos:'noun', def:'A system of winds rotating inward to an area of low atmospheric pressure; a violent tropical storm.', lang:'Greek, from kyklōn (\'moving in a circle, whirling\'), present participle of kykloun (\'to go around\'), from kyklos (\'circle\').', example:'The powerful cyclone battered the coastline with fierce winds and torrential rain, forcing thousands to evacuate.', isNoun:true },
+  { word:'cymbals', pronunciation:'SIM-bulz', ipa:'/ˈsɪmbəlz/', pos:'noun', def:'A pair of concave metal plates that are struck together or hit with a stick to produce a ringing or clashing sound in music.', lang:'Latin, from cymbalum, from Greek kymbalon (\'cymbal\'), from kymbē (\'cup, bowl\').', example:'The drummer crashed the cymbals at the climax of the song, sending a shimmering wave of sound through the arena.', isNoun:true }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Slider
+  const totalA = a.length;
+  const pct = totalA > 1 ? s / (totalA - 1) * 100 : 0;
+  document.getElementById("sliderFill").style.width = pct + "%";
+  const sliderArea = document.getElementById("sliderArea");
+  const areaW = sliderArea.offsetWidth || 200;
+  const pad = 10;
+  const thumbLeft = pad + (pct / 100) * (areaW - pad * 2);
+  const thumb = document.getElementById("sliderThumb");
+  if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
+
+  // Ticks - show ~20 evenly spaced markers
+  const tickCount = Math.min(totalA, 20);
+  let ticksHtml = '';
+  for(let t=0; t<tickCount; t++){
+    const ti = Math.round(t / (tickCount-1) * (totalA-1));
+    const cls = ti===s ? 'active' : (t % 5 === 0 ? 'major' : '');
+    ticksHtml += `<div class="slider-tick ${cls}"></div>`;
+  }
+  document.getElementById("sliderDots").innerHTML = ticksHtml;
+  document.getElementById("sliderCounter").textContent = `${s+1} / ${totalA}`;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Slider drag
+const slArea=document.getElementById("sliderArea");
+const slThumb=document.getElementById("sliderThumb");
+let slDragging=false;
+function sliderFromX(cx){
+  const r=slArea.getBoundingClientRect();
+  const pad=10;
+  const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
+  const a=aw(),idx=Math.round(p*(a.length-1));
+  // Move thumb immediately for smooth feel
+  const thumbLeft=pad+(p)*(r.width-pad*2);
+  slThumb.style.left=thumbLeft+"px";
+  if(idx!==si()){
+    const g=WORDS.findIndex(w=>w.word===a[idx].word);
+    flipped=false; currentIndex=g; render();
+  }
+}
+slArea.addEventListener("touchstart",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(slDragging) sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    // Speak the word after releasing
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+slArea.addEventListener("mousedown",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.clientX); e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(slDragging) sliderFromX(e.clientX);
+});
+document.addEventListener("mouseup",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>

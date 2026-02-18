@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 900;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 18px; height: 18px; }
+.slider-area {
+  flex: 1; height: 32px; position: relative;
+  display: flex; align-items: center;
+  touch-action: none; cursor: pointer;
+}
+.slider-track-bg {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
+}
+.slider-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(212,175,55,0.5));
+  transition: width 0.15s ease;
+}
+.slider-dots {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; padding: 0 2px;
+}
+.slider-tick {
+  width: 2px; height: 8px; border-radius: 1px;
+  background: rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.slider-tick.major { height: 12px; background: rgba(255,255,255,0.12); }
+.slider-tick.active { background: var(--gold); height: 14px; width: 3px; border-radius: 1.5px; box-shadow: 0 0 6px rgba(212,175,55,0.4); }
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px solid #1a1528;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  cursor: grab; transition: left 0.12s ease;
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
+.slider-thumb.dragging { transition: none; transform: translate(-50%, -50%) scale(1.15); }
+.slider-counter {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.08em;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1>Spelling Bee</h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="slider-area" id="sliderArea">
+      <div class="slider-track-bg">
+        <div class="slider-fill" id="sliderFill"></div>
+      </div>
+      <div class="slider-dots" id="sliderDots"></div>
+      <div class="slider-thumb" id="sliderThumb"></div>
+    </div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'abaft', pronunciation:'uh-BAFT', ipa:'/əˈbæft/', pos:'adverb', def:'In or behind the stern area of a ship; toward the rear of a vessel.', lang:'English, from Old English on bæftan (\'behind\'), from be (\'by\') + æftan (\'behind, after\').', example:'The captain ordered the crew to move abaft as the storm waves began crashing over the bow.', isNoun:false },
+  { word:'abashed', pronunciation:'uh-BASHT', ipa:'/əˈbæʃt/', pos:'adjective', def:'Embarrassed, disconcerted, or ashamed.', lang:'Old French, from esbahir (\'to astonish\'), from es- (\'utterly\') + bahir (\'to gape\'), of uncertain origin.', example:'She felt abashed when she realized she had been calling her new neighbor by the wrong name for weeks.', isNoun:false },
+  { word:'abject', pronunciation:'AB-jekt', ipa:'/ˈæbdʒɛkt/', pos:'adjective', def:'Extremely bad, unpleasant, or degrading; experienced to the maximum degree; completely without pride or dignity.', lang:'Latin, from abjectus (\'thrown away\'), past participle of abicere (\'to throw away\'), from ab (\'away\') + jacere (\'to throw\').', example:'The refugees lived in abject poverty, lacking even the most basic necessities like clean water and shelter.', isNoun:false },
+  { word:'abolish', pronunciation:'uh-BOL-ish', ipa:'/əˈbɒlɪʃ/', pos:'verb', def:'To formally put an end to a system, practice, or institution.', lang:'Latin, from abolere (\'to destroy, cause to die out\'), via Old French aboliss-.', example:'The movement to abolish slavery gained momentum throughout the 19th century, culminating in emancipation.', isNoun:false },
+  { word:'aboriginal', pronunciation:'AB-uh-RIJ-uh-nul', ipa:'/ˌæbəˈrɪdʒɪnəl/', pos:'adjective', def:'Inhabiting or existing in a land from the earliest times or from before the arrival of colonists; indigenous.', lang:'Latin, from aborigines (\'original inhabitants\'), from ab origine (\'from the beginning\').', example:'The aboriginal peoples of Australia have a rich cultural heritage stretching back over sixty thousand years.', isNoun:false },
+  { word:'absurdity', pronunciation:'ab-SUR-dih-tee', ipa:'/æbˈsɜːrdɪti/', pos:'noun', def:'The quality or state of being ridiculous or wildly unreasonable; something that is absurd.', lang:'Latin, from absurditas, from absurdus (\'out of tune, senseless\'), from ab (\'away from\') + surdus (\'deaf, dull\').', example:'The absurdity of the situation became clear when both teams arrived wearing identical uniforms to the championship game.', isNoun:true },
+  { word:'acceptance', pronunciation:'ak-SEP-tuns', ipa:'/ækˈsɛptəns/', pos:'noun', def:'The action of consenting to receive or undertake something offered; willingness to tolerate a difficult situation.', lang:'Latin, from acceptare (\'to receive willingly\'), frequentative of accipere (\'to take\'), from ad (\'to\') + capere (\'to take\').', example:'Her acceptance of the award was humble and gracious, thanking everyone who had supported her along the way.', isNoun:true },
+  { word:'acclaim', pronunciation:'uh-KLAYM', ipa:'/əˈkleɪm/', pos:'noun', def:'Enthusiastic and public praise or approval.', lang:'Latin, from acclamare (\'to shout at\'), from ad (\'to\') + clamare (\'to shout, cry out\').', example:'The young author\'s debut novel received widespread acclaim from critics and readers alike.', isNoun:true },
+  { word:'accolade', pronunciation:'AK-uh-layd', ipa:'/ˈækəˌleɪd/', pos:'noun', def:'An award or privilege granted as a special honor or as an acknowledgment of merit; praise or approval.', lang:'French, from accolade (\'an embrace\'), from Provençal acolada, from accolar (\'to embrace around the neck\'), from Latin ad (\'to\') + collum (\'neck\').', example:'Winning the Pulitzer Prize is considered the highest accolade a journalist can receive.', isNoun:true },
+  { word:'accomplice', pronunciation:'uh-KOM-plis', ipa:'/əˈkɒmplɪs/', pos:'noun', def:'A person who helps another commit a crime or wrongdoing.', lang:'Old French, from complice (\'associate\'), from Latin complex (\'closely connected\'), from com (\'together\') + plicare (\'to fold\').', example:'The getaway driver was arrested as an accomplice to the bank robbery and charged alongside the other suspects.', isNoun:true },
+  { word:'acquit', pronunciation:'uh-KWIT', ipa:'/əˈkwɪt/', pos:'verb', def:'To free someone from a criminal charge by a verdict of not guilty; to conduct oneself in a specified way.', lang:'Old French, from aquiter (\'to pay off, discharge\'), from a- (\'to\') + quite (\'free, clear\'), from Latin quietus (\'at rest\').', example:'The jury voted to acquit the defendant after the prosecution failed to present sufficient evidence.', isNoun:false },
+  { word:'acrostic', pronunciation:'uh-KROS-tik', ipa:'/əˈkrɒstɪk/', pos:'noun', def:'A poem or other composition in which certain letters in each line, usually the first, form a word or phrase.', lang:'Greek, from akrostichis, from akron (\'end, tip\') + stichos (\'line, row of verse\').', example:'The children wrote acrostic poems using the letters of their names to describe their favorite qualities.', isNoun:true },
+  { word:'adage', pronunciation:'AD-ij', ipa:'/ˈædɪdʒ/', pos:'noun', def:'A proverb or short statement expressing a general truth or piece of advice.', lang:'Latin, from adagium (\'proverb, saying\'), related to aio (\'I say\').', example:'The old adage \'practice makes perfect\' proved true as her piano playing improved with each daily session.', isNoun:true },
+  { word:'addendum', pronunciation:'uh-DEN-dum', ipa:'/əˈdɛndəm/', pos:'noun', def:'An item of additional material added at the end of a book or other publication; something added or to be added.', lang:'Latin, neuter gerundive of addere (\'to add\'), from ad (\'to\') + dare (\'to give\').', example:'The author included an addendum at the back of the book to address questions raised after the first edition.', isNoun:true },
+  { word:'addition', pronunciation:'uh-DISH-un', ipa:'/əˈdɪʃən/', pos:'noun', def:'The action or process of adding something to something else; a person or thing added.', lang:'Latin, from additio (\'an adding to\'), from addere (\'to add\'), from ad (\'to\') + dare (\'to give, place\').', example:'The new addition to the library included a spacious reading room with floor-to-ceiling windows.', isNoun:true },
+  { word:'addle', pronunciation:'AD-ul', ipa:'/ˈædəl/', pos:'verb', def:'To make someone unable to think clearly; to confuse or muddle.', lang:'Old English, from adela (\'liquid filth, mud\'), later applied to rotten eggs; related to the idea of something gone bad or confused.', example:'The complicated instructions addled his brain, leaving him more confused than when he started.', isNoun:false },
+  { word:'adhesion', pronunciation:'ad-HEE-zhun', ipa:'/ædˈhiːʒən/', pos:'noun', def:'The action or process of adhering to a surface or object; the sticking together of particles of different substances.', lang:'Latin, from adhaesio (\'a sticking to\'), from adhaerere (\'to stick to\'), from ad (\'to\') + haerere (\'to stick\').', example:'The adhesion of the new wallpaper to the damp wall was poor, causing it to peel within days.', isNoun:true },
+  { word:'adjacent', pronunciation:'uh-JAY-sunt', ipa:'/əˈdʒeɪsənt/', pos:'adjective', def:'Next to or adjoining something else; close or near, especially without touching.', lang:'Latin, from adjacentem, present participle of adjacere (\'to lie near\'), from ad (\'to, near\') + jacere (\'to lie, throw\').', example:'The park is adjacent to the school, making it a popular spot for students during lunch breaks.', isNoun:false },
+  { word:'adjudicate', pronunciation:'uh-JOO-dih-kayt', ipa:'/əˈdʒuːdɪˌkeɪt/', pos:'verb', def:'To make a formal judgment or decision about a problem or disputed matter; to act as a judge.', lang:'Latin, from adjudicatus, past participle of adjudicare (\'to award judicially\'), from ad (\'to\') + judicare (\'to judge\').', example:'A panel of experts was brought in to adjudicate the dispute between the two neighboring property owners.', isNoun:false },
+  { word:'admonition', pronunciation:'AD-muh-NISH-un', ipa:'/ˌædməˈnɪʃən/', pos:'noun', def:'A firm warning or reprimand; an act of admonishing; advice or encouragement.', lang:'Latin, from admonitio (\'a reminding\'), from admonere (\'to advise, warn\'), from ad (\'to\') + monere (\'to warn\').', example:'The teacher\'s gentle admonition about the importance of honesty made a lasting impression on the young student.', isNoun:true },
+  { word:'adnate', pronunciation:'AD-nayt', ipa:'/ˈædneɪt/', pos:'adjective', def:'In botany, grown together or attached along the full length; fused to a structure of a different kind.', lang:'Latin, from adnatus (\'grown to\'), past participle of adnasci (\'to grow on\'), from ad (\'to\') + nasci (\'to be born, grow\').', example:'The adnate gills of the mushroom were firmly attached along their entire length to the stem.', isNoun:false },
+  { word:'adsum', pronunciation:'AD-sum', ipa:'/ˈædˌsʌm/', pos:'interjection', def:'A Latin word meaning \'I am here\' or \'I am present,\' traditionally used as a response during roll call.', lang:'Latin, from adsum (\'I am present\'), from ad (\'at, to\') + sum (\'I am\').', example:'When the instructor called his name, the student stood at attention and replied with a confident \'Adsum!\'', isNoun:false },
+  { word:'advection', pronunciation:'ad-VEK-shun', ipa:'/ædˈvɛkʃən/', pos:'noun', def:'The transfer of heat, moisture, or other properties by the horizontal movement of a mass of air or fluid.', lang:'Latin, from advectio (\'a carrying to\'), from advehere (\'to carry to\'), from ad (\'to\') + vehere (\'to carry\').', example:'The advection of warm, moist air from the Gulf of Mexico often triggers severe thunderstorms in the central plains.', isNoun:true },
+  { word:'adversaria', pronunciation:'AD-vur-SAIR-ee-uh', ipa:'/ˌædvərˈsɛəriə/', pos:'noun', def:'A collection of miscellaneous notes or remarks; a commonplace book or notebook of observations.', lang:'Latin, from adversaria (scripta) (\'things written on the side facing one\'), neuter plural of adversarius (\'turned toward\'), from advertere (\'to turn to\').', example:'The scholar kept detailed adversaria throughout her career, filling dozens of notebooks with observations and quotations.', isNoun:true },
+  { word:'affront', pronunciation:'uh-FRUNT', ipa:'/əˈfrʌnt/', pos:'noun', def:'An action or remark that causes outrage or offense; an insult to one\'s dignity.', lang:'Old French, from afronter (\'to slap in the face, insult\'), from a fronte (\'to the face\'), from Latin ad (\'to\') + frons (\'forehead, face\').', example:'The diplomat considered the exclusion from the summit an affront to his country\'s sovereignty.', isNoun:true },
+  { word:'aforesaid', pronunciation:'uh-FOR-sed', ipa:'/əˈfɔːrsɛd/', pos:'adjective', def:'Previously stated or mentioned; referred to earlier in a document or text.', lang:'English, from afore (\'before\') + said, from Old English ær (\'before\') + sæd (\'said\').', example:'The aforesaid terms and conditions shall remain in effect for the duration of the contract period.', isNoun:false },
+  { word:'afroth', pronunciation:'uh-FROTH', ipa:'/əˈfrɒθ/', pos:'adjective', def:'In a state of frothing or foaming; covered with or producing froth.', lang:'English, from a- (\'in a state of\') + froth, from Old Norse frotha (\'froth, foam\').', example:'The stormy sea churned afroth, sending plumes of white foam crashing against the rocky cliffs.', isNoun:false },
+  { word:'agility', pronunciation:'uh-JIL-ih-tee', ipa:'/əˈdʒɪlɪti/', pos:'noun', def:'The ability to move quickly and easily; the ability to think and understand quickly.', lang:'Latin, from agilitas (\'nimbleness\'), from agilis (\'quick, nimble\'), from agere (\'to do, drive, move\').', example:'The gymnast\'s remarkable agility allowed her to execute a flawless series of flips and twists on the balance beam.', isNoun:true },
+  { word:'agitation', pronunciation:'AJ-ih-TAY-shun', ipa:'/ˌædʒɪˈteɪʃən/', pos:'noun', def:'A state of anxiety or nervous excitement; the action of briskly stirring or disturbing something.', lang:'Latin, from agitatio (\'a putting in motion\'), from agitare (\'to drive, set in motion\'), frequentative of agere (\'to do, drive\').', example:'The growing agitation among the workers led to a series of protests demanding better wages and conditions.', isNoun:true },
+  { word:'airborne', pronunciation:'AIR-born', ipa:'/ˈɛrbɔːrn/', pos:'adjective', def:'Transported by air; in the air; carried by the wind or by aircraft.', lang:'English, from air + borne (past participle of bear, \'to carry\').', example:'The airborne seeds of the dandelion drifted lazily across the meadow in the warm afternoon breeze.', isNoun:false },
+  { word:'algae', pronunciation:'AL-jee', ipa:'/ˈældʒiː/', pos:'noun', def:'Simple, nonflowering, typically aquatic plants that include seaweeds and many single-celled forms, containing chlorophyll but lacking true stems, roots, and leaves.', lang:'Latin, plural of alga (\'seaweed\'), of uncertain origin.', example:'The pond turned green as algae bloomed rapidly in the warm, nutrient-rich water during the summer months.', isNoun:true },
+  { word:'alienate', pronunciation:'AY-lee-uh-nayt', ipa:'/ˈeɪliəˌneɪt/', pos:'verb', def:'To cause someone to feel isolated or estranged; to make someone unsympathetic or hostile.', lang:'Latin, from alienatus, past participle of alienare (\'to make another\'s, estrange\'), from alienus (\'of another, foreign\'), from alius (\'other\').', example:'His constant criticism began to alienate his friends, who one by one stopped returning his calls.', isNoun:false },
+  { word:'alms', pronunciation:'AHMZ', ipa:'/ɑːmz/', pos:'noun', def:'Money or food given to poor people as an act of charity.', lang:'Old English, from ælmysse, from Latin eleemosyna, from Greek eleēmosynē (\'compassion, alms\'), from eleos (\'mercy, pity\').', example:'The monks distributed alms to the poor who gathered at the monastery gates each morning.', isNoun:true },
+  { word:'aloof', pronunciation:'uh-LOOF', ipa:'/əˈluːf/', pos:'adjective', def:'Not friendly or forthcoming; cool and distant in manner; standing apart from others.', lang:'Dutch, from loef (\'windward\'), originally a nautical term meaning to keep a ship\'s head to the wind and away from the shore.', example:'The new student seemed aloof at first, but once she warmed up, she turned out to be incredibly kind.', isNoun:false },
+  { word:'alpaca', pronunciation:'al-PAK-uh', ipa:'/ælˈpækə/', pos:'noun', def:'A long-haired domesticated South American mammal related to the llama, valued for its soft wool.', lang:'Spanish, from Aymara allpaca or Quechua allpaka.', example:'The farm raised alpacas for their luxuriously soft fleece, which was spun into yarn and sold at local markets.', isNoun:true },
+  { word:'altercation', pronunciation:'ALL-tur-KAY-shun', ipa:'/ˌɔːltərˈkeɪʃən/', pos:'noun', def:'A noisy argument or disagreement, especially in public.', lang:'Latin, from altercatio (\'a dispute\'), from altercari (\'to dispute with another\'), from alter (\'other\').', example:'A brief altercation broke out between two fans in the stands, but security quickly stepped in to calm the situation.', isNoun:true },
+  { word:'amass', pronunciation:'uh-MAS', ipa:'/əˈmæs/', pos:'verb', def:'To gather together or accumulate a large amount of something over a period of time.', lang:'Old French, from amasser (\'to heap up\'), from a- (\'to\') + masse (\'mass, lump\'), from Latin massa (\'lump\').', example:'Over decades of careful investing, she managed to amass a considerable fortune.', isNoun:false },
+  { word:'amiably', pronunciation:'AY-mee-uh-blee', ipa:'/ˈeɪmiəbli/', pos:'adverb', def:'In a friendly and pleasant manner; good-naturedly.', lang:'Latin, from amicabilis (\'friendly\'), from amicus (\'friend\'), from amare (\'to love\'), + -ly.', example:'The shopkeeper amiably chatted with each customer, asking about their families and offering samples of fresh bread.', isNoun:false },
+  { word:'Amish', pronunciation:'AH-mish', ipa:'/ˈɑːmɪʃ/', pos:'noun', def:'A member of a strict Mennonite sect known for simple living, plain dress, and reluctance to adopt modern technology.', lang:'German, named after Jakob Ammann (c. 1644–c. 1730), a Swiss Anabaptist leader who founded the movement.', example:'The Amish community builds its barns by hand, with neighbors gathering for traditional barn-raising events.', isNoun:true },
+  { word:'amnesty', pronunciation:'AM-nuh-stee', ipa:'/ˈæmnəsti/', pos:'noun', def:'An official pardon for people who have been convicted of political offenses; a general forgiveness.', lang:'Greek, from amnēstia (\'forgetfulness, oblivion\'), from amnēstos (\'forgotten\'), from a- (\'not\') + mnasthai (\'to remember\').', example:'The government declared an amnesty for all political prisoners as part of the peace agreement.', isNoun:true },
+  { word:'amputate', pronunciation:'AM-pyuh-tayt', ipa:'/ˈæmpjʊˌteɪt/', pos:'verb', def:'To cut off a limb or other body part by surgical operation.', lang:'Latin, from amputatus, past participle of amputare (\'to cut away\'), from am- (variant of ambi-, \'around\') + putare (\'to prune\').', example:'The surgeons had to amputate the soldier\'s injured leg to prevent a life-threatening infection from spreading.', isNoun:false },
+  { word:'amulet', pronunciation:'AM-yuh-lit', ipa:'/ˈæmjʊlɪt/', pos:'noun', def:'An ornament or small piece of jewelry thought to give protection against evil, danger, or disease.', lang:'Latin, from amuletum (\'object that protects a person from trouble\'), of uncertain origin.', example:'The traveler wore an ancient amulet around her neck, believing it would bring good luck on her journey.', isNoun:true },
+  { word:'amusement', pronunciation:'uh-MYOOZ-munt', ipa:'/əˈmjuːzmənt/', pos:'noun', def:'The state or experience of finding something funny or entertaining; something that provides enjoyment.', lang:'French, from amuser (\'to entertain, divert\'), from a- (\'to\') + muser (\'to stare, loiter\'), of uncertain origin.', example:'The children squealed with amusement as the clown performed silly tricks and made balloon animals.', isNoun:true },
+  { word:'ancho', pronunciation:'AHN-choh', ipa:'/ˈɑːntʃoʊ/', pos:'noun', def:'A dried poblano chili pepper, dark reddish-brown in color, with a mild, sweet, smoky flavor commonly used in Mexican cuisine.', lang:'Spanish, short for chile ancho (\'wide chili\'), from ancho (\'wide, broad\'), from Latin amplus (\'wide\').', example:'The chef ground dried ancho peppers into a paste for the rich, smoky mole sauce.', isNoun:true },
+  { word:'anime', pronunciation:'AN-ih-may', ipa:'/ˈænɪˌmeɪ/', pos:'noun', def:'A style of animation originating in Japan, characterized by colorful artwork, fantastical themes, and vibrant characters.', lang:'Japanese, from anime, a shortened form of animēshon, borrowed from English animation.', example:'She spent the weekend binge-watching her favorite anime series, captivated by its stunning artwork and complex storyline.', isNoun:true },
+  { word:'anklet', pronunciation:'ANK-lit', ipa:'/ˈæŋklɪt/', pos:'noun', def:'A chain or band worn around the ankle as an ornament; a short sock reaching just above the ankle.', lang:'English, from ankle + -let (diminutive suffix). Ankle from Old English ancleow, of Germanic origin.', example:'She wore a delicate gold anklet that jingled softly with each step she took along the beach.', isNoun:true },
+  { word:'anniversary', pronunciation:'AN-ih-VUR-suh-ree', ipa:'/ˌænɪˈvɜːrsəri/', pos:'noun', def:'The date on which an event took place in a previous year; a celebration of such a date.', lang:'Latin, from anniversarius (\'returning yearly\'), from annus (\'year\') + versus (past participle of vertere, \'to turn\').', example:'The couple celebrated their fiftieth wedding anniversary with a grand party surrounded by family and friends.', isNoun:true },
+  { word:'annotate', pronunciation:'AN-uh-tayt', ipa:'/ˈænəˌteɪt/', pos:'verb', def:'To add notes of explanation or comment to a text or diagram.', lang:'Latin, from annotatus, past participle of annotare (\'to note down\'), from ad (\'to\') + notare (\'to note, mark\'), from nota (\'mark\').', example:'The professor asked students to annotate the poem, marking key metaphors and literary devices in the margins.', isNoun:false },
+  { word:'anoint', pronunciation:'uh-NOYNT', ipa:'/əˈnɔɪnt/', pos:'verb', def:'To smear or rub with oil, typically as part of a religious ceremony; to ceremonially confer divine or holy office upon.', lang:'Old French, from enoint (\'smeared on\'), past participle of enoindre, from Latin inungere (\'to smear on\'), from in (\'upon\') + ungere (\'to smear\').', example:'The bishop anointed the new king\'s forehead with sacred oil during the coronation ceremony.', isNoun:false },
+  { word:'ante', pronunciation:'AN-tee', ipa:'/ˈænti/', pos:'noun', def:'A stake put up by a player in poker before receiving cards; a preliminary payment or contribution.', lang:'Latin, from ante (\'before\'), used in English poker terminology since the early 19th century.', example:'Each player placed a five-dollar ante into the pot before the dealer distributed the cards.', isNoun:true },
+  { word:'anthropology', pronunciation:'AN-thruh-POL-uh-jee', ipa:'/ˌænθrəˈpɒlədʒi/', pos:'noun', def:'The study of human societies, cultures, and their development; the study of human biological and physiological characteristics.', lang:'Greek, from anthrōpos (\'human being\') + -logia (\'study of\').', example:'Her degree in anthropology took her to remote villages around the world to study diverse cultural traditions.', isNoun:true },
+  { word:'antiseptic', pronunciation:'AN-tih-SEP-tik', ipa:'/ˌæntɪˈsɛptɪk/', pos:'noun', def:'A substance that prevents the growth of disease-causing microorganisms; relating to or denoting such a substance.', lang:'Greek, from anti (\'against\') + sēptikos (\'putrefying\'), from sēpein (\'to make rotten\').', example:'The nurse cleaned the wound with antiseptic before applying a sterile bandage to prevent infection.', isNoun:true },
+  { word:'apology', pronunciation:'uh-POL-uh-jee', ipa:'/əˈpɒlədʒi/', pos:'noun', def:'A regretful acknowledgment of an offense or failure; a formal defense or justification of something.', lang:'Greek, from apologia (\'a speech in defense\'), from apologeisthai (\'to speak in one\'s defense\'), from apo (\'away\') + logos (\'speech\').', example:'He offered a sincere apology for arriving late to the meeting and disrupting the presentation.', isNoun:true },
+  { word:'apparel', pronunciation:'uh-PAIR-ul', ipa:'/əˈpærəl/', pos:'noun', def:'Clothing, especially of a particular or formal type.', lang:'Old French, from apareillier (\'to make fit, prepare\'), from a- (\'to\') + pareil (\'like, equal\'), from Latin par (\'equal\').', example:'The store specialized in athletic apparel, offering everything from running shoes to moisture-wicking shirts.', isNoun:true },
+  { word:'apparently', pronunciation:'uh-PAIR-unt-lee', ipa:'/əˈpærəntli/', pos:'adverb', def:'As far as one knows or can see; seemingly; used to convey that something appears to be the case.', lang:'Latin, from apparent- (\'appearing\'), present participle of apparere (\'to appear\'), from ad (\'to\') + parere (\'to come into view\').', example:'The train is apparently running twenty minutes late due to signal problems along the route.', isNoun:false },
+  { word:'appealing', pronunciation:'uh-PEE-ling', ipa:'/əˈpiːlɪŋ/', pos:'adjective', def:'Attractive or interesting; making a serious or heartfelt request.', lang:'Old French, from apeler (\'to call upon\'), from Latin appellare (\'to address, call upon\'), from ad (\'to\') + pellere (\'to drive\').', example:'The puppy gave her an appealing look with its big brown eyes, and she couldn\'t resist picking it up.', isNoun:false },
+  { word:'applicable', pronunciation:'AP-lih-kuh-bul', ipa:'/ˈæplɪkəbəl/', pos:'adjective', def:'Relevant or appropriate to a particular situation or context.', lang:'Latin, from applicabilis, from applicare (\'to attach, join to\'), from ad (\'to\') + plicare (\'to fold\').', example:'The discount code is only applicable to online orders placed before the end of the month.', isNoun:false },
+  { word:'appraisal', pronunciation:'uh-PRAY-zul', ipa:'/əˈpreɪzəl/', pos:'noun', def:'An act of assessing something or someone; a formal evaluation of the value or quality of something.', lang:'English, from appraise + -al. Appraise from Old French aprisier (\'to set a price on\'), from a- (\'to\') + prisier (\'to price, value\').', example:'The real estate agent conducted a thorough appraisal of the house before listing it for sale.', isNoun:true },
+  { word:'apprehensive', pronunciation:'AP-rih-HEN-siv', ipa:'/ˌæprɪˈhɛnsɪv/', pos:'adjective', def:'Anxious or fearful that something bad or unpleasant will happen; worried or uneasy.', lang:'Latin, from apprehensivus, from apprehendere (\'to seize, grasp\'), from ad (\'to\') + prehendere (\'to seize\').', example:'She felt apprehensive about starting at a new school where she didn\'t know anyone.', isNoun:false },
+  { word:'arithmetic', pronunciation:'uh-RITH-muh-tik', ipa:'/əˈrɪθmətɪk/', pos:'noun', def:'The branch of mathematics dealing with the properties and manipulation of numbers, including addition, subtraction, multiplication, and division.', lang:'Greek, from arithmētikē (tekhnē) (\'art of counting\'), from arithmos (\'number\'), from a root meaning \'to fit together\'.', example:'Strong arithmetic skills are essential for everyday tasks like budgeting, cooking, and shopping.', isNoun:true },
+  { word:'Arthurian', pronunciation:'ar-THOOR-ee-un', ipa:'/ɑːrˈθʊəriən/', pos:'adjective', def:'Relating to or associated with the legends of King Arthur and his knights of the Round Table.', lang:'English, from Arthur (the legendary British king) + -ian. Arthur possibly from Celtic artos (\'bear\') or Latin Artorius.', example:'The Arthurian legends of Camelot, Excalibur, and the quest for the Holy Grail have inspired countless books and films.', isNoun:false },
+  { word:'assertion', pronunciation:'uh-SUR-shun', ipa:'/əˈsɜːrʃən/', pos:'noun', def:'A confident and forceful statement of fact or belief; the action of declaring something with confidence.', lang:'Latin, from assertio (\'a claiming, declaration\'), from asserere (\'to claim, assert\'), from ad (\'to\') + serere (\'to join, connect\').', example:'Her assertion that the project would be completed on time proved correct when the team delivered ahead of schedule.', isNoun:true },
+  { word:'astonish', pronunciation:'uh-STON-ish', ipa:'/əˈstɒnɪʃ/', pos:'verb', def:'To surprise someone greatly; to fill with sudden wonder or amazement.', lang:'Old French, from estoner (\'to stun, daze\'), from Latin extonare (\'to thunder out\'), from ex (\'out\') + tonare (\'to thunder\').', example:'The magician\'s final trick never failed to astonish the audience, leaving them wondering how it was done.', isNoun:false },
+  { word:'astounding', pronunciation:'uh-STOUND-ing', ipa:'/əˈstaʊndɪŋ/', pos:'adjective', def:'Surprisingly impressive or notable; shocking or amazing.', lang:'English, present participle of astound, from Old French estoner (\'to stun\'), from Latin extonare (\'to thunder out\').', example:'The astronomer made the astounding discovery of a new planet orbiting a nearby star.', isNoun:false },
+  { word:'astronaut', pronunciation:'AS-truh-nawt', ipa:'/ˈæstrəˌnɔːt/', pos:'noun', def:'A person who is trained to travel in a spacecraft; a space traveler.', lang:'Greek, from astron (\'star\') + nautēs (\'sailor\'), modeled on aeronaut.', example:'The astronaut gazed out of the space station window at the breathtaking view of Earth below.', isNoun:true },
+  { word:'aswoon', pronunciation:'uh-SWOON', ipa:'/əˈswuːn/', pos:'adjective', def:'In a state of swooning; fainting or feeling faint, often from overwhelming emotion.', lang:'English, from a- (\'in a state of\') + swoon, from Old English geswōgen (\'in a faint\').', example:'The audience was aswoon with delight as the famous tenor hit the final soaring note of the aria.', isNoun:false },
+  { word:'atomic', pronunciation:'uh-TOM-ik', ipa:'/əˈtɒmɪk/', pos:'adjective', def:'Of or relating to an atom or atoms; relating to nuclear energy or weapons.', lang:'Greek, from atomos (\'indivisible, uncuttable\'), from a- (\'not\') + tomos (\'a cutting\'), from temnein (\'to cut\').', example:'The development of atomic energy in the 20th century forever changed both science and international politics.', isNoun:false },
+  { word:'atonement', pronunciation:'uh-TOHN-munt', ipa:'/əˈtoʊnmənt/', pos:'noun', def:'Reparation for a wrongdoing; the action of making amends for a sin or mistake.', lang:'English, from at one + -ment, meaning \'the condition of being at one (with God or another)\', coined in the 16th century.', example:'He spent years doing volunteer work as atonement for the mistakes he had made in his youth.', isNoun:true },
+  { word:'atrophy', pronunciation:'AT-ruh-fee', ipa:'/ˈætrəfi/', pos:'noun', def:'The gradual decline or wasting away of a body part, tissue, or organ, especially from disuse or lack of nourishment.', lang:'Greek, from atrophia (\'a wasting away\'), from a- (\'without\') + trophē (\'nourishment, food\').', example:'After months in a cast, the muscles in his leg had undergone significant atrophy and required physical therapy.', isNoun:true },
+  { word:'attempt', pronunciation:'uh-TEMPT', ipa:'/əˈtɛmpt/', pos:'noun', def:'An effort to achieve or complete something, often without success; a try.', lang:'Latin, from attemptare (\'to try\'), from ad (\'to\') + temptare (\'to test, try\').', example:'Her first attempt at baking a soufflé collapsed, but her second one rose perfectly and tasted delicious.', isNoun:true },
+  { word:'attendee', pronunciation:'uh-TEN-dee', ipa:'/əˌtɛnˈdiː/', pos:'noun', def:'A person who attends a conference, event, or other gathering.', lang:'English, from attend + -ee. Attend from Old French atendre (\'to wait for, expect\'), from Latin attendere (\'to stretch toward\'), from ad (\'to\') + tendere (\'to stretch\').', example:'Each attendee at the conference received a name badge and a folder containing the schedule of events.', isNoun:true },
+  { word:'attitude', pronunciation:'AT-ih-tood', ipa:'/ˈætɪˌtjuːd/', pos:'noun', def:'A settled way of thinking or feeling about something; a position of the body suggesting a particular mental state.', lang:'Italian, from attitudine (\'fitness, posture\'), from Latin aptitudo (\'fitness\'), from aptus (\'fit, suited\').', example:'Her positive attitude in the face of challenges inspired everyone on the team to work harder.', isNoun:true },
+  { word:'auction', pronunciation:'AWK-shun', ipa:'/ˈɔːkʃən/', pos:'noun', def:'A public sale in which goods or property are sold to the highest bidder.', lang:'Latin, from auctio (\'an increasing\'), from augere (\'to increase\'), because the price increases with each bid.', example:'The rare painting sold at auction for three times its estimated value, surprising even the experts.', isNoun:true },
+  { word:'auditorium', pronunciation:'AW-dih-TOR-ee-um', ipa:'/ˌɔːdɪˈtɔːriəm/', pos:'noun', def:'The part of a theater or hall in which the audience sits; a large building or room used for public gatherings.', lang:'Latin, from auditorium (\'a place for hearing\'), from auditor (\'a hearer\'), from audire (\'to hear\').', example:'The school\'s newly renovated auditorium could seat over five hundred students for assemblies and performances.', isNoun:true },
+  { word:'august', pronunciation:'aw-GUST', ipa:'/ɔːˈɡʌst/', pos:'adjective', def:'Inspiring reverence or admiration; of supreme dignity or grandeur; majestic and imposing.', lang:'Latin, from augustus (\'consecrated, venerable\'), related to augere (\'to increase\') and augur (\'religious official\').', example:'The august professor commanded the respect of every student who entered her lecture hall.', isNoun:false },
+  { word:'avalanche', pronunciation:'AV-uh-lanch', ipa:'/ˈævəˌlæntʃ/', pos:'noun', def:'A mass of snow, ice, and rocks falling rapidly down a mountainside; a sudden overwhelming quantity of things.', lang:'French, from Alpine dialect lavanche (\'avalanche\'), possibly from Provençal lavanca, of pre-Roman Alpine origin.', example:'The powerful avalanche swept down the mountain, burying the hiking trail under tons of snow and debris.', isNoun:true },
+  { word:'avatar', pronunciation:'AV-uh-tar', ipa:'/ˈævəˌtɑːr/', pos:'noun', def:'An incarnation or embodiment of a person or idea; in Hinduism, a manifestation of a deity on earth; a digital representation of a person.', lang:'Sanskrit, from avatāra (\'descent\'), from ava (\'down\') + tarati (\'he crosses, passes over\').', example:'Players spent hours customizing their avatar before entering the virtual world of the online game.', isNoun:true },
+  { word:'avenue', pronunciation:'AV-uh-noo', ipa:'/ˈævəˌnjuː/', pos:'noun', def:'A broad road in a town or city, typically with trees on both sides; a way of approaching a problem or opportunity.', lang:'French, from avenue (\'approach, arrival\'), feminine past participle of avenir (\'to come to\'), from Latin advenire (\'to come to\'), from ad (\'to\') + venire (\'to come\').', example:'The tree-lined avenue leading to the mansion was especially beautiful in autumn when the leaves turned golden.', isNoun:true },
+  { word:'aviation', pronunciation:'AY-vee-AY-shun', ipa:'/ˌeɪviˈeɪʃən/', pos:'noun', def:'The flying or operating of aircraft; the industry dealing with the design, development, and production of aircraft.', lang:'French, from aviation, from Latin avis (\'bird\') + -ation.', example:'The Wright brothers\' first successful flight at Kitty Hawk marked the dawn of modern aviation.', isNoun:true },
+  { word:'awry', pronunciation:'uh-RYE', ipa:'/əˈraɪ/', pos:'adverb', def:'Away from the appropriate, planned, or expected course; amiss; turned or twisted to one side.', lang:'English, from a- (\'on\') + wry (\'twisted, turned to one side\'), from Old English wrigian (\'to turn, bend\').', example:'Everything went awry when the caterer arrived at the wrong address on the day of the wedding reception.', isNoun:false },
+  { word:'azure', pronunciation:'AZH-ur', ipa:'/ˈæʒər/', pos:'noun', def:'A bright blue color like a cloudless sky; the clear blue sky.', lang:'Old French, from azur, from Medieval Latin azurium, from Arabic lāzaward (\'lapis lazuli\'), from Persian lāžward.', example:'The painter mixed the perfect shade of azure to capture the brilliant Mediterranean sky in her landscape.', isNoun:true }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Slider
+  const totalA = a.length;
+  const pct = totalA > 1 ? s / (totalA - 1) * 100 : 0;
+  document.getElementById("sliderFill").style.width = pct + "%";
+  const sliderArea = document.getElementById("sliderArea");
+  const areaW = sliderArea.offsetWidth || 200;
+  const pad = 10;
+  const thumbLeft = pad + (pct / 100) * (areaW - pad * 2);
+  const thumb = document.getElementById("sliderThumb");
+  if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
+
+  // Ticks - show ~20 evenly spaced markers
+  const tickCount = Math.min(totalA, 20);
+  let ticksHtml = '';
+  for(let t=0; t<tickCount; t++){
+    const ti = Math.round(t / (tickCount-1) * (totalA-1));
+    const cls = ti===s ? 'active' : (t % 5 === 0 ? 'major' : '');
+    ticksHtml += `<div class="slider-tick ${cls}"></div>`;
+  }
+  document.getElementById("sliderDots").innerHTML = ticksHtml;
+  document.getElementById("sliderCounter").textContent = `${s+1} / ${totalA}`;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Slider drag
+const slArea=document.getElementById("sliderArea");
+const slThumb=document.getElementById("sliderThumb");
+let slDragging=false;
+function sliderFromX(cx){
+  const r=slArea.getBoundingClientRect();
+  const pad=10;
+  const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
+  const a=aw(),idx=Math.round(p*(a.length-1));
+  // Move thumb immediately for smooth feel
+  const thumbLeft=pad+(p)*(r.width-pad*2);
+  slThumb.style.left=thumbLeft+"px";
+  if(idx!==si()){
+    const g=WORDS.findIndex(w=>w.word===a[idx].word);
+    flipped=false; currentIndex=g; render();
+  }
+}
+slArea.addEventListener("touchstart",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(slDragging) sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    // Speak the word after releasing
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+slArea.addEventListener("mousedown",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.clientX); e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(slDragging) sliderFromX(e.clientX);
+});
+document.addEventListener("mouseup",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>

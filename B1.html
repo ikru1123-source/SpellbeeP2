@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 900;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 18px; height: 18px; }
+.slider-area {
+  flex: 1; height: 32px; position: relative;
+  display: flex; align-items: center;
+  touch-action: none; cursor: pointer;
+}
+.slider-track-bg {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
+}
+.slider-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(212,175,55,0.5));
+  transition: width 0.15s ease;
+}
+.slider-dots {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; padding: 0 2px;
+}
+.slider-tick {
+  width: 2px; height: 8px; border-radius: 1px;
+  background: rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.slider-tick.major { height: 12px; background: rgba(255,255,255,0.12); }
+.slider-tick.active { background: var(--gold); height: 14px; width: 3px; border-radius: 1.5px; box-shadow: 0 0 6px rgba(212,175,55,0.4); }
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px solid #1a1528;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  cursor: grab; transition: left 0.12s ease;
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
+.slider-thumb.dragging { transition: none; transform: translate(-50%, -50%) scale(1.15); }
+.slider-counter {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.08em;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1>Spelling Bee</h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="slider-area" id="sliderArea">
+      <div class="slider-track-bg">
+        <div class="slider-fill" id="sliderFill"></div>
+      </div>
+      <div class="slider-dots" id="sliderDots"></div>
+      <div class="slider-thumb" id="sliderThumb"></div>
+    </div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'backgammon', pronunciation:'BAK-gam-un', ipa:'/ˈbækˌɡæmən/', pos:'noun', def:'A board game for two players in which pieces are moved according to dice rolls, with the goal of removing all one\'s pieces from the board first.', lang:'English, probably from back + Middle English gamen (\'game\'), referring to pieces being sent back to start.', example:'They spent rainy afternoons playing backgammon on the old wooden board her grandfather had carved by hand.', isNoun:true },
+  { word:'badger', pronunciation:'BAJ-ur', ipa:'/ˈbædʒər/', pos:'noun', def:'A heavily built omnivorous nocturnal mammal with a black-and-white-striped head, living in a system of underground tunnels called a sett.', lang:'English, possibly from badge + -ard, referring to the white mark on the animal\'s forehead resembling a badge.', example:'The badger emerged from its burrow at dusk, sniffing the cool evening air before foraging for earthworms and beetles.', isNoun:true },
+  { word:'bailiff', pronunciation:'BAY-lif', ipa:'/ˈbeɪlɪf/', pos:'noun', def:'An officer of the court who is responsible for keeping order and executing writs and processes; a person who manages land or property for a landlord.', lang:'Old French, from baillif (\'custodian\'), from bail (\'custody, charge\'), from Latin bajulus (\'carrier, manager\').', example:'The bailiff called the courtroom to order as the judge entered and took her seat on the bench.', isNoun:true },
+  { word:'baleful', pronunciation:'BAYL-ful', ipa:'/ˈbeɪlfəl/', pos:'adjective', def:'Threatening harm; menacing; having a harmful or destructive effect.', lang:'Old English, from bealu (\'evil, calamity\') + -ful, of Germanic origin.', example:'The villain fixed the hero with a baleful stare, silently promising revenge for the defeat.', isNoun:false },
+  { word:'ballad', pronunciation:'BAL-ud', ipa:'/ˈbæləd/', pos:'noun', def:'A poem or song narrating a story in short stanzas, often of folk origin; a slow, sentimental song.', lang:'Old French, from balade (\'dancing song\'), from Provençal balada (\'dance, song for dancing\'), from balar (\'to dance\'), from Latin ballare.', example:'The folk singer performed an ancient ballad about a sailor lost at sea, her voice echoing through the quiet hall.', isNoun:true },
+  { word:'banquet', pronunciation:'BANG-kwit', ipa:'/ˈbæŋkwɪt/', pos:'noun', def:'An elaborate and formal evening meal for many people, often followed by speeches; a lavish feast.', lang:'French, from banquet (\'feast\'), from Old Italian banchetto (\'little bench, light meal\'), diminutive of banco (\'bench, table\').', example:'The royal banquet featured twelve courses, from delicate appetizers to a towering dessert of spun sugar.', isNoun:true },
+  { word:'baptismal', pronunciation:'bap-TIZ-mul', ipa:'/bæpˈtɪzməl/', pos:'adjective', def:'Of or relating to baptism; connected with the Christian sacrament of admission into the faith through symbolic use of water.', lang:'Greek, from baptisma (\'immersion, baptism\'), from baptizein (\'to dip, immerse\'), from baptein (\'to dip\').', example:'The infant wore a beautiful white baptismal gown that had been passed down through four generations of the family.', isNoun:false },
+  { word:'barbie', pronunciation:'BAR-bee', ipa:'/ˈbɑːrbi/', pos:'noun', def:'An informal Australian term for a barbecue; an outdoor meal or gathering at which food is cooked on a grill.', lang:'Australian English, diminutive of barbecue, from Spanish barbacoa, from Taino (Caribbean indigenous language).', example:'The neighbors invited everyone over for a barbie in the backyard, grilling shrimp and sausages by the pool.', isNoun:true },
+  { word:'bask', pronunciation:'BASK', ipa:'/bæsk/', pos:'verb', def:'To lie exposed to warmth and light, typically from the sun, for relaxation and pleasure; to revel in and enjoy something pleasant.', lang:'Old Norse, probably from baðask (\'to bathe oneself\'), reflexive of baða (\'to bathe\').', example:'The cat loved to bask in the warm patch of sunlight that fell across the living room floor each afternoon.', isNoun:false },
+  { word:'become', pronunciation:'bih-KUM', ipa:'/bɪˈkʌm/', pos:'verb', def:'To begin to be; to grow or come to be; to be appropriate or suitable for someone.', lang:'Old English, from becuman (\'to come to, arrive, happen\'), from be- (\'about\') + cuman (\'to come\'), of Germanic origin.', example:'With years of practice and dedication, she became one of the most respected violinists in the country.', isNoun:false },
+  { word:'begirdle', pronunciation:'bih-GUR-dul', ipa:'/bɪˈɡɜːrdəl/', pos:'verb', def:'To encircle or surround with or as if with a girdle; to encompass.', lang:'English, from be- (\'around, about\') + girdle, from Old English gyrdel (\'belt, sash\'), from gyrdan (\'to gird\').', example:'A thick wall of ancient oaks begirdled the meadow, forming a natural boundary around the sunlit clearing.', isNoun:false },
+  { word:'Bengal', pronunciation:'ben-GAWL', ipa:'/bɛnˈɡɔːl/', pos:'noun', def:'A region in South Asia divided between Bangladesh and the Indian state of West Bengal; also, a breed of domestic cat with a wild, spotted coat.', lang:'Bengali/Hindi, from Bangla or Bangala, the name of the region, possibly from the ancient Vanga kingdom.', example:'The Bengal cat\'s striking spotted coat and energetic personality make it one of the most popular exotic cat breeds.', isNoun:true },
+  { word:'bespoke', pronunciation:'bih-SPOHK', ipa:'/bɪˈspoʊk/', pos:'adjective', def:'Made to order; custom-made according to the buyer\'s specifications, especially referring to clothing or goods.', lang:'English, past participle of bespeak (\'to speak for, order\'), from Old English besprecan, from be- (\'about\') + sprecan (\'to speak\').', example:'He wore a bespoke suit tailored to his exact measurements, and the perfect fit was immediately noticeable.', isNoun:false },
+  { word:'bewitched', pronunciation:'bih-WICHD', ipa:'/bɪˈwɪtʃt/', pos:'adjective', def:'Under a spell; enchanted or captivated, as if by magic.', lang:'English, past participle of bewitch, from be- (\'thoroughly\') + witch, from Old English wicce (\'sorceress\').', example:'The audience sat bewitched by the dancer\'s performance, unable to look away from her graceful movements.', isNoun:false },
+  { word:'bias', pronunciation:'BYE-us', ipa:'/ˈbaɪəs/', pos:'noun', def:'Prejudice in favor of or against one thing, person, or group compared with another, usually considered unfair; a diagonal line across fabric.', lang:'French, from biais (\'oblique, slanting\'), of uncertain origin, possibly from Greek epikarsios (\'oblique\').', example:'The study was criticized for bias because the researchers only interviewed participants who supported the theory.', isNoun:true },
+  { word:'bigotry', pronunciation:'BIG-uh-tree', ipa:'/ˈbɪɡətri/', pos:'noun', def:'Obstinate or unreasonable attachment to a belief, opinion, or faction; intolerance toward those who hold different views.', lang:'French, from bigoterie (\'sanctimoniousness\'), from bigot (\'a religious hypocrite\'), of uncertain origin.', example:'The community united to stand against bigotry, organizing events that celebrated diversity and mutual respect.', isNoun:true },
+  { word:'birdie', pronunciation:'BUR-dee', ipa:'/ˈbɜːrdi/', pos:'noun', def:'A score of one stroke under par for a hole in golf; informal term for a small bird.', lang:'English, from bird + -ie (diminutive suffix). The golf term originated in American English around 1903.', example:'The golfer sank a twenty-foot putt for a birdie on the final hole, clinching the tournament victory.', isNoun:true },
+  { word:'blandish', pronunciation:'BLAN-dish', ipa:'/ˈblændɪʃ/', pos:'verb', def:'To coax or persuade someone with gentle flattery; to cajole.', lang:'Old French, from blandir (\'to flatter\'), from Latin blandiri (\'to soothe, flatter\'), from blandus (\'soft, smooth\').', example:'The salesman tried to blandish the reluctant customer with compliments, hoping she would agree to the purchase.', isNoun:false },
+  { word:'blarney', pronunciation:'BLAR-nee', ipa:'/ˈblɑːrni/', pos:'noun', def:'Talk that aims to charm, flatter, or persuade; eloquent and often insincere speech.', lang:'Irish English, from Blarney Castle near Cork, Ireland, where a stone is said to give the gift of persuasive speech to those who kiss it.', example:'His gift of blarney could charm anyone; within minutes of meeting a stranger, they\'d feel like an old friend.', isNoun:true },
+  { word:'bleary', pronunciation:'BLEER-ee', ipa:'/ˈblɪəri/', pos:'adjective', def:'Dull and unfocused, especially from sleep or tiredness; blurred or dimmed.', lang:'English, from blear (\'to make dim or watery\'), possibly from Middle Low German blerre (\'having blurred vision\').', example:'She stumbled into the kitchen with bleary eyes, reaching for the coffee pot before she could face the day.', isNoun:false },
+  { word:'bleat', pronunciation:'BLEET', ipa:'/bliːt/', pos:'verb', def:'To make the characteristic wavering cry of a sheep or goat; to speak or complain in a weak, whining way.', lang:'Old English, from blǣtan (\'to bleat\'), of imitative origin.', example:'The lost lamb began to bleat loudly, and its mother quickly came trotting across the field in response.', isNoun:false },
+  { word:'blingy', pronunciation:'BLING-ee', ipa:'/ˈblɪŋi/', pos:'adjective', def:'Flashy and ostentatious, especially with excessive jewelry, sequins, or shiny decoration.', lang:'English, from bling (slang for flashy jewelry or decoration), possibly of imitative origin suggesting the sparkle of light, + -y.', example:'Her blingy outfit, covered in rhinestones and sequins, caught every ray of light on the dance floor.', isNoun:false },
+  { word:'blink', pronunciation:'BLINK', ipa:'/blɪŋk/', pos:'verb', def:'To shut and open the eyes quickly; to shine with an unsteady or intermittent light.', lang:'English, possibly from Middle Dutch blinken (\'to glitter, shine\'), of Germanic origin.', example:'The stars began to blink through the darkening sky as the last traces of sunset faded on the horizon.', isNoun:false },
+  { word:'blooper', pronunciation:'BLOO-pur', ipa:'/ˈbluːpər/', pos:'noun', def:'An embarrassing error or blunder; a funny mistake, especially one made during a live broadcast or film recording.', lang:'English, from bloop (\'an embarrassing error\'), possibly of imitative origin suggesting an awkward sound, + -er.', example:'The funniest blooper from the film showed the lead actor tripping over a prop and falling into the fountain.', isNoun:true },
+  { word:'blurb', pronunciation:'BLURB', ipa:'/blɜːrb/', pos:'noun', def:'A short description written to promote a book, film, or other product, typically on its back cover or in advertising.', lang:'English, coined by American humorist Gelett Burgess in 1907 as a mock endorsement on a book jacket.', example:'The blurb on the back of the novel promised a thrilling mystery that would keep readers guessing until the last page.', isNoun:true },
+  { word:'boarders', pronunciation:'BOR-durz', ipa:'/ˈbɔːrdərz/', pos:'noun', def:'People who receive regular meals and lodging at another\'s home or at a boarding school in return for payment.', lang:'English, from board (\'table, meals\') + -er. Board from Old English bord (\'plank, table\'), of Germanic origin.', example:'The old inn took in boarders during the winter months, offering warm meals and a bed by the fireplace.', isNoun:true },
+  { word:'boggle', pronunciation:'BOG-ul', ipa:'/ˈbɒɡəl/', pos:'verb', def:'To be astonished or overwhelmed when trying to imagine something; to hesitate or be baffled.', lang:'English, probably from bogle (\'phantom, goblin\'), related to bug (\'hobgoblin\'), suggesting being startled or frightened.', example:'The sheer size of the Grand Canyon never fails to boggle the mind of first-time visitors.', isNoun:false },
+  { word:'bonanza', pronunciation:'buh-NAN-zuh', ipa:'/bəˈnænzə/', pos:'noun', def:'A situation or event that creates a sudden increase in wealth, good fortune, or profits; a large amount of something desirable.', lang:'Spanish, from bonanza (\'fair weather, prosperity\'), from Latin bonus (\'good\').', example:'The discovery of gold in the hills turned the sleepy town into a bonanza of wealth and opportunity.', isNoun:true },
+  { word:'boogie-woogie', pronunciation:'BOO-gee-WOO-gee', ipa:'/ˌbʊɡiˈwʊɡi/', pos:'noun', def:'A style of blues piano music characterized by a strong, fast beat with a repeated bass pattern in the left hand.', lang:'English, of African American origin, possibly from Sierra Leone Krio bogi (\'to dance\') or from boogie (\'to dance energetically\').', example:'The pianist\'s fingers flew over the keys in a rollicking boogie-woogie that had everyone in the club tapping their feet.', isNoun:true },
+  { word:'bootless', pronunciation:'BOOT-lus', ipa:'/ˈbuːtləs/', pos:'adjective', def:'Having no useful result; unavailing; pointless or futile.', lang:'Old English, from bōtlēas (\'without remedy\'), from bōt (\'remedy, advantage, compensation\') + -lēas (\'-less\').', example:'After hours of bootless argument, they realized neither side was willing to compromise and agreed to table the discussion.', isNoun:false },
+  { word:'botany', pronunciation:'BOT-uh-nee', ipa:'/ˈbɒtəni/', pos:'noun', def:'The scientific study of plants, including their physiology, structure, genetics, ecology, and classification.', lang:'Greek, from botanē (\'herb, plant, grass\'), from boskein (\'to feed, graze\').', example:'Her passion for botany led her to catalog over three hundred species of wildflowers in the national park.', isNoun:true },
+  { word:'bowie', pronunciation:'BOO-ee', ipa:'/ˈbuːi/', pos:'noun', def:'A large sheath knife with a long, clip-pointed blade, associated with the American frontier.', lang:'English, named after Jim Bowie (1796–1836), the American frontiersman and folk hero who popularized the knife.', example:'The frontiersman kept a trusty bowie knife on his belt, useful for everything from cutting rope to preparing camp meals.', isNoun:true },
+  { word:'breakthrough', pronunciation:'BRAYK-throo', ipa:'/ˈbreɪkˌθruː/', pos:'noun', def:'A sudden, dramatic, and important discovery or development; an instance of achieving success after overcoming an obstacle.', lang:'English, from break + through. A compound formed in the early 20th century.', example:'The medical breakthrough in gene therapy offered new hope for patients suffering from previously untreatable genetic disorders.', isNoun:true },
+  { word:'breathtaking', pronunciation:'BRETH-tay-king', ipa:'/ˈbrɛθˌteɪkɪŋ/', pos:'adjective', def:'Astonishing or awe-inspiring in quality; so remarkable as to take one\'s breath away.', lang:'English, from breath + taking, suggesting something so impressive it causes one to gasp.', example:'The view from the mountaintop was breathtaking, with rolling green valleys stretching out to the distant horizon.', isNoun:false },
+  { word:'brick', pronunciation:'BRIK', ipa:'/brɪk/', pos:'noun', def:'A small rectangular block of fired clay used in building; informally, a reliable and dependable person.', lang:'Old French, from briche, from Middle Dutch bricke (\'brick\'), of Germanic origin.', example:'The old brick fireplace had been the centerpiece of the family home for over a hundred years.', isNoun:true },
+  { word:'brigand', pronunciation:'BRIG-und', ipa:'/ˈbrɪɡənd/', pos:'noun', def:'A member of a gang of bandits, especially one who operates in a wild or mountainous area; a robber or outlaw.', lang:'Old French, from brigand (\'foot soldier, fighter\'), from Italian brigante (\'skirmisher\'), from brigare (\'to fight, brawl\').', example:'The mountain pass was once notorious for brigands who ambushed travelers and stole their valuables.', isNoun:true },
+  { word:'brochure', pronunciation:'broh-SHOOR', ipa:'/broʊˈʃʊər/', pos:'noun', def:'A small book or pamphlet containing descriptive or advertising material, typically about a product, service, or place.', lang:'French, from brocher (\'to stitch\'), from broche (\'a pointed tool\'), because early brochures were stitched together.', example:'The travel agency handed out colorful brochures featuring tropical destinations with crystal-clear waters and white sand beaches.', isNoun:true },
+  { word:'broil', pronunciation:'BROYL', ipa:'/brɔɪl/', pos:'verb', def:'To cook meat or fish by exposure to direct, intense heat; to become very hot.', lang:'Old French, from bruler (\'to burn\'), possibly from a Germanic source; some scholars link it to Latin ustulare (\'to scorch\').', example:'She set the oven to broil and placed the salmon fillets on the top rack to cook under the direct heat.', isNoun:false },
+  { word:'buffoonery', pronunciation:'buh-FOO-nuh-ree', ipa:'/bəˈfuːnəri/', pos:'noun', def:'Behavior that is ridiculous but amusing; silly or comical antics.', lang:'French, from bouffonnerie (\'jesting\'), from bouffon (\'jester, clown\'), from Italian buffone (\'jester\'), from buffa (\'jest, puff of wind\').', example:'The children roared with laughter at the clown\'s buffoonery, especially when he pretended to slip on a banana peel.', isNoun:true },
+  { word:'bumblebee', pronunciation:'BUM-bul-bee', ipa:'/ˈbʌmbəlˌbiː/', pos:'noun', def:'A large, hairy bee with a loud hum, known for its ability to pollinate flowers and its distinctive buzzing flight.', lang:'English, from bumble (\'to buzz, hum\'), of imitative origin, + bee, from Old English bēo.', example:'A fat bumblebee drifted lazily from flower to flower in the garden, its legs dusted with bright yellow pollen.', isNoun:true },
+  { word:'bungee', pronunciation:'BUN-jee', ipa:'/ˈbʌndʒi/', pos:'noun', def:'A long elastic cord used for securing luggage or for bungee jumping; the activity of jumping from a height while attached to such a cord.', lang:'English, of uncertain origin; possibly from India or from British dialect bungy (\'anything thick and squat\').', example:'She gathered her courage and leaped off the bridge, the bungee cord snapping her back just above the river below.', isNoun:true },
+  { word:'burial', pronunciation:'BAIR-ee-ul', ipa:'/ˈbɛriəl/', pos:'noun', def:'The act or ceremony of burying a dead body; interment.', lang:'Old English, from byrgels (\'tomb, grave\'), from byrgan (\'to bury\'), of Germanic origin.', example:'The burial took place in the small churchyard overlooking the sea, just as he had always wished.', isNoun:true },
+  { word:'buzzworthy', pronunciation:'BUZ-wur-thee', ipa:'/ˈbʌzˌwɜːrði/', pos:'adjective', def:'Likely to generate excitement, discussion, or media attention; worthy of being talked about.', lang:'English, from buzz (\'excited talk or attention\') + worthy (\'deserving of\').', example:'The director\'s latest film is already buzzworthy, with critics calling it a masterpiece months before its release.', isNoun:false },
+  { word:'bystander', pronunciation:'BYE-stan-dur', ipa:'/ˈbaɪˌstændər/', pos:'noun', def:'A person who is present at an event or incident but does not take part; an onlooker or spectator.', lang:'English, from by (\'near\') + stander (\'one who stands\'), modeled on earlier formations like bysitter.', example:'A brave bystander rushed into the street to pull the child out of the path of the oncoming car.', isNoun:true }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Slider
+  const totalA = a.length;
+  const pct = totalA > 1 ? s / (totalA - 1) * 100 : 0;
+  document.getElementById("sliderFill").style.width = pct + "%";
+  const sliderArea = document.getElementById("sliderArea");
+  const areaW = sliderArea.offsetWidth || 200;
+  const pad = 10;
+  const thumbLeft = pad + (pct / 100) * (areaW - pad * 2);
+  const thumb = document.getElementById("sliderThumb");
+  if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
+
+  // Ticks - show ~20 evenly spaced markers
+  const tickCount = Math.min(totalA, 20);
+  let ticksHtml = '';
+  for(let t=0; t<tickCount; t++){
+    const ti = Math.round(t / (tickCount-1) * (totalA-1));
+    const cls = ti===s ? 'active' : (t % 5 === 0 ? 'major' : '');
+    ticksHtml += `<div class="slider-tick ${cls}"></div>`;
+  }
+  document.getElementById("sliderDots").innerHTML = ticksHtml;
+  document.getElementById("sliderCounter").textContent = `${s+1} / ${totalA}`;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Slider drag
+const slArea=document.getElementById("sliderArea");
+const slThumb=document.getElementById("sliderThumb");
+let slDragging=false;
+function sliderFromX(cx){
+  const r=slArea.getBoundingClientRect();
+  const pad=10;
+  const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
+  const a=aw(),idx=Math.round(p*(a.length-1));
+  // Move thumb immediately for smooth feel
+  const thumbLeft=pad+(p)*(r.width-pad*2);
+  slThumb.style.left=thumbLeft+"px";
+  if(idx!==si()){
+    const g=WORDS.findIndex(w=>w.word===a[idx].word);
+    flipped=false; currentIndex=g; render();
+  }
+}
+slArea.addEventListener("touchstart",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(slDragging) sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    // Speak the word after releasing
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+slArea.addEventListener("mousedown",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.clientX); e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(slDragging) sliderFromX(e.clientX);
+});
+document.addEventListener("mouseup",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>
