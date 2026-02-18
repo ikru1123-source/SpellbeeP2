@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 900;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 18px; height: 18px; }
+.slider-area {
+  flex: 1; height: 32px; position: relative;
+  display: flex; align-items: center;
+  touch-action: none; cursor: pointer;
+}
+.slider-track-bg {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
+}
+.slider-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(212,175,55,0.5));
+  transition: width 0.15s ease;
+}
+.slider-dots {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; padding: 0 2px;
+}
+.slider-tick {
+  width: 2px; height: 8px; border-radius: 1px;
+  background: rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.slider-tick.major { height: 12px; background: rgba(255,255,255,0.12); }
+.slider-tick.active { background: var(--gold); height: 14px; width: 3px; border-radius: 1.5px; box-shadow: 0 0 6px rgba(212,175,55,0.4); }
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px solid #1a1528;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  cursor: grab; transition: left 0.12s ease;
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
+.slider-thumb.dragging { transition: none; transform: translate(-50%, -50%) scale(1.15); }
+.slider-counter {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.08em;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1>Spelling Bee</h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="slider-area" id="sliderArea">
+      <div class="slider-track-bg">
+        <div class="slider-fill" id="sliderFill"></div>
+      </div>
+      <div class="slider-dots" id="sliderDots"></div>
+      <div class="slider-thumb" id="sliderThumb"></div>
+    </div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'eagerly', pronunciation:'EE-gur-lee', ipa:'/ˈiːɡərli/', pos:'adverb', def:'In a keen or enthusiastic manner; with great interest or desire.', lang:'Old French, from aigre (\'keen, sharp\'), from Latin acer (\'sharp, eager\'), + -ly.', example:'The children eagerly tore open their birthday presents, squealing with delight at each new surprise.', isNoun:false },
+  { word:'earmark', pronunciation:'EER-mark', ipa:'/ˈɪərˌmɑːrk/', pos:'verb', def:'To designate something for a particular purpose; to set aside funds or resources for a specific use.', lang:'English, from ear + mark, originally referring to a mark cut into the ear of livestock to indicate ownership.', example:'The city council voted to earmark two million dollars from the budget for the renovation of the public library.', isNoun:false },
+  { word:'earnestly', pronunciation:'UR-nist-lee', ipa:'/ˈɜːrnɪstli/', pos:'adverb', def:'In a sincere and serious manner; with genuine intensity of feeling or purpose.', lang:'Old English, from eornoste (\'zealous, serious\'), of Germanic origin, + -ly.', example:'She earnestly pleaded with her parents to let her adopt the stray kitten she had found on the way home.', isNoun:false },
+  { word:'eclectic', pronunciation:'ih-KLEK-tik', ipa:'/ɪˈklɛktɪk/', pos:'adjective', def:'Deriving ideas, style, or taste from a broad and diverse range of sources; not following any one system.', lang:'Greek, from eklektikos (\'selective\'), from eklegein (\'to pick out, select\'), from ek (\'out\') + legein (\'to choose\').', example:'Her eclectic music collection ranged from classical symphonies and jazz standards to hip-hop and traditional folk songs.', isNoun:false },
+  { word:'eclipse', pronunciation:'ih-KLIPS', ipa:'/ɪˈklɪps/', pos:'noun', def:'An obscuring of the light from one celestial body by the passage of another; a loss of significance or power.', lang:'Greek, from ekleipsis (\'an abandonment, failing\'), from ekleipein (\'to leave out, forsake\'), from ek (\'out\') + leipein (\'to leave\').', example:'Millions of people gathered outdoors to watch the total solar eclipse, gasping as the moon completely covered the sun.', isNoun:true },
+  { word:'editorial', pronunciation:'ED-ih-TOR-ee-ul', ipa:'/ˌɛdɪˈtɔːriəl/', pos:'noun', def:'A newspaper article written by or on behalf of an editor that gives an opinion on a topical issue.', lang:'Latin, from editor (\'one who publishes\'), from editus, past participle of edere (\'to put forth, publish\'), from e- (\'out\') + dare (\'to give\').', example:'The newspaper\'s editorial urged voters to consider the long-term environmental consequences before casting their ballots.', isNoun:true },
+  { word:'eerily', pronunciation:'EER-uh-lee', ipa:'/ˈɪərɪli/', pos:'adverb', def:'In a strange and frightening manner; in a way that inspires an unsettling sense of mystery.', lang:'English, from eerie (possibly from Old English earg, \'cowardly, fearful\'), of Northern English and Scottish origin, + -ly.', example:'The abandoned house stood eerily silent in the moonlight, its broken windows staring like hollow eyes.', isNoun:false },
+  { word:'effortless', pronunciation:'EF-urt-lus', ipa:'/ˈɛfərtləs/', pos:'adjective', def:'Requiring no physical or mental exertion; achieved with admirable ease.', lang:'English, from effort (from French effort, from Old French esforz, from esforcer \'to force\') + -less.', example:'The ballerina made the most difficult jumps look effortless, gliding across the stage with graceful ease.', isNoun:false },
+  { word:'eighth', pronunciation:'AYTTH', ipa:'/eɪtθ/', pos:'adjective', def:'Coming after the seventh in position or order; constituting number eight in a sequence.', lang:'Old English, from eahtoþa (\'eighth\'), from eahta (\'eight\'), of Germanic origin, related to Latin octo and Greek oktō.', example:'Their table was the eighth one from the entrance, tucked in a cozy corner near the fireplace.', isNoun:false },
+  { word:'Einstein', pronunciation:'YNE-styne', ipa:'/ˈaɪnstaɪn/', pos:'noun', def:'Albert Einstein, the German-born theoretical physicist who developed the theory of relativity; informally, an exceptionally intelligent person.', lang:'German, a surname meaning \'one stone\' or \'stone enclosure,\' from ein (\'one\') + Stein (\'stone\').', example:'You don\'t have to be an Einstein to figure out that spending more than you earn leads to debt.', isNoun:true },
+  { word:'elaborative', pronunciation:'ih-LAB-uh-RAY-tiv', ipa:'/ɪˈlæbəˌreɪtɪv/', pos:'adjective', def:'Serving to elaborate or develop something in greater detail; tending to add complexity or richness.', lang:'Latin, from elaboratus, past participle of elaborare (\'to work out\'), from e- (\'out\') + laborare (\'to work\'), + -ive.', example:'The teacher used elaborative questioning techniques to help students develop deeper understanding of the material.', isNoun:false },
+  { word:'elasticity', pronunciation:'EE-las-TIS-ih-tee', ipa:'/ˌiːlæsˈtɪsɪti/', pos:'noun', def:'The ability of an object or material to resume its normal shape after being stretched or compressed; flexibility and adaptability.', lang:'Greek, from elastos (\'ductile, flexible\'), from elaunein (\'to drive, beat out\'), + -icity.', example:'The elasticity of the rubber band allowed it to stretch far without breaking, then snap back to its original size.', isNoun:true },
+  { word:'elegant', pronunciation:'EL-ih-gunt', ipa:'/ˈɛlɪɡənt/', pos:'adjective', def:'Pleasingly graceful and stylish in appearance or manner; cleverly simple and effective.', lang:'Latin, from elegantem (\'choice, fine, tasteful\'), from eligere (\'to select, choose\'), from e- (\'out\') + legere (\'to choose, pick\').', example:'She wore an elegant black dress to the gala, accessorized with a simple strand of pearls and diamond earrings.', isNoun:false },
+  { word:'element', pronunciation:'EL-uh-munt', ipa:'/ˈɛlɪmənt/', pos:'noun', def:'A basic component or part of something; a substance that cannot be broken down into simpler substances by chemical means.', lang:'Latin, from elementum (\'first principle, letter of the alphabet, element\'), of uncertain ultimate origin.', example:'Oxygen is the most abundant element in the Earth\'s crust, making up nearly half its weight.', isNoun:true },
+  { word:'elicitation', pronunciation:'ih-LIS-ih-TAY-shun', ipa:'/ɪˌlɪsɪˈteɪʃən/', pos:'noun', def:'The act of drawing out a response, answer, or information from someone through questioning or prompting.', lang:'Latin, from elicitus, past participle of elicere (\'to draw out, entice\'), from e- (\'out\') + lacere (\'to lure\'), + -ation.', example:'The detective\'s careful elicitation of details from the witness helped piece together the sequence of events.', isNoun:true },
+  { word:'eligibility', pronunciation:'EL-ih-juh-BIL-ih-tee', ipa:'/ˌɛlɪdʒəˈbɪlɪti/', pos:'noun', def:'The state of having the right to do or obtain something through satisfying the required conditions.', lang:'Latin, from eligibilis (\'able to be chosen\'), from eligere (\'to choose, select\'), from e- (\'out\') + legere (\'to pick\'), + -ity.', example:'Students must maintain a minimum grade point average to keep their eligibility for the varsity sports team.', isNoun:true },
+  { word:'elixir', pronunciation:'ih-LIK-sur', ipa:'/ɪˈlɪksər/', pos:'noun', def:'A magical or medicinal potion believed to cure all ills or grant eternal life; a preparation supposedly capable of changing metals into gold.', lang:'Arabic, from al-iksīr (\'the philosopher\'s stone\'), possibly from Greek xērion (\'dry powder for treating wounds\'), from xēros (\'dry\').', example:'The old apothecary claimed his herbal elixir could cure everything from headaches to heartbreak, though few believed him.', isNoun:true },
+  { word:'ellipse', pronunciation:'ih-LIPS', ipa:'/ɪˈlɪps/', pos:'noun', def:'A regular oval shape, traced by a point moving so that the sum of its distances from two fixed points is constant; the geometric shape of planetary orbits.', lang:'Greek, from elleipsis (\'a falling short, defect\'), from elleipein (\'to fall short\'), from en (\'in\') + leipein (\'to leave\'), because the curve falls short of a full circle.', example:'The planets in our solar system orbit the sun in an ellipse rather than a perfect circle.', isNoun:true },
+  { word:'elocution', pronunciation:'EL-uh-KYOO-shun', ipa:'/ˌɛləˈkjuːʃən/', pos:'noun', def:'The skill of clear and expressive speech, especially of distinct pronunciation and articulation.', lang:'Latin, from elocutio (\'oratorical delivery\'), from eloqui (\'to speak out\'), from e- (\'out\') + loqui (\'to speak\').', example:'The aspiring actress took elocution lessons to improve her diction and project her voice to the back of the theater.', isNoun:true },
+  { word:'elusive', pronunciation:'ih-LOO-siv', ipa:'/ɪˈluːsɪv/', pos:'adjective', def:'Difficult to find, catch, or achieve; hard to remember or define clearly.', lang:'Latin, from elusus, past participle of eludere (\'to escape from, elude\'), from e- (\'out, away\') + ludere (\'to play\').', example:'The elusive snow leopard is rarely spotted in the wild, making every sighting a memorable event for researchers.', isNoun:false },
+  { word:'emancipatory', pronunciation:'ih-MAN-sih-puh-TOR-ee', ipa:'/ɪˌmænsɪˈpeɪtəri/', pos:'adjective', def:'Serving to set free from legal, social, or political restrictions; liberating.', lang:'Latin, from emancipatus, past participle of emancipare (\'to set free\'), from e- (\'out\') + mancipare (\'to transfer ownership\'), from manus (\'hand\') + capere (\'to take\').', example:'The emancipatory movement fought for equal rights and freedoms for all citizens regardless of background.', isNoun:false },
+  { word:'embassy', pronunciation:'EM-buh-see', ipa:'/ˈɛmbəsi/', pos:'noun', def:'The official residence or offices of an ambassador in a foreign country; a diplomatic mission.', lang:'Old French, from ambassée (\'mission\'), from Italian ambasciata, from Medieval Latin ambactia (\'mission, service\'), from Gaulish ambactos (\'servant\').', example:'The travelers went to the embassy to get emergency replacement passports after theirs were stolen.', isNoun:true },
+  { word:'embezzlement', pronunciation:'em-BEZ-ul-munt', ipa:'/ɛmˈbɛzəlmənt/', pos:'noun', def:'The theft or misappropriation of funds placed in one\'s trust or belonging to one\'s employer.', lang:'Anglo-French, from embesiler (\'to steal, make away with\'), from en- (\'in\') + besiler (\'to maltreat, destroy\'), of uncertain origin.', example:'The accountant was charged with embezzlement after auditors discovered she had diverted company funds into her personal account.', isNoun:true },
+  { word:'emblazoned', pronunciation:'em-BLAY-zund', ipa:'/ɛmˈbleɪzənd/', pos:'adjective', def:'Conspicuously inscribed or displayed; decorated with a coat of arms or other design.', lang:'English, from en- (\'in, on\') + blazon (\'to describe or paint heraldic arms\'), from Old French blason (\'shield\').', example:'The knight\'s shield was emblazoned with a golden lion, the symbol of his noble family for generations.', isNoun:false },
+  { word:'emerald', pronunciation:'EM-ur-uld', ipa:'/ˈɛmərəld/', pos:'noun', def:'A bright green precious stone, a variety of beryl; a vivid, rich shade of green.', lang:'Old French, from esmeralde, from Latin smaragdus, from Greek smaragdos, ultimately from Sanskrit marakata (\'emerald\').', example:'The antique ring featured a stunning emerald surrounded by tiny diamonds, passed down from her great-grandmother.', isNoun:true },
+  { word:'empire', pronunciation:'EM-pyre', ipa:'/ˈɛmpaɪər/', pos:'noun', def:'An extensive group of states or countries under a single supreme authority; a large commercial organization controlled by one person or group.', lang:'Old French, from empire, from Latin imperium (\'supreme power, sovereignty, dominion\'), from imperare (\'to command\').', example:'At its height, the Roman Empire stretched from Britain in the northwest to Egypt in the southeast.', isNoun:true },
+  { word:'endearing', pronunciation:'en-DEER-ing', ipa:'/ɛnˈdɪərɪŋ/', pos:'adjective', def:'Inspiring affection or warm feelings; lovable or charming.', lang:'English, from endear (\'to cause to be loved\'), from en- (\'make\') + dear, from Old English dēore (\'precious, beloved\'), + -ing.', example:'The puppy had an endearing habit of tilting its head sideways whenever someone spoke to it.', isNoun:false },
+  { word:'endure', pronunciation:'en-DOOR', ipa:'/ɛnˈdjʊər/', pos:'verb', def:'To suffer something painful or difficult patiently; to remain in existence; to last.', lang:'Old French, from endurer (\'to last, harden\'), from Latin indurare (\'to make hard\'), from in- (\'in\') + durare (\'to harden\'), from durus (\'hard\').', example:'The marathon runners had to endure blistering heat and steep hills to reach the finish line.', isNoun:false },
+  { word:'enervate', pronunciation:'EN-ur-vayt', ipa:'/ˈɛnərˌveɪt/', pos:'verb', def:'To cause someone to feel drained of energy or vitality; to weaken.', lang:'Latin, from enervatus, past participle of enervare (\'to weaken\'), from e- (\'out of\') + nervus (\'sinew, nerve\').', example:'The oppressive summer heat seemed to enervate everyone in the office, leaving them sluggish and unmotivated.', isNoun:false },
+  { word:'engagement', pronunciation:'en-GAYJ-munt', ipa:'/ɛnˈɡeɪdʒmənt/', pos:'noun', def:'A formal agreement to get married; an arrangement to do something at a fixed time; participation or involvement.', lang:'French, from engager (\'to pledge\'), from en- (\'in\') + gage (\'pledge\'), of Germanic origin.', example:'The couple announced their engagement at the family dinner, and everyone raised their glasses in celebration.', isNoun:true },
+  { word:'engender', pronunciation:'en-JEN-dur', ipa:'/ɛnˈdʒɛndər/', pos:'verb', def:'To cause or give rise to a feeling, situation, or condition; to bring into existence.', lang:'Old French, from engendrer (\'to beget\'), from Latin ingenerare (\'to implant, generate\'), from in- (\'in\') + generare (\'to beget\'), from genus (\'birth, race\').', example:'The coach\'s inspirational speech engendered a sense of unity and determination among the players before the big game.', isNoun:false },
+  { word:'engineer', pronunciation:'EN-juh-NEER', ipa:'/ˌɛndʒɪˈnɪər/', pos:'noun', def:'A person who designs, builds, or maintains engines, machines, or public works; a person who skillfully plans something.', lang:'Old French, from engigneor (\'constructor of military engines\'), from engin (\'skill, cleverness, war machine\'), from Latin ingenium (\'inborn qualities, talent\').', example:'The engineer designed a bridge that could withstand earthquakes while blending beautifully with the surrounding landscape.', isNoun:true },
+  { word:'entreat', pronunciation:'en-TREET', ipa:'/ɛnˈtriːt/', pos:'verb', def:'To ask someone earnestly or anxiously to do something; to plead or beg.', lang:'Old French, from entraiter (\'to treat, deal with\'), from en- (\'in\') + traiter (\'to treat\'), from Latin tractare (\'to handle, manage\').', example:'The villagers entreated the king to send troops to defend them against the approaching invaders.', isNoun:false },
+  { word:'entrée', pronunciation:'ON-tray', ipa:'/ˈɒntreɪ/', pos:'noun', def:'The main course of a meal; the right or privilege of admission or access to a place or group.', lang:'French, from entrée (\'entry, entrance\'), from entrer (\'to enter\'), from Latin intrare (\'to enter\'), from intra (\'within\').', example:'For the entrée, guests could choose between grilled salmon with lemon butter or roasted chicken with herbs.', isNoun:true },
+  { word:'entrepreneur', pronunciation:'ON-truh-pruh-NUR', ipa:'/ˌɒntrəprəˈnɜːr/', pos:'noun', def:'A person who organizes and operates a business, taking on financial risk to do so; an innovator in business.', lang:'French, from entrepreneur (\'one who undertakes\'), from entreprendre (\'to undertake\'), from entre (\'between\') + prendre (\'to take\'), from Latin prehendere.', example:'The young entrepreneur turned her homemade candle hobby into a thriving online business within just two years.', isNoun:true },
+  { word:'enviable', pronunciation:'EN-vee-uh-bul', ipa:'/ˈɛnviəbəl/', pos:'adjective', def:'Arousing or likely to arouse envy; highly desirable.', lang:'Latin, from invidia (\'envy\'), from invidere (\'to look upon with envy\'), from in- (\'upon\') + videre (\'to see\'), + -able.', example:'She had the enviable ability to fall asleep anywhere within minutes, even on long airplane flights.', isNoun:false },
+  { word:'epoxy', pronunciation:'ih-POK-see', ipa:'/ɪˈpɒksi/', pos:'noun', def:'A strong adhesive or coating made from a type of synthetic thermosetting resin, used for bonding and sealing.', lang:'Greek, from ep- (variant of epi, \'over, upon\') + oxy- (from oxys, \'sharp, acid\'), referring to the oxygen bridge in the chemical structure.', example:'He used epoxy to repair the cracked vase, and the bond was so strong that the fix was nearly invisible.', isNoun:true },
+  { word:'erode', pronunciation:'ih-ROHD', ipa:'/ɪˈroʊd/', pos:'verb', def:'To gradually wear away by wind, water, or other natural agents; to gradually destroy or diminish.', lang:'Latin, from erodere (\'to eat away\'), from e- (\'away\') + rodere (\'to gnaw\').', example:'Over thousands of years, the river slowly eroded the canyon walls, carving the spectacular gorge we see today.', isNoun:false },
+  { word:'eruption', pronunciation:'ih-RUP-shun', ipa:'/ɪˈrʌpʃən/', pos:'noun', def:'An act of bursting out or through; a volcanic explosion of lava and gases; a sudden outbreak of something.', lang:'Latin, from eruptio (\'a breaking out\'), from erumpere (\'to burst out\'), from e- (\'out\') + rumpere (\'to break\').', example:'The volcanic eruption sent a towering column of ash and smoke thousands of feet into the sky.', isNoun:true },
+  { word:'escalator', pronunciation:'ES-kuh-LAY-tur', ipa:'/ˈɛskəˌleɪtər/', pos:'noun', def:'A moving staircase consisting of an endlessly circulating belt of steps driven by a motor.', lang:'English, originally a trademark, from escalade (\'scaling of walls\'), from Latin scala (\'ladder\'), + -ator.', example:'The shoppers rode the escalator up to the second floor of the department store to browse the clothing section.', isNoun:true },
+  { word:'escapade', pronunciation:'ES-kuh-PAYD', ipa:'/ˈɛskəˌpeɪd/', pos:'noun', def:'An act or incident involving excitement, daring, or adventure; a wild or exciting undertaking.', lang:'French, from escapade (\'an escape\'), from Spanish escapada, from escapar (\'to escape\'), from Latin excappare (\'to get out of one\'s cape\').', example:'The siblings\' weekend escapade involved sneaking out at dawn to explore the hidden caves near the coastline.', isNoun:true },
+  { word:'essential', pronunciation:'ih-SEN-shul', ipa:'/ɪˈsɛnʃəl/', pos:'adjective', def:'Absolutely necessary; extremely important; fundamental to the nature of something.', lang:'Latin, from essentialis (\'relating to the essence\'), from essentia (\'being, essence\'), from esse (\'to be\').', example:'Water is essential for all living organisms, playing a vital role in nearly every biological process.', isNoun:false },
+  { word:'establishment', pronunciation:'ih-STAB-lish-munt', ipa:'/ɪˈstæblɪʃmənt/', pos:'noun', def:'A business organization, public institution, or household; the act of establishing something; the dominant group in society.', lang:'Old French, from establir (\'to establish\'), from Latin stabilire (\'to make firm\'), from stabilis (\'stable, firm\'), from stare (\'to stand\').', example:'The family-owned establishment has been serving homemade pasta in the same location for over seventy years.', isNoun:true },
+  { word:'evaluate', pronunciation:'ih-VAL-yoo-ayt', ipa:'/ɪˈvæljuˌeɪt/', pos:'verb', def:'To form an idea of the amount, number, or value of something; to assess or judge.', lang:'French, from évaluer (\'to assess\'), from é- (\'out\') + value (\'value\'), from Latin valere (\'to be strong, be worth\').', example:'The teacher asked students to evaluate the evidence presented in the article and form their own conclusions.', isNoun:false },
+  { word:'ewe', pronunciation:'YOO', ipa:'/juː/', pos:'noun', def:'A female sheep, especially a mature one.', lang:'Old English, from ēowu (\'female sheep\'), of Germanic origin, related to Latin ovis (\'sheep\') and Greek ois.', example:'The ewe gently nudged her newborn lamb, encouraging it to stand on its wobbly legs for the first time.', isNoun:true },
+  { word:'exaggerate', pronunciation:'ig-ZAJ-uh-rayt', ipa:'/ɪɡˈzædʒəˌreɪt/', pos:'verb', def:'To represent something as being larger, greater, better, or worse than it really is; to overstate.', lang:'Latin, from exaggeratus, past participle of exaggerare (\'to heap up, amplify\'), from ex- (\'thoroughly\') + aggerare (\'to heap up\'), from agger (\'heap\').', example:'He tends to exaggerate his fishing stories, claiming each catch was twice the size it actually was.', isNoun:false },
+  { word:'exceedingly', pronunciation:'ik-SEE-ding-lee', ipa:'/ɪkˈsiːdɪŋli/', pos:'adverb', def:'To a very great degree; extremely; surpassing the usual or expected level.', lang:'English, from exceeding + -ly. Exceed from Latin excedere (\'to go beyond\'), from ex- (\'out\') + cedere (\'to go\').', example:'The dessert was exceedingly rich, with layers of dark chocolate ganache and salted caramel that melted on the tongue.', isNoun:false },
+  { word:'excursion', pronunciation:'ik-SKUR-zhun', ipa:'/ɪkˈskɜːrʒən/', pos:'noun', def:'A short journey or trip, especially one taken for leisure; a deviation from a direct course.', lang:'Latin, from excursio (\'a running out\'), from excurrere (\'to run out\'), from ex- (\'out\') + currere (\'to run\').', example:'The school organized a weekend excursion to the natural history museum, where students explored dinosaur exhibits.', isNoun:true },
+  { word:'exercise', pronunciation:'EK-sur-syze', ipa:'/ˈɛksərˌsaɪz/', pos:'noun', def:'Physical activity carried out to sustain or improve health and fitness; a task or activity done to practice a skill.', lang:'Latin, from exercitium (\'training, exercise\'), from exercere (\'to keep busy, train\'), from ex- (\'thoroughly\') + arcere (\'to keep in, enclose\').', example:'Daily exercise, even a simple thirty-minute walk, can significantly improve both physical and mental health.', isNoun:true },
+  { word:'existence', pronunciation:'ig-ZIS-tunce', ipa:'/ɪɡˈzɪstəns/', pos:'noun', def:'The fact or state of living or having objective reality; continued survival; a way of living.', lang:'Latin, from existentia (\'existence\'), from existere (\'to come into being, exist\'), from ex- (\'out\') + sistere (\'to take a stand\').', example:'Scientists continue to search for evidence of the existence of life on other planets in our solar system.', isNoun:true },
+  { word:'expansion', pronunciation:'ik-SPAN-shun', ipa:'/ɪkˈspænʃən/', pos:'noun', def:'The action of becoming larger or more extensive; the process of increasing in size, volume, or scope.', lang:'Latin, from expansio (\'a spreading out\'), from expandere (\'to spread out\'), from ex- (\'out\') + pandere (\'to spread\').', example:'The rapid expansion of the company required them to hire two hundred new employees and open three additional offices.', isNoun:true },
+  { word:'expedition', pronunciation:'EK-spuh-DISH-un', ipa:'/ˌɛkspɪˈdɪʃən/', pos:'noun', def:'A journey or voyage undertaken for a specific purpose, especially exploration or research; promptness or speed.', lang:'Latin, from expeditio (\'a military campaign\'), from expedire (\'to free the feet, prepare\'), from ex- (\'out\') + pes (genitive pedis, \'foot\').', example:'The scientific expedition to Antarctica lasted three months and yielded important data about climate change.', isNoun:true },
+  { word:'explode', pronunciation:'ik-PLOHD', ipa:'/ɪkˈsploʊd/', pos:'verb', def:'To burst or shatter violently as a result of rapid combustion or pressure; to increase suddenly and dramatically.', lang:'Latin, from explodere (\'to drive out by clapping\'), from ex- (\'out\') + plaudere (\'to clap\'), originally meaning to hiss an actor off stage.', example:'The fireworks exploded in brilliant bursts of color across the night sky, drawing cheers from the crowd below.', isNoun:false },
+  { word:'extensive', pronunciation:'ik-STEN-siv', ipa:'/ɪkˈstɛnsɪv/', pos:'adjective', def:'Covering or affecting a large area; large in amount or scale; wide-ranging and thorough.', lang:'Latin, from extensivus, from extensus, past participle of extendere (\'to stretch out\'), from ex- (\'out\') + tendere (\'to stretch\').', example:'The detective conducted an extensive investigation, interviewing over a hundred witnesses across three cities.', isNoun:false },
+  { word:'extinct', pronunciation:'ik-STINKT', ipa:'/ɪkˈstɪŋkt/', pos:'adjective', def:'No longer in existence; having died out completely, especially of a species; no longer active, of a volcano.', lang:'Latin, from extinctus, past participle of extinguere (\'to put out, quench\'), from ex- (\'out\') + stinguere (\'to quench\').', example:'The dodo bird has been extinct since the late 17th century, hunted to oblivion on the island of Mauritius.', isNoun:false },
+  { word:'extinguish', pronunciation:'ik-STING-gwish', ipa:'/ɪkˈstɪŋɡwɪʃ/', pos:'verb', def:'To cause a fire or light to cease burning or shining; to put an end to something.', lang:'Latin, from extinguere (\'to put out, quench\'), from ex- (\'out\') + stinguere (\'to quench\').', example:'The firefighters worked through the night to extinguish the blaze before it could spread to neighboring buildings.', isNoun:false },
+  { word:'extracurricular', pronunciation:'EK-struh-kuh-RIK-yuh-lur', ipa:'/ˌɛkstrəkəˈrɪkjʊlər/', pos:'adjective', def:'Of an activity at school or college pursued in addition to the normal course of study; outside the regular curriculum.', lang:'Latin, from extra (\'outside, beyond\') + curriculum (\'a running, course\'), from currere (\'to run\').', example:'She participated in several extracurricular activities, including debate club, orchestra, and the school newspaper.', isNoun:false },
+  { word:'extradition', pronunciation:'EK-struh-DISH-un', ipa:'/ˌɛkstrəˈdɪʃən/', pos:'noun', def:'The action of surrendering a person accused or convicted of a crime to the jurisdiction of the country where the crime was committed.', lang:'French, from extradition, from Latin ex- (\'out\') + traditio (\'a handing over\'), from tradere (\'to hand over\').', example:'The government approved the extradition of the fugitive to face fraud charges in the country where the crime occurred.', isNoun:true },
+  { word:'extraordinaire', pronunciation:'ik-STROR-dih-NAIR', ipa:'/ɪkˌstrɔːrdɪˈnɛr/', pos:'adjective', def:'Outstanding or remarkable in a particular capacity; used after a noun for emphasis to denote exceptional skill.', lang:'French, from extraordinaire (\'extraordinary\'), from Latin extraordinarius (\'out of the common order\'), from extra (\'outside\') + ordinarius (\'orderly\').', example:'The chef extraordinaire dazzled the judges with a five-course meal that pushed the boundaries of modern cuisine.', isNoun:false },
+  { word:'exude', pronunciation:'ig-ZOOD', ipa:'/ɪɡˈzuːd/', pos:'verb', def:'To discharge slowly and steadily; to display a quality or feeling strongly and openly.', lang:'Latin, from exsudare (\'to sweat out\'), from ex- (\'out\') + sudare (\'to sweat\').', example:'The confident speaker seemed to exude warmth and charisma, instantly putting the nervous audience at ease.', isNoun:false }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Slider
+  const totalA = a.length;
+  const pct = totalA > 1 ? s / (totalA - 1) * 100 : 0;
+  document.getElementById("sliderFill").style.width = pct + "%";
+  const sliderArea = document.getElementById("sliderArea");
+  const areaW = sliderArea.offsetWidth || 200;
+  const pad = 10;
+  const thumbLeft = pad + (pct / 100) * (areaW - pad * 2);
+  const thumb = document.getElementById("sliderThumb");
+  if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
+
+  // Ticks - show ~20 evenly spaced markers
+  const tickCount = Math.min(totalA, 20);
+  let ticksHtml = '';
+  for(let t=0; t<tickCount; t++){
+    const ti = Math.round(t / (tickCount-1) * (totalA-1));
+    const cls = ti===s ? 'active' : (t % 5 === 0 ? 'major' : '');
+    ticksHtml += `<div class="slider-tick ${cls}"></div>`;
+  }
+  document.getElementById("sliderDots").innerHTML = ticksHtml;
+  document.getElementById("sliderCounter").textContent = `${s+1} / ${totalA}`;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Slider drag
+const slArea=document.getElementById("sliderArea");
+const slThumb=document.getElementById("sliderThumb");
+let slDragging=false;
+function sliderFromX(cx){
+  const r=slArea.getBoundingClientRect();
+  const pad=10;
+  const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
+  const a=aw(),idx=Math.round(p*(a.length-1));
+  // Move thumb immediately for smooth feel
+  const thumbLeft=pad+(p)*(r.width-pad*2);
+  slThumb.style.left=thumbLeft+"px";
+  if(idx!==si()){
+    const g=WORDS.findIndex(w=>w.word===a[idx].word);
+    flipped=false; currentIndex=g; render();
+  }
+}
+slArea.addEventListener("touchstart",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(slDragging) sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    // Speak the word after releasing
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+slArea.addEventListener("mousedown",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.clientX); e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(slDragging) sliderFromX(e.clientX);
+});
+document.addEventListener("mouseup",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>
