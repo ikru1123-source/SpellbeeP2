@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 900;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 18px; height: 18px; }
+.slider-area {
+  flex: 1; height: 32px; position: relative;
+  display: flex; align-items: center;
+  touch-action: none; cursor: pointer;
+}
+.slider-track-bg {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
+}
+.slider-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(212,175,55,0.5));
+  transition: width 0.15s ease;
+}
+.slider-dots {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; padding: 0 2px;
+}
+.slider-tick {
+  width: 2px; height: 8px; border-radius: 1px;
+  background: rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.slider-tick.major { height: 12px; background: rgba(255,255,255,0.12); }
+.slider-tick.active { background: var(--gold); height: 14px; width: 3px; border-radius: 1.5px; box-shadow: 0 0 6px rgba(212,175,55,0.4); }
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px solid #1a1528;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  cursor: grab; transition: left 0.12s ease;
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
+.slider-thumb.dragging { transition: none; transform: translate(-50%, -50%) scale(1.15); }
+.slider-counter {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.08em;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1>Spelling Bee</h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="slider-area" id="sliderArea">
+      <div class="slider-track-bg">
+        <div class="slider-fill" id="sliderFill"></div>
+      </div>
+      <div class="slider-dots" id="sliderDots"></div>
+      <div class="slider-thumb" id="sliderThumb"></div>
+    </div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'rabid', pronunciation:'RAB-id', ipa:'/ˈræbɪd/', pos:'adjective', def:'Having or proceeding from an extreme or fanatical support of something; affected with rabies.', lang:'Latin, from rabidus (\'raging, mad\'), from rabere (\'to rave, be mad\').', example:'The rabid fans painted their faces in team colors and cheered nonstop through every minute of the game.', isNoun:false },
+  { word:'radius', pronunciation:'RAY-dee-us', ipa:'/ˈreɪdiəs/', pos:'noun', def:'A straight line from the center to the circumference of a circle or sphere; a specified distance from a central point.', lang:'Latin, from radius (\'staff, spoke of a wheel, ray of light\').', example:'The police searched every building within a two-mile radius of the last known location of the missing child.', isNoun:true },
+  { word:'raffle', pronunciation:'RAF-ul', ipa:'/ˈræfəl/', pos:'noun', def:'A lottery in which prizes are won by purchasing numbered tickets, with winning numbers drawn at random.', lang:'Old French, from rafle (\'a game of dice\'), of Germanic origin.', example:'She bought five raffle tickets at the school fundraiser and won a brand-new bicycle on the very last draw.', isNoun:true },
+  { word:'ragwort', pronunciation:'RAG-wurt', ipa:'/ˈræɡˌwɜːrt/', pos:'noun', def:'A yellow-flowered plant of the daisy family, common in grasslands and toxic to livestock, especially horses.', lang:'English, from rag (\'ragged\') + wort (\'plant\'), from Old English wyrt, referring to its ragged-looking leaves.', example:'The farmer spent the afternoon pulling ragwort from the pasture to protect the horses from its poisonous leaves.', isNoun:true },
+  { word:'railroad', pronunciation:'RAYL-rohd', ipa:'/ˈreɪlˌroʊd/', pos:'noun', def:'A track made of steel rails along which trains run; a system of such tracks with trains, stations, and other facilities.', lang:'English, from rail (from Old French reille, \'bar, rail\', from Latin regula, \'straight stick, rule\') + road.', example:'The transcontinental railroad connected the east and west coasts of America, transforming travel and commerce forever.', isNoun:true },
+  { word:'rambling', pronunciation:'RAM-bling', ipa:'/ˈræmblɪŋ/', pos:'adjective', def:'Lengthy and confused or inconsequential; spreading irregularly in various directions; sprawling.', lang:'English, from ramble (possibly from Middle Dutch rammelen, \'to wander about\'), + -ing.', example:'The old rambling farmhouse had rooms added over the centuries, creating a maze of hallways and unexpected staircases.', isNoun:false },
+  { word:'ramen', pronunciation:'RAH-men', ipa:'/ˈrɑːmən/', pos:'noun', def:'A Japanese dish of wheat noodles served in a rich broth, typically flavored with soy sauce or miso and topped with meat and vegetables.', lang:'Japanese, from rāmen, borrowed from Chinese lāmiàn (\'pulled noodles\'), from lā (\'to pull\') + miàn (\'noodle\').', example:'The steaming bowl of ramen arrived at the table with sliced pork, a soft-boiled egg, and fragrant green onions floating in rich broth.', isNoun:true },
+  { word:'ravenous', pronunciation:'RAV-uh-nus', ipa:'/ˈrævənəs/', pos:'adjective', def:'Extremely hungry; having a huge appetite; devouring food greedily.', lang:'Old French, from ravinos (\'rapacious\'), from raviner (\'to seize\'), from Latin rapina (\'plunder\'), from rapere (\'to seize\').', example:'After hiking all day without lunch, the campers were ravenous and devoured everything on their plates within minutes.', isNoun:false },
+  { word:'rebound', pronunciation:'rih-BOUND', ipa:'/rɪˈbaʊnd/', pos:'noun', def:'A ball that bounces back after striking a hard surface; in basketball, the act of retrieving the ball after a missed shot; a recovery.', lang:'Old French, from rebondir (\'to bounce back\'), from re- (\'back\') + bondir (\'to bounce, leap\').', example:'The center grabbed the rebound and immediately passed it to the point guard, who sprinted downcourt for an easy layup.', isNoun:true },
+  { word:'rebuff', pronunciation:'rih-BUF', ipa:'/rɪˈbʌf/', pos:'noun', def:'An abrupt or ungracious refusal or rejection of an offer, request, or friendly gesture.', lang:'Italian, from ribuffo (\'a reproof, snub\'), from ribuffare (\'to repulse\'), from ri- (\'back\') + buffo (\'a puff, gust\').', example:'Despite the initial rebuff from the publisher, she revised her manuscript and submitted it again with renewed determination.', isNoun:true },
+  { word:'recanted', pronunciation:'rih-KAN-tid', ipa:'/rɪˈkæntɪd/', pos:'verb', def:'Withdrew or renounced a former belief or statement, especially publicly and formally.', lang:'Latin, from recantare (\'to revoke, recall\'), from re- (\'back\') + cantare (\'to sing, chant\').', example:'The witness recanted his earlier testimony, admitting under cross-examination that he had not actually seen the incident.', isNoun:false },
+  { word:'reckless', pronunciation:'REK-lus', ipa:'/ˈrɛkləs/', pos:'adjective', def:'Without thinking or caring about the consequences of an action; careless and irresponsible.', lang:'Old English, from reccelēas (\'careless\'), from reccan (\'to take care, heed\') + -lēas (\'-less\').', example:'The reckless driver sped through the red light, narrowly missing a family crossing the street in the crosswalk.', isNoun:false },
+  { word:'recollections', pronunciation:'REK-uh-LEK-shunz', ipa:'/ˌrɛkəˈlɛkʃənz/', pos:'noun', def:'Memories; the action or faculty of remembering something; things that are recalled from the past.', lang:'Latin, from recolligere (\'to gather again\'), from re- (\'again\') + colligere (\'to collect, gather\'), + -tion + -s.', example:'Her recollections of childhood summers at the lake house were filled with sunshine, laughter, and the smell of pine trees.', isNoun:true },
+  { word:'reconsider', pronunciation:'REE-kun-SID-ur', ipa:'/ˌriːkənˈsɪdər/', pos:'verb', def:'To consider something again, especially with a view to changing a previous decision or opinion.', lang:'Latin, from re- (\'again\') + considerare (\'to look at closely, observe\'), from com- (\'together\') + sidus (\'star\').', example:'After hearing the new evidence, the committee agreed to reconsider its decision and reopen the investigation.', isNoun:false },
+  { word:'recovery', pronunciation:'rih-KUV-uh-ree', ipa:'/rɪˈkʌvəri/', pos:'noun', def:'A return to a normal state of health, mind, or strength; the action of regaining possession or control of something.', lang:'Old French, from recovrer (\'to recover\'), from Latin recuperare (\'to regain\'), from re- (\'back\') + capere (\'to take\').', example:'Her recovery from surgery was remarkably swift, and she was back on her feet within just a few weeks.', isNoun:true },
+  { word:'redemption', pronunciation:'rih-DEMP-shun', ipa:'/rɪˈdɛmpʃən/', pos:'noun', def:'The action of saving or being saved from sin, error, or evil; the action of regaining or gaining possession of something.', lang:'Latin, from redemptio (\'a buying back\'), from redimere (\'to buy back\'), from re- (\'back\') + emere (\'to buy\').', example:'The novel tells a powerful story of redemption, following a man who transforms his life after years of poor choices.', isNoun:true },
+  { word:'refinery', pronunciation:'rih-FY-nuh-ree', ipa:'/rɪˈfaɪnəri/', pos:'noun', def:'An industrial installation where a substance such as oil, sugar, or metal is purified or processed.', lang:'English, from refine (from French raffiner, \'to purify\', from re- + fin, \'fine\') + -ery.', example:'The oil refinery processed thousands of barrels of crude oil daily, converting it into gasoline, diesel, and jet fuel.', isNoun:true },
+  { word:'reflect', pronunciation:'rih-FLEKT', ipa:'/rɪˈflɛkt/', pos:'verb', def:'To throw back light, heat, or sound without absorbing it; to think deeply or carefully about something.', lang:'Latin, from reflectere (\'to bend back\'), from re- (\'back\') + flectere (\'to bend\').', example:'She paused to reflect on how much her life had changed since moving to the new city five years earlier.', isNoun:false },
+  { word:'regiment', pronunciation:'REJ-ih-munt', ipa:'/ˈrɛdʒɪmənt/', pos:'noun', def:'A permanent unit of an army typically commanded by a colonel and divided into companies; a large number of people or things.', lang:'Latin, from regimentum (\'rule, government\'), from regere (\'to rule, direct\').', example:'The regiment marched in perfect formation through the town square during the annual military parade.', isNoun:true },
+  { word:'regional', pronunciation:'REE-juh-nul', ipa:'/ˈriːdʒənəl/', pos:'adjective', def:'Of, relating to, or characteristic of a particular region or area.', lang:'Latin, from regionalis, from regio (\'direction, boundary, district\'), from regere (\'to direct, rule\'), + -al.', example:'The restaurant specialized in regional cuisine, serving dishes unique to the coastal villages of southern Italy.', isNoun:false },
+  { word:'registrar', pronunciation:'REJ-ih-strar', ipa:'/ˈrɛdʒɪˌstrɑːr/', pos:'noun', def:'An official responsible for keeping a register or official records, especially in a university or court.', lang:'Medieval Latin, from registrarius, from registrum (\'list, register\'), from Latin regesta (\'things recorded\'), from regerere (\'to record\').', example:'The university registrar processed thousands of enrollment forms during the first week of the new academic semester.', isNoun:true },
+  { word:'reign', pronunciation:'RAYN', ipa:'/reɪn/', pos:'noun', def:'The period during which a sovereign rules; royal authority or rule; a period of dominance.', lang:'Old French, from reigne (\'kingdom\'), from Latin regnum (\'royal authority, kingdom\'), from rex (genitive regis, \'king\').', example:'Queen Victoria\'s reign lasted over sixty-three years, the longest of any British monarch until Queen Elizabeth II.', isNoun:true },
+  { word:'reiterate', pronunciation:'ree-IT-uh-rayt', ipa:'/riːˈɪtəˌreɪt/', pos:'verb', def:'To say something again or a number of times, typically for emphasis or clarity; to repeat.', lang:'Latin, from reiteratus, past participle of reiterare (\'to repeat\'), from re- (\'again\') + iterare (\'to do again\'), from iterum (\'again\').', example:'The teacher reiterated the importance of showing all work on the math exam, not just writing down the final answer.', isNoun:false },
+  { word:'rejuvenate', pronunciation:'rih-JOO-vuh-nayt', ipa:'/rɪˈdʒuːvɪˌneɪt/', pos:'verb', def:'To make someone or something look or feel younger, fresher, or more lively; to restore vitality.', lang:'Latin, from re- (\'again\') + juvenis (\'young\'), + -ate.', example:'A weekend at the mountain spa rejuvenated her completely, and she returned to work feeling refreshed and energized.', isNoun:false },
+  { word:'remain', pronunciation:'rih-MAYN', ipa:'/rɪˈmeɪn/', pos:'verb', def:'To continue to exist, especially after other similar things have ceased to exist; to stay in the same place or condition.', lang:'Old French, from remaindre (\'to stay\'), from Latin remanere (\'to stay behind\'), from re- (\'back\') + manere (\'to stay\').', example:'Only a few ancient ruins remain of the once-great city that flourished along the trade route thousands of years ago.', isNoun:false },
+  { word:'remnants', pronunciation:'REM-nunts', ipa:'/ˈrɛmnənts/', pos:'noun', def:'Small remaining quantities of something; pieces of cloth or other material left over after the larger part has been used.', lang:'Old French, from remenant (\'remaining\'), present participle of remanoir (\'to remain\'), from Latin remanere.', example:'The archaeologists carefully studied the remnants of pottery and tools found at the ancient settlement site.', isNoun:true },
+  { word:'remorseful', pronunciation:'rih-MORS-ful', ipa:'/rɪˈmɔːrsfəl/', pos:'adjective', def:'Filled with deep regret or guilt over a wrong committed.', lang:'Latin, from remorsus (\'a biting back\'), past participle of remordere (\'to bite back, torment\'), from re- (\'back\') + mordere (\'to bite\'), + -ful.', example:'The remorseful teenager wrote a heartfelt letter of apology to the neighbor whose garden he had accidentally damaged.', isNoun:false },
+  { word:'renewable', pronunciation:'rih-NOO-uh-bul', ipa:'/rɪˈnjuːəbəl/', pos:'adjective', def:'Capable of being renewed; of an energy source, not depleted when used, such as solar, wind, or hydroelectric power.', lang:'English, from renew (from Old French renoveler, from Latin renovare, \'to make new again\', from re- + novus, \'new\') + -able.', example:'The country invested heavily in renewable energy sources, installing wind turbines and solar panels across the countryside.', isNoun:false },
+  { word:'renovating', pronunciation:'REN-uh-vay-ting', ipa:'/ˈrɛnəˌveɪtɪŋ/', pos:'verb', def:'Restoring something to good condition by repairing or remodeling; making new again.', lang:'Latin, from renovatus, past participle of renovare (\'to make new again\'), from re- (\'again\') + novare (\'to make new\'), from novus (\'new\').', example:'They spent the entire summer renovating the old farmhouse, replacing the roof, updating the plumbing, and refinishing the floors.', isNoun:false },
+  { word:'resemble', pronunciation:'rih-ZEM-bul', ipa:'/rɪˈzɛmbəl/', pos:'verb', def:'To look or seem like; to have qualities or features in common with someone or something.', lang:'Old French, from resembler (\'to be like\'), from re- (\'expressing intensive force\') + sembler (\'to seem\'), from Latin simulare (\'to imitate\').', example:'The twins resemble each other so closely that even their teachers occasionally mix them up in class.', isNoun:false },
+  { word:'residue', pronunciation:'REZ-ih-doo', ipa:'/ˈrɛzɪˌdjuː/', pos:'noun', def:'A small amount of something that remains after the main part has gone or been taken or used; a substance left behind.', lang:'Latin, from residuum (\'that which remains\'), from residere (\'to remain behind\'), from re- (\'back\') + sedere (\'to sit\').', example:'A sticky residue remained on the jar after she peeled off the price tag, requiring extra scrubbing to remove.', isNoun:true },
+  { word:'respite', pronunciation:'RES-pit', ipa:'/ˈrɛspɪt/', pos:'noun', def:'A short period of rest or relief from something difficult or unpleasant; a temporary delay.', lang:'Old French, from respit (\'delay, respect\'), from Latin respectus (\'a looking back, consideration\'), from respicere (\'to look back\').', example:'The cool breeze offered a welcome respite from the relentless summer heat that had baked the city for weeks.', isNoun:true },
+  { word:'restive', pronunciation:'RES-tiv', ipa:'/ˈrɛstɪv/', pos:'adjective', def:'Unable to keep still or silent; restless and fidgety; stubbornly refusing to move forward.', lang:'Old French, from restif (\'inclined to remain still, balky\'), from rester (\'to remain\'), from Latin restare (\'to stand back\').', example:'The restive crowd grew increasingly impatient as the concert start time was pushed back by yet another half hour.', isNoun:false },
+  { word:'retorts', pronunciation:'rih-TORTS', ipa:'/rɪˈtɔːrts/', pos:'noun', def:'Sharp, angry, or witty replies; in chemistry, glass containers with a long neck used for distilling.', lang:'Latin, from retortus (\'twisted back\'), past participle of retorquere (\'to twist back\'), from re- (\'back\') + torquere (\'to twist\').', example:'The comedian\'s quick retorts to audience comments were so clever that the hecklers eventually gave up and just laughed along.', isNoun:true },
+  { word:'retriever', pronunciation:'rih-TREE-vur', ipa:'/rɪˈtriːvər/', pos:'noun', def:'A breed of dog trained to retrieve game for hunters; any dog of a breed known for its ability to fetch.', lang:'English, from retrieve (from Old French retrouver, \'to find again\', from re- + trouver, \'to find\') + -er.', example:'The golden retriever bounded into the lake and swam back with the tennis ball clenched proudly in its jaws.', isNoun:true },
+  { word:'revelation', pronunciation:'REV-uh-LAY-shun', ipa:'/ˌrɛvəˈleɪʃən/', pos:'noun', def:'A surprising and previously unknown fact that has been disclosed; the making known of something previously secret.', lang:'Latin, from revelatio (\'a laying bare\'), from revelare (\'to unveil, reveal\'), from re- (\'back\') + velare (\'to cover, veil\').', example:'The revelation that the quiet librarian was actually a bestselling mystery novelist shocked the entire town.', isNoun:true },
+  { word:'revulsive', pronunciation:'rih-VUL-siv', ipa:'/rɪˈvʌlsɪv/', pos:'adjective', def:'Causing revulsion or a strong feeling of disgust; in medicine, drawing blood or disease away from one part of the body to another.', lang:'Latin, from revulsus, past participle of revellere (\'to pull away\'), from re- (\'back\') + vellere (\'to pull, pluck\'), + -ive.', example:'The documentary contained revulsive footage of pollution dumped into pristine rivers, shocking viewers into action.', isNoun:false },
+  { word:'riddance', pronunciation:'RID-uns', ipa:'/ˈrɪdəns/', pos:'noun', def:'The action of getting rid of someone or something undesirable; deliverance from something unwanted.', lang:'English, from rid (from Old Norse ryðja, \'to clear\') + -ance.', example:'When the noisy neighbors finally moved away, her only reaction was to mutter \'good riddance\' with a sigh of relief.', isNoun:true },
+  { word:'riffraff', pronunciation:'RIF-raf', ipa:'/ˈrɪfˌræf/', pos:'noun', def:'Disreputable or undesirable people; worthless or contemptible people considered as a group.', lang:'Old French, from rif et raf (\'one and all, every bit\'), from rifler (\'to plunder\') + raffler (\'to carry off\').', example:'The exclusive club hired extra security to ensure that no riffraff wandered in from the street during the gala.', isNoun:true },
+  { word:'righteous', pronunciation:'RY-chus', ipa:'/ˈraɪtʃəs/', pos:'adjective', def:'Morally right or justifiable; acting in accord with divine or moral law; virtuous.', lang:'Old English, from rihtwīs (\'just, upright\'), from riht (\'right\') + wīs (\'wise, manner\'), altered by association with -eous.', example:'The community leader was known for her righteous commitment to justice, always standing up for those who could not speak for themselves.', isNoun:false },
+  { word:'rigorous', pronunciation:'RIG-ur-us', ipa:'/ˈrɪɡərəs/', pos:'adjective', def:'Extremely thorough, exhaustive, or accurate; adhering strictly to rules or standards; harsh or demanding.', lang:'Latin, from rigorosus, from rigor (\'stiffness, severity\'), from rigere (\'to be stiff\').', example:'The rigorous training program pushed the cadets to their physical and mental limits over twelve grueling weeks.', isNoun:false },
+  { word:'riviera', pronunciation:'RIV-ee-AIR-uh', ipa:'/ˌrɪviˈɛrə/', pos:'noun', def:'A coastal region with a subtropical climate and vegetation, especially one that is a popular resort area.', lang:'Italian, from riviera (\'coast, shore\'), from Latin riparia (\'riverbank\'), from ripa (\'bank, shore\').', example:'The French Riviera attracts millions of visitors each year with its glamorous beaches, azure waters, and sun-drenched hillside villages.', isNoun:true },
+  { word:'rocket', pronunciation:'ROK-it', ipa:'/ˈrɒkɪt/', pos:'noun', def:'A cylindrical projectile propelled to great height or distance by combustion of its contents; a type of engine or vehicle.', lang:'Italian, from rocchetta (\'a bobbin\'), diminutive of rocca (\'distaff\'), referring to the cylindrical shape; from Germanic origin.', example:'The rocket launched from the pad in a blaze of fire and smoke, carrying the satellite into orbit above the Earth.', isNoun:true },
+  { word:'rotary', pronunciation:'ROH-tuh-ree', ipa:'/ˈroʊtəri/', pos:'adjective', def:'Revolving around a center or axis; rotational; having a rotating part or parts.', lang:'Latin, from rotarius (\'of a wheel\'), from rota (\'wheel\').', example:'The rotary engine in the vintage airplane hummed smoothly as the pilot guided the craft down the grass runway.', isNoun:false },
+  { word:'row', pronunciation:'ROW', ipa:'/raʊ/', pos:'noun', def:'A noisy quarrel or argument; a loud disturbance or commotion.', lang:'English, of uncertain origin, possibly related to rouse or from a slang term for a disturbance, first appearing in the mid-18th century.', example:'A terrible row erupted between the neighbors over the fence line, with both sides shouting accusations across the yard.', isNoun:true },
+  { word:'rubric', pronunciation:'ROO-brik', ipa:'/ˈruːbrɪk/', pos:'noun', def:'A heading on a document; a set of instructions or rules; a guide listing specific criteria for grading or evaluating.', lang:'Latin, from rubrica (terra) (\'red earth\'), from ruber (\'red\'), because headings in medieval manuscripts were written in red ink.', example:'The teacher provided a detailed rubric so students knew exactly how their science projects would be graded.', isNoun:true },
+  { word:'rugby', pronunciation:'RUG-bee', ipa:'/ˈrʌɡbi/', pos:'noun', def:'A team sport played with an oval ball that may be kicked, carried, or passed by hand, originating in England.', lang:'English, named after Rugby School in Warwickshire, England, where the game is said to have been invented in 1823.', example:'The rugby match was fiercely contested, with both teams battling through mud and rain for a hard-fought victory.', isNoun:true },
+  { word:'rumor', pronunciation:'ROO-mur', ipa:'/ˈruːmər/', pos:'noun', def:'A currently circulating story or report of uncertain or doubtful truth; unverified information spread by word of mouth.', lang:'Latin, from rumor (\'noise, common talk, hearsay\'), of uncertain origin.', example:'A rumor spread through the school that the principal was planning a surprise day off, but it turned out to be wishful thinking.', isNoun:true }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Slider
+  const totalA = a.length;
+  const pct = totalA > 1 ? s / (totalA - 1) * 100 : 0;
+  document.getElementById("sliderFill").style.width = pct + "%";
+  const sliderArea = document.getElementById("sliderArea");
+  const areaW = sliderArea.offsetWidth || 200;
+  const pad = 10;
+  const thumbLeft = pad + (pct / 100) * (areaW - pad * 2);
+  const thumb = document.getElementById("sliderThumb");
+  if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
+
+  // Ticks - show ~20 evenly spaced markers
+  const tickCount = Math.min(totalA, 20);
+  let ticksHtml = '';
+  for(let t=0; t<tickCount; t++){
+    const ti = Math.round(t / (tickCount-1) * (totalA-1));
+    const cls = ti===s ? 'active' : (t % 5 === 0 ? 'major' : '');
+    ticksHtml += `<div class="slider-tick ${cls}"></div>`;
+  }
+  document.getElementById("sliderDots").innerHTML = ticksHtml;
+  document.getElementById("sliderCounter").textContent = `${s+1} / ${totalA}`;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Slider drag
+const slArea=document.getElementById("sliderArea");
+const slThumb=document.getElementById("sliderThumb");
+let slDragging=false;
+function sliderFromX(cx){
+  const r=slArea.getBoundingClientRect();
+  const pad=10;
+  const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
+  const a=aw(),idx=Math.round(p*(a.length-1));
+  // Move thumb immediately for smooth feel
+  const thumbLeft=pad+(p)*(r.width-pad*2);
+  slThumb.style.left=thumbLeft+"px";
+  if(idx!==si()){
+    const g=WORDS.findIndex(w=>w.word===a[idx].word);
+    flipped=false; currentIndex=g; render();
+  }
+}
+slArea.addEventListener("touchstart",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(slDragging) sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    // Speak the word after releasing
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+slArea.addEventListener("mousedown",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.clientX); e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(slDragging) sliderFromX(e.clientX);
+});
+document.addEventListener("mouseup",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>
