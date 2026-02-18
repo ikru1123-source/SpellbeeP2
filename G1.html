@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 900;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 18px; height: 18px; }
+.slider-area {
+  flex: 1; height: 32px; position: relative;
+  display: flex; align-items: center;
+  touch-action: none; cursor: pointer;
+}
+.slider-track-bg {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
+}
+.slider-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(212,175,55,0.5));
+  transition: width 0.15s ease;
+}
+.slider-dots {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; padding: 0 2px;
+}
+.slider-tick {
+  width: 2px; height: 8px; border-radius: 1px;
+  background: rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.slider-tick.major { height: 12px; background: rgba(255,255,255,0.12); }
+.slider-tick.active { background: var(--gold); height: 14px; width: 3px; border-radius: 1.5px; box-shadow: 0 0 6px rgba(212,175,55,0.4); }
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px solid #1a1528;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  cursor: grab; transition: left 0.12s ease;
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
+.slider-thumb.dragging { transition: none; transform: translate(-50%, -50%) scale(1.15); }
+.slider-counter {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.08em;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1>Spelling Bee</h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="slider-area" id="sliderArea">
+      <div class="slider-track-bg">
+        <div class="slider-fill" id="sliderFill"></div>
+      </div>
+      <div class="slider-dots" id="sliderDots"></div>
+      <div class="slider-thumb" id="sliderThumb"></div>
+    </div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'gab', pronunciation:'GAB', ipa:'/ɡæb/', pos:'verb', def:'To talk at length in a trivial or gossipy way; idle chatter.', lang:'English, probably from Irish Gaelic gob (\'mouth, beak\'), or from Scottish Gaelic gab (\'mouth\').', example:'The two neighbors stood at the fence and gabbed for over an hour about everything from the weather to the local news.', isNoun:false },
+  { word:'gaffer', pronunciation:'GAF-ur', ipa:'/ˈɡæfər/', pos:'noun', def:'A chief electrician on a film or television set; an old man; informally, a boss or foreman.', lang:'English, probably a contraction of godfather, or from grandfather; the film industry sense developed in the early 20th century.', example:'The gaffer positioned the lights carefully to create the moody shadows the director wanted for the nighttime scene.', isNoun:true },
+  { word:'gaggle', pronunciation:'GAG-ul', ipa:'/ˈɡæɡəl/', pos:'noun', def:'A flock of geese; a disorderly or noisy group of people.', lang:'English, of imitative origin, representing the cackling sound made by geese.', example:'A gaggle of excited schoolchildren poured out of the bus and raced toward the entrance of the amusement park.', isNoun:true },
+  { word:'gallant', pronunciation:'GAL-unt', ipa:'/ˈɡælənt/', pos:'adjective', def:'Brave; heroic; showing courage in the face of danger; attentive and chivalrous to women.', lang:'Old French, from galant (\'courteous, brave\'), present participle of galer (\'to make merry, rejoice\'), of Germanic origin.', example:'The gallant firefighter rushed into the burning building to rescue the family trapped on the second floor.', isNoun:false },
+  { word:'galley', pronunciation:'GAL-ee', ipa:'/ˈɡæli/', pos:'noun', def:'A low, flat ship with one or more sails and propelled mainly by oars; the kitchen in a ship or aircraft.', lang:'Old French, from galie (\'galley\'), from Medieval Latin galea, from Byzantine Greek galaia, of uncertain origin.', example:'The chef prepared meals for two hundred passengers in the ship\'s cramped galley, working wonders in a tiny kitchen.', isNoun:true },
+  { word:'gardenesque', pronunciation:'GAR-dun-ESK', ipa:'/ˌɡɑːrdɪˈnɛsk/', pos:'adjective', def:'Of or relating to a style of garden design that emphasizes individual plants displayed to show their beauty, as opposed to naturalistic planting.', lang:'English, from garden + -esque (\'in the style of\'), coined by landscape gardener John Claudius Loudon in the 1830s.', example:'The gardenesque layout of the botanical park showcased each specimen tree and shrub as an individual work of art.', isNoun:false },
+  { word:'gargle', pronunciation:'GAR-gul', ipa:'/ˈɡɑːrɡəl/', pos:'verb', def:'To wash one\'s mouth and throat with a liquid kept in motion by exhaling through it; the sound produced.', lang:'French, from gargouiller (\'to gargle, gurgle\'), from gargouille (\'throat, waterspout\'), of imitative origin.', example:'The doctor advised her to gargle with warm salt water three times a day to soothe her sore throat.', isNoun:false },
+  { word:'garniture', pronunciation:'GAR-nih-chur', ipa:'/ˈɡɑːrnɪtʃər/', pos:'noun', def:'A set of decorative accessories or ornaments; a garnish or trimming, especially for food or furniture.', lang:'French, from garnir (\'to equip, furnish, garnish\'), of Germanic origin.', example:'The antique mantelpiece displayed a garniture of three matching porcelain vases and two candlesticks.', isNoun:true },
+  { word:'gateway', pronunciation:'GAYT-way', ipa:'/ˈɡeɪtˌweɪ/', pos:'noun', def:'An opening that can be closed by a gate; an entrance or means of access; something that leads to a larger experience.', lang:'English, from gate (from Old English geat, \'opening, passage\') + way (from Old English weg, \'road, path\').', example:'The historic stone gateway marked the entrance to the ancient walled city that had stood for over a thousand years.', isNoun:true },
+  { word:'gaucho', pronunciation:'GOW-choh', ipa:'/ˈɡaʊtʃoʊ/', pos:'noun', def:'A cowboy of the South American pampas, known for horseback riding, herding cattle, and a distinctive style of dress.', lang:'Spanish, from gaucho, possibly from Quechua wahcha (\'orphan, vagabond\') or from Araucanian (Mapuche) cauchu (\'wanderer\').', example:'The gaucho rode across the vast Argentine pampas, his poncho billowing in the wind as he herded cattle toward the ranch.', isNoun:true },
+  { word:'gawkers', pronunciation:'GAW-kurz', ipa:'/ˈɡɔːkərz/', pos:'noun', def:'People who stare stupidly or rudely at something or someone; idle onlookers.', lang:'English, from gawk (\'to stare\'), possibly from obsolete gaw (\'to stare\'), related to Old Norse gá (\'to heed\'), + -er + -s.', example:'Police asked the gawkers to move along so the emergency crew could work without obstruction at the accident scene.', isNoun:true },
+  { word:'gazette', pronunciation:'guh-ZET', ipa:'/ɡəˈzɛt/', pos:'noun', def:'A journal or newspaper, especially an official one; a periodical publication listing official appointments and announcements.', lang:'Italian, from gazzetta (\'a small Venetian coin, a newspaper\'), possibly from gazeta, the price of early Venetian newspapers.', example:'The appointment of the new ambassador was officially announced in the government gazette published that morning.', isNoun:true },
+  { word:'generalization', pronunciation:'JEN-ur-ul-ih-ZAY-shun', ipa:'/ˌdʒɛnərəlɪˈzeɪʃən/', pos:'noun', def:'A general statement or concept obtained by inferring from specific cases; the action of making something more widespread.', lang:'French, from généraliser (\'to make general\'), from général (\'general\'), from Latin generalis (\'of a whole class\'), from genus (\'kind, class\').', example:'Saying that all teenagers are lazy is an unfair generalization that ignores the many hardworking young people.', isNoun:true },
+  { word:'genteel', pronunciation:'jen-TEEL', ipa:'/dʒɛnˈtiːl/', pos:'adjective', def:'Polite, refined, or respectable, often in an affected or ostentatious way; associated with the upper social classes.', lang:'French, from gentil (\'well-born, noble\'), from Latin gentilis (\'of the same clan\'), from gens (\'race, clan\').', example:'The genteel hostess served tea in fine china cups and insisted that every guest use a cloth napkin.', isNoun:false },
+  { word:'ghastly', pronunciation:'GAST-lee', ipa:'/ˈɡæstli/', pos:'adjective', def:'Causing great horror or fear; extremely unwell or unpleasant; deathly pale.', lang:'Middle English, from gasten (\'to terrify\'), from Old English gǣstan (\'to torment\'), related to gāst (\'ghost, spirit\').', example:'The detective described the crime scene as ghastly, one of the worst he had encountered in his long career.', isNoun:false },
+  { word:'giggle', pronunciation:'GIG-ul', ipa:'/ˈɡɪɡəl/', pos:'verb', def:'To laugh lightly in a nervous, silly, or amused way; a light, silly laugh.', lang:'English, of imitative origin, representing a high-pitched, repeated laughing sound; first recorded in the early 16th century.', example:'The children couldn\'t stop giggling when the puppy chased its own tail in circles around the living room.', isNoun:false },
+  { word:'gist', pronunciation:'JIST', ipa:'/dʒɪst/', pos:'noun', def:'The substance or essence of a speech, conversation, or argument; the main point.', lang:'Old French, from gist (\'it lies\'), third person singular of gésir (\'to lie\'), from Latin jacere (\'to lie, throw\'), used in legal phrases meaning where the action lies.', example:'I didn\'t hear every word of the speech, but I got the gist of it — they\'re planning to build a new park.', isNoun:true },
+  { word:'gizzard', pronunciation:'GIZ-urd', ipa:'/ˈɡɪzərd/', pos:'noun', def:'A muscular, thick-walled part of a bird\'s stomach used for grinding food, often containing small stones.', lang:'Old French, from gésier (\'gizzard\'), from Latin gigerium (\'cooked entrails of poultry\'), of uncertain origin.', example:'The biologist dissected the owl\'s gizzard and found tiny bones and fur from the small rodents it had consumed.', isNoun:true },
+  { word:'glacier', pronunciation:'GLAY-shur', ipa:'/ˈɡleɪʃər/', pos:'noun', def:'A slowly moving mass of ice formed by the accumulation and compaction of snow on mountains or near the poles.', lang:'French, from glace (\'ice\'), from Latin glacies (\'ice\').', example:'The massive glacier carved a deep valley through the mountains over thousands of years of slow, relentless movement.', isNoun:true },
+  { word:'glint', pronunciation:'GLINT', ipa:'/ɡlɪnt/', pos:'noun', def:'A small flash of light, especially as reflected from a shiny surface; a brief or faint sign of a quality or emotion.', lang:'Scandinavian, probably from Swedish dialect glinta (\'to gleam, glint\'), of Germanic origin.', example:'A glint of sunlight reflected off the lake\'s surface, momentarily dazzling the kayakers as they paddled along.', isNoun:true },
+  { word:'glossary', pronunciation:'GLOS-uh-ree', ipa:'/ˈɡlɒsəri/', pos:'noun', def:'An alphabetical list of terms or words found in or relating to a specific subject, with explanations; a brief dictionary.', lang:'Latin, from glossarium (\'collection of glosses\'), from glossa (\'foreign or obscure word requiring explanation\'), from Greek glōssa (\'tongue, language\').', example:'The textbook included a helpful glossary at the back that defined all the technical terms used throughout each chapter.', isNoun:true },
+  { word:'gnarled', pronunciation:'NARLD', ipa:'/nɑːrld/', pos:'adjective', def:'Knobbly, rough, and twisted, especially with age; rugged and weathered in appearance.', lang:'English, variant of knarled, from knar (\'knot in wood\'), from Middle English knarre, of Germanic origin.', example:'The gnarled old oak tree had stood in the village square for centuries, its twisted branches reaching in every direction.', isNoun:false },
+  { word:'gnome', pronunciation:'NOHM', ipa:'/noʊm/', pos:'noun', def:'A legendary dwarfish creature supposed to guard the earth\'s treasures underground; a small garden ornament in the form of a bearded man.', lang:'French, from Modern Latin gnomus, coined by Paracelsus (16th century), possibly from Greek gnōmē (\'thought, intelligence\') or gē-nomos (\'earth-dweller\').', example:'A cheerful ceramic gnome with a red pointed hat stood guard beside the rosebushes in her front garden.', isNoun:true },
+  { word:'Godspeed', pronunciation:'GOD-speed', ipa:'/ˈɡɒdˌspiːd/', pos:'noun', def:'An expression of good wishes to a person starting a journey or undertaking; a wish for success and safety.', lang:'Middle English, from God spede (\'God prosper you\'), from God + spede (subjunctive of speden, \'to prosper, succeed\').', example:'As the ship left the harbor, the crowd on the dock waved and shouted Godspeed to the sailors embarking on their voyage.', isNoun:true },
+  { word:'goober', pronunciation:'GOO-bur', ipa:'/ˈɡuːbər/', pos:'noun', def:'A peanut; informally, a foolish or silly person.', lang:'Bantu, from nguba (\'peanut\'), brought to America by enslaved Africans, used primarily in the southern United States.', example:'The kids giggled and called each other goobers as they tossed shelled peanuts into each other\'s mouths at the picnic.', isNoun:true },
+  { word:'googly', pronunciation:'GOO-glee', ipa:'/ˈɡuːɡli/', pos:'noun', def:'In cricket, a ball bowled with a deceptive spin that turns the opposite way from what the batsman expects.', lang:'English, of uncertain origin, possibly related to goggle (\'to look with wide eyes\'), suggesting the batsman\'s surprised reaction.', example:'The bowler delivered a perfectly disguised googly that completely fooled the batsman and knocked the stumps clean off.', isNoun:true },
+  { word:'gospel', pronunciation:'GOS-pul', ipa:'/ˈɡɒspəl/', pos:'noun', def:'The teachings of Jesus Christ; any of the first four books of the New Testament; something regarded as absolutely true.', lang:'Old English, from gōdspel (\'good news\'), from gōd (\'good\') + spel (\'news, story\'), translating Latin evangelium, from Greek euangelion (\'good news\').', example:'She took her grandmother\'s cooking advice as gospel, following each recipe exactly as it was written.', isNoun:true },
+  { word:'gossip', pronunciation:'GOS-ip', ipa:'/ˈɡɒsɪp/', pos:'noun', def:'Casual or unconstrained conversation or reports about other people, typically involving details that are not confirmed as true.', lang:'Old English, from godsibb (\'godparent, close friend\'), from god (\'God\') + sibb (\'kinsman\'), because godparents gathered for intimate talk.', example:'The small town thrived on gossip, and any new arrival could expect to be the subject of lively discussion within hours.', isNoun:true },
+  { word:'gotcha', pronunciation:'GOT-chuh', ipa:'/ˈɡɒtʃə/', pos:'interjection', def:'An informal contraction of \'got you,\' used to express triumph at catching someone out or to indicate understanding.', lang:'English, informal contraction of \'got you\' or \'I\'ve got you,\' representing colloquial pronunciation.', example:'\'Gotcha!\' he shouted triumphantly as he tagged his sister in their backyard game of chase.', isNoun:false },
+  { word:'gradation', pronunciation:'gray-DAY-shun', ipa:'/ɡreɪˈdeɪʃən/', pos:'noun', def:'A scale or series of successive changes, stages, or degrees; a gradual transition from one state or condition to another.', lang:'Latin, from gradatio (\'a climbing, ascent\'), from gradus (\'step, degree\').', example:'The sunset displayed a stunning gradation of colors, shifting from deep orange to pink to soft purple across the sky.', isNoun:true },
+  { word:'graham', pronunciation:'GRAY-um', ipa:'/ˈɡreɪəm/', pos:'noun', def:'A type of flour or cracker made from unbolted wheat flour, named after its inventor.', lang:'English, named after Sylvester Graham (1794–1851), an American dietary reformer who advocated whole-grain flour.', example:'The children crushed graham crackers into a fine crumb to make the base for the chocolate cream pie.', isNoun:true },
+  { word:'grandeur', pronunciation:'GRAN-jur', ipa:'/ˈɡrændʒər/', pos:'noun', def:'Splendor and impressiveness, especially of appearance or style; high rank or social importance.', lang:'French, from grand (\'great, tall\'), from Latin grandis (\'great, large, full-grown\').', example:'The grandeur of the palace took their breath away, from its towering marble columns to its glittering crystal chandeliers.', isNoun:true },
+  { word:'grapple', pronunciation:'GRAP-ul', ipa:'/ˈɡræpəl/', pos:'verb', def:'To engage in a close fight or struggle without weapons; to struggle to deal with or overcome a difficulty.', lang:'Old French, from grappil (\'a hook\'), diminutive of grappe (\'hook\'), of Germanic origin.', example:'The young scientist grappled with the complex equation for days before finally arriving at an elegant solution.', isNoun:false },
+  { word:'gratifying', pronunciation:'GRAT-ih-fy-ing', ipa:'/ˈɡrætɪˌfaɪɪŋ/', pos:'adjective', def:'Giving pleasure or satisfaction; pleasing and rewarding.', lang:'Latin, from gratificari (\'to do a favor, oblige\'), from gratus (\'pleasing, thankful\') + facere (\'to make, do\'), + -ing.', example:'It was gratifying to see her students succeed after she had spent so many hours tutoring them after school.', isNoun:false },
+  { word:'gridiron', pronunciation:'GRID-eye-urn', ipa:'/ˈɡrɪdˌaɪərn/', pos:'noun', def:'A frame of parallel metal bars used for grilling food over a fire; an American football field, named for its pattern of yard lines.', lang:'Middle English, from gredire (\'griddle\'), from Anglo-French, + iron; the football sense from the field\'s resemblance to a grill.', example:'Friday nights in the small town revolved around the gridiron, where the high school football team battled under the lights.', isNoun:true },
+  { word:'griefful', pronunciation:'GREEF-ful', ipa:'/ˈɡriːffʊl/', pos:'adjective', def:'Full of grief; deeply sorrowful or mournful.', lang:'English, from grief (from Old French grief, \'hardship, suffering\', from grever, \'to burden\', from Latin gravare, \'to weigh down\') + -ful.', example:'The griefful widow stood silently by the graveside, clutching a single white rose as the ceremony concluded.', isNoun:false },
+  { word:'groom', pronunciation:'GROOM', ipa:'/ɡruːm/', pos:'noun', def:'A man on his wedding day; a person employed to take care of horses; to prepare or train someone for a position.', lang:'Middle English, from grome (\'boy, servant\'), of uncertain origin; the wedding sense developed from bridegroom.', example:'The nervous groom straightened his tie one last time before walking down the aisle to await his bride.', isNoun:true },
+  { word:'grotto', pronunciation:'GROT-oh', ipa:'/ˈɡrɒtoʊ/', pos:'noun', def:'A small picturesque cave, especially an artificial one in a park or garden; an indoor structure resembling a cave.', lang:'Italian, from grotta (\'cave\'), from Latin crypta (\'vault, cavern\'), from Greek kryptē (\'hidden place\'), from kryptein (\'to hide\').', example:'The garden\'s grotto was lined with shells and mossy stones, with a small fountain bubbling at its center.', isNoun:true },
+  { word:'grout', pronunciation:'GROWT', ipa:'/ɡraʊt/', pos:'noun', def:'A mortar or paste used to fill gaps between tiles or bricks; thin finishing mortar for masonry.', lang:'Old English, from grūt (\'coarse meal, sediment\'), of Germanic origin; related to the gritty texture of the material.', example:'After laying the bathroom tiles, the contractor applied white grout between each one to seal the gaps and create a smooth finish.', isNoun:true },
+  { word:'gruel', pronunciation:'GROO-ul', ipa:'/ˈɡruːəl/', pos:'noun', def:'A thin porridge made by boiling oatmeal or other cereal in water or milk; historically, a food for the poor or sick.', lang:'Old French, from gruel (\'coarsely ground grain\'), of Germanic origin, related to English grit and groats.', example:'In the novel, the hungry orphan timidly asked for a second bowl of gruel, shocking everyone in the workhouse.', isNoun:true }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Slider
+  const totalA = a.length;
+  const pct = totalA > 1 ? s / (totalA - 1) * 100 : 0;
+  document.getElementById("sliderFill").style.width = pct + "%";
+  const sliderArea = document.getElementById("sliderArea");
+  const areaW = sliderArea.offsetWidth || 200;
+  const pad = 10;
+  const thumbLeft = pad + (pct / 100) * (areaW - pad * 2);
+  const thumb = document.getElementById("sliderThumb");
+  if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
+
+  // Ticks - show ~20 evenly spaced markers
+  const tickCount = Math.min(totalA, 20);
+  let ticksHtml = '';
+  for(let t=0; t<tickCount; t++){
+    const ti = Math.round(t / (tickCount-1) * (totalA-1));
+    const cls = ti===s ? 'active' : (t % 5 === 0 ? 'major' : '');
+    ticksHtml += `<div class="slider-tick ${cls}"></div>`;
+  }
+  document.getElementById("sliderDots").innerHTML = ticksHtml;
+  document.getElementById("sliderCounter").textContent = `${s+1} / ${totalA}`;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Slider drag
+const slArea=document.getElementById("sliderArea");
+const slThumb=document.getElementById("sliderThumb");
+let slDragging=false;
+function sliderFromX(cx){
+  const r=slArea.getBoundingClientRect();
+  const pad=10;
+  const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
+  const a=aw(),idx=Math.round(p*(a.length-1));
+  // Move thumb immediately for smooth feel
+  const thumbLeft=pad+(p)*(r.width-pad*2);
+  slThumb.style.left=thumbLeft+"px";
+  if(idx!==si()){
+    const g=WORDS.findIndex(w=>w.word===a[idx].word);
+    flipped=false; currentIndex=g; render();
+  }
+}
+slArea.addEventListener("touchstart",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(slDragging) sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    // Speak the word after releasing
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+slArea.addEventListener("mousedown",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.clientX); e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(slDragging) sliderFromX(e.clientX);
+});
+document.addEventListener("mouseup",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>
