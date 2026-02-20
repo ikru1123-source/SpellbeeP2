@@ -1,169 +1,207 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport"
-      content="width=device-width,
-               initial-scale=1,
-               maximum-scale=1,
-               user-scalable=no,
-               viewport-fit=cover" />
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+  />
 
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Spelling Bee">
-<meta name="theme-color" content="#0c0a13">
+  <!-- iPhone Home Screen Web App -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Spellbee" />
+  <meta name="theme-color" content="#0c0a13" />
 
-<title>Spelling Bee</title>
+  <title>Spellbee</title>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
 
-<style>
-:root {
-  --gold:#d4af37;
-  --bg:#0c0a13;
-  --card:#1e1a2e;
-  --text:#f0ece2;
-  --safe-top:env(safe-area-inset-top);
-  --safe-bottom:env(safe-area-inset-bottom);
-}
+  <style>
+    :root{
+      --gold:#d4af37;
+      --bg:#0c0a13;
+      --text:#f0ece2;
+      --cardBorder:rgba(212,175,55,.15);
+      --btnBorder:rgba(212,175,55,.38);
+      --btnBg:rgba(212,175,55,.10);
+      --btnBgActive:rgba(212,175,55,.22);
+      --safeTop:env(safe-area-inset-top, 0px);
+      --safeBottom:env(safe-area-inset-bottom, 0px);
+    }
 
-*{box-sizing:border-box;margin:0;padding:0}
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;overflow:hidden}
 
-html,body{
-  height:100%;
-  overflow:hidden;
-  background:
-    radial-gradient(900px 600px at 20% -10%, rgba(212,175,55,0.12), transparent 60%),
-    radial-gradient(900px 600px at 110% 15%, rgba(130,110,255,0.10), transparent 55%),
-    var(--bg);
-  font-family:'DM Sans',-apple-system,system-ui,sans-serif;
-  color:var(--text);
-  -webkit-font-smoothing:antialiased;
-}
+    body{
+      padding-top:var(--safeTop);
+      padding-bottom:var(--safeBottom);
+      background:
+        radial-gradient(900px 600px at 20% -10%, rgba(212,175,55,0.12), transparent 60%),
+        radial-gradient(900px 600px at 110% 15%, rgba(130,110,255,0.10), transparent 55%),
+        var(--bg);
+      color:var(--text);
+      font-family:'DM Sans', -apple-system, system-ui, sans-serif;
+      -webkit-font-smoothing:antialiased;
+      display:flex;
+      flex-direction:column;
+    }
 
-body{
-  padding-top:var(--safe-top);
-  padding-bottom:var(--safe-bottom);
-  display:flex;
-  flex-direction:column;
-}
+    .header{
+      padding:16px 16px 10px;
+      flex-shrink:0;
+    }
 
-.header{
-  padding:16px;
-}
+    .title{
+      font-family:'Playfair Display', serif;
+      font-weight:800;
+      font-size:22px;
+      letter-spacing:.03em;
+    }
 
-.title{
-  font-family:'Playfair Display',serif;
-  font-size:22px;
-  font-weight:800;
-  letter-spacing:.03em;
-}
+    .content{
+      flex:1;
+      padding:12px;
+      overflow:hidden;
+    }
 
-.subtitle{
-  font-size:12px;
-  opacity:.5;
-  letter-spacing:.08em;
-  text-transform:uppercase;
-}
+    .card{
+      height:100%;
+      overflow:auto;
+      -webkit-overflow-scrolling:touch;
+      background:linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+      border-radius:22px;
+      border:1px solid var(--cardBorder);
+      padding:16px;
+      box-shadow:0 20px 50px rgba(0,0,0,0.5);
+    }
 
-.card-area{
-  flex:1;
-  padding:12px;
-}
+    .card::-webkit-scrollbar{display:none}
 
-.card{
-  background:linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
-  border-radius:22px;
-  border:1px solid rgba(212,175,55,0.15);
-  padding:18px;
-  height:100%;
-  overflow-y:auto;
-  -webkit-overflow-scrolling:touch;
-  box-shadow:0 20px 50px rgba(0,0,0,0.5);
-}
+    .section{
+      margin-bottom:22px;
+    }
 
-.section-title{
-  font-family:'Playfair Display',serif;
-  font-size:18px;
-  margin-bottom:12px;
-}
+    .section h2{
+      font-family:'Playfair Display', serif;
+      font-size:20px;
+      font-weight:800;
+      margin-bottom:14px;
+      letter-spacing:.02em;
+    }
 
-.launch-btn{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:14px 16px;
-  margin:12px 0;
-  border-radius:18px;
-  border:1px solid rgba(212,175,55,.35);
-  background:rgba(212,175,55,.08);
-  color:var(--gold);
-  font-weight:600;
-  font-size:16px;
-  text-decoration:none;
-  transition:.15s ease;
-  -webkit-tap-highlight-color:transparent;
-}
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(3, 1fr);
+      gap:12px;
+    }
 
-.launch-btn:active{
-  transform:scale(.97);
-  background:rgba(212,175,55,.2);
-}
+    @media (min-width: 420px){
+      .grid{ grid-template-columns:repeat(4, 1fr); }
+    }
 
-.chev{
-  opacity:.6;
-}
-</style>
+    a.btn{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:56px;
+      padding:14px 10px;
+      border-radius:16px;
+      text-decoration:none;
+      font-weight:800;
+      font-size:18px;
+      color:var(--gold);
+      background:var(--btnBg);
+      border:1px solid var(--btnBorder);
+      -webkit-tap-highlight-color:transparent;
+      touch-action:manipulation;
+      user-select:none;
+    }
+
+    a.btn:active{
+      transform:scale(.97);
+      background:var(--btnBgActive);
+    }
+  </style>
 </head>
 
 <body>
 
-<div class="header">
-  <div class="title">Spelling Bee</div>
-  <div class="subtitle">Launcher</div>
-</div>
-
-<div class="card-area">
-  <div class="card">
-    <div class="section-title">Select Page</div>
-
-    <!-- DOMAIN RELATIVE LINKS -->
-    <a class="launch-btn" href="./P1.html">
-      P1
-      <span class="chev">›</span>
-    </a>
-
-    <a class="launch-btn" href="./P2.html">
-      P2
-      <span class="chev">›</span>
-    </a>
-
-    <a class="launch-btn" href="./P3.html">
-      P3
-      <span class="chev">›</span>
-    </a>
-
+  <div class="header">
+    <div class="title">Spellbee</div>
   </div>
-</div>
+
+  <div class="content">
+    <div class="card">
+
+      <div class="section">
+        <h2>Level 1</h2>
+        <div class="grid" id="set1"></div>
+      </div>
+
+      <div class="section">
+        <h2>Level 2</h2>
+        <div class="grid" id="set2"></div>
+      </div>
+
+      <div class="section">
+        <h2>Level 3</h2>
+        <div class="grid" id="set3"></div>
+      </div>
+
+    </div>
+  </div>
 
 <script>
 (function () {
+
+  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+
+  function addButtons(containerId, suffix, excludeSet = new Set()) {
+    const container = document.getElementById(containerId);
+    letters.forEach((L) => {
+      const label = `${L}${suffix}`;
+      if (excludeSet.has(label)) return;
+
+      const a = document.createElement("a");
+      a.className = "btn";
+      a.textContent = label;
+      a.href = `./${L.toLowerCase()}${suffix}.html`;
+      container.appendChild(a);
+    });
+  }
+
+  // Level 1 (exclude X1)
+  addButtons("set1", 1, new Set(["X1"]));
+
+  // Level 2 (include X2)
+  addButtons("set2", 2);
+
+  // Level 3 (include X3)
+  addButtons("set3", 3);
+
   const isStandalone =
     window.navigator.standalone === true ||
     window.matchMedia("(display-mode: standalone)").matches;
 
-  document.addEventListener("click", function (e) {
-    const a = e.target.closest("a");
-    if (!a) return;
+  document.addEventListener(
+    "click",
+    (e) => {
+      const a = e.target.closest("a.btn");
+      if (!a) return;
 
-    // Only intercept navigation if running as Home Screen web app
-    if (isStandalone) {
-      e.preventDefault();
-      window.location.href = a.getAttribute("href");
-    }
-  }, { capture: true });
+      if (isStandalone) {
+        e.preventDefault();
+        window.location.href = a.getAttribute("href");
+      }
+    },
+    { capture: true }
+  );
+
 })();
 </script>
 
