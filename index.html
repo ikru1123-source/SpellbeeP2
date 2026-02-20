@@ -170,7 +170,10 @@
       const a = document.createElement("a");
       a.className = "btn";
       a.textContent = label;
-      a.href = `./${L.toLowerCase()}${suffix}.html`;
+
+      // IMPORTANT: filenames are uppercase (A1.html, B1.html, etc.)
+      a.href = `./${L}${suffix}.html`;
+
       container.appendChild(a);
     });
   }
