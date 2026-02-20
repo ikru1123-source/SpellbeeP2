@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 900;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 18px; height: 18px; }
+.slider-area {
+  flex: 1; height: 32px; position: relative;
+  display: flex; align-items: center;
+  touch-action: none; cursor: pointer;
+}
+.slider-track-bg {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
+}
+.slider-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(212,175,55,0.5));
+  transition: width 0.15s ease;
+}
+.slider-dots {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; padding: 0 2px;
+}
+.slider-tick {
+  width: 2px; height: 8px; border-radius: 1px;
+  background: rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.slider-tick.major { height: 12px; background: rgba(255,255,255,0.12); }
+.slider-tick.active { background: var(--gold); height: 14px; width: 3px; border-radius: 1.5px; box-shadow: 0 0 6px rgba(212,175,55,0.4); }
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px solid #1a1528;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  cursor: grab; transition: left 0.12s ease;
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
+.slider-thumb.dragging { transition: none; transform: translate(-50%, -50%) scale(1.15); }
+.slider-counter {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.08em;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1>Spelling Bee</h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="slider-area" id="sliderArea">
+      <div class="slider-track-bg">
+        <div class="slider-fill" id="sliderFill"></div>
+      </div>
+      <div class="slider-dots" id="sliderDots"></div>
+      <div class="slider-thumb" id="sliderThumb"></div>
+    </div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'talent', pronunciation:'TAL-unt', ipa:'/ˈtælənt/', pos:'noun', def:'A natural aptitude or skill; people possessing natural ability; an ancient unit of weight and money.', lang:'Old English, from talente, from Latin talentum (\'unit of weight or money\'), from Greek talanton (\'a balance, weight\'), later used figuratively from the biblical Parable of the Talents.', example:'Her talent for painting was evident from an early age, and by twelve she had already won several regional art competitions.', isNoun:true },
+  { word:'tango', pronunciation:'TANG-goh', ipa:'/ˈtæŋɡoʊ/', pos:'noun', def:'A ballroom dance originating in Buenos Aires, characterized by dramatic pauses, sharp movements, and close partner contact.', lang:'Argentine Spanish, from tango, of uncertain origin, possibly from African languages brought by enslaved people, or from Latin tangere (\'to touch\').', example:'The couple glided across the dance floor in an elegant tango, their movements perfectly synchronized to the passionate music.', isNoun:true },
+  { word:'tariff', pronunciation:'TAIR-if', ipa:'/ˈtærɪf/', pos:'noun', def:'A tax or duty to be paid on a particular class of imports or exports; a schedule of prices or fees.', lang:'Italian, from tariffa (\'list of prices\'), from Arabic ta\'rifa (\'notification, inventory\'), from arrafa (\'to make known\').', example:'The government imposed a steep tariff on imported steel to protect domestic manufacturers from foreign competition.', isNoun:true },
+  { word:'tase', pronunciation:'TAYZ', ipa:'/teɪz/', pos:'verb', def:'To stun or incapacitate someone with a Taser, a device that delivers an electric shock.', lang:'English, from Taser, an acronym for Thomas A. Swift\'s Electric Rifle, named after a character in a young adult adventure novel.', example:'The officer had to tase the aggressive suspect after repeated verbal warnings failed to de-escalate the situation.', isNoun:false },
+  { word:'tawny', pronunciation:'TAW-nee', ipa:'/ˈtɔːni/', pos:'adjective', def:'Of a warm, sandy, or golden brown color; resembling the color of tanned leather.', lang:'Old French, from tané (\'tanned\'), past participle of taner (\'to tan\'), from Medieval Latin tannare, from tannum (\'crushed oak bark used in tanning\').', example:'The tawny owl perched silently on the branch, its warm brown feathers blending perfectly with the autumn leaves.', isNoun:false },
+  { word:'teamwork', pronunciation:'TEEM-wurk', ipa:'/ˈtiːmˌwɜːrk/', pos:'noun', def:'The combined action of a group of people working together effectively toward a common goal.', lang:'English, from team (from Old English tēam, \'family, group of animals yoked together\') + work (from Old English weorc).', example:'The project\'s success was entirely due to teamwork, with each member contributing their unique skills to the effort.', isNoun:true },
+  { word:'tearjerker', pronunciation:'TEER-jur-kur', ipa:'/ˈtɪərˌdʒɜːrkər/', pos:'noun', def:'A sentimental story, movie, or song that is calculated to evoke sadness or sympathy; something that makes people cry.', lang:'English, from tear (\'a drop of liquid from the eye\') + jerker (\'something that jerks or pulls\'), suggesting it jerks tears from the eyes.', example:'The movie was a real tearjerker — by the final scene, nearly everyone in the theater was reaching for tissues.', isNoun:true },
+  { word:'teenagers', pronunciation:'TEEN-ay-jurz', ipa:'/ˈtiːnˌeɪdʒərz/', pos:'noun', def:'People aged between thirteen and nineteen years old; young people in the transitional stage between childhood and adulthood.', lang:'English, from teen (from the -teen suffix in thirteen through nineteen, from Old English -tēne, \'ten\') + age + -er + -s.', example:'The community center offered after-school programs for teenagers, including music lessons, coding workshops, and sports leagues.', isNoun:true },
+  { word:'tendency', pronunciation:'TEN-dun-see', ipa:'/ˈtɛndənsi/', pos:'noun', def:'An inclination toward a particular characteristic or type of behavior; a general direction in which something develops.', lang:'Latin, from tendentia (\'a stretching\'), from tendere (\'to stretch, extend, aim\').', example:'He had a tendency to procrastinate on large projects, often leaving the hardest tasks until the very last minute.', isNoun:true },
+  { word:'terminator', pronunciation:'TUR-mih-nay-tur', ipa:'/ˈtɜːrmɪˌneɪtər/', pos:'noun', def:'A person or thing that terminates something; the boundary between the illuminated and dark parts of a celestial body.', lang:'Latin, from terminator (\'one who sets boundaries\'), from terminare (\'to set bounds, limit\'), from terminus (\'boundary, end\').', example:'Through the telescope, the terminator line on the moon was clearly visible, dividing the bright and shadowed halves.', isNoun:true },
+  { word:'terrier', pronunciation:'TAIR-ee-ur', ipa:'/ˈtɛriər/', pos:'noun', def:'A small, typically energetic dog breed originally bred for hunting animals in their burrows.', lang:'Old French, from chien terrier (\'earth dog\'), from Medieval Latin terrarius (\'of the earth\'), from Latin terra (\'earth\'), because terriers dig into the ground.', example:'The feisty little terrier chased squirrels around the yard with boundless energy, never quite catching one.', isNoun:true },
+  { word:'testament', pronunciation:'TES-tuh-munt', ipa:'/ˈtɛstəmənt/', pos:'noun', def:'Something that serves as proof or evidence of a fact; a person\'s will; either of the two main divisions of the Bible.', lang:'Latin, from testamentum (\'a will, covenant\'), from testari (\'to be a witness, make a will\'), from testis (\'witness\').', example:'The beautifully preserved cathedral stands as a testament to the skill and devotion of the craftsmen who built it.', isNoun:true },
+  { word:'thawed', pronunciation:'THAWD', ipa:'/θɔːd/', pos:'verb', def:'Became liquid or soft after being frozen; warmed up enough to melt; became friendlier or more cordial.', lang:'Old English, from thawian (\'to thaw, melt\'), of Germanic origin.', example:'The frozen chicken thawed overnight in the refrigerator, and by morning it was ready to be seasoned and roasted.', isNoun:false },
+  { word:'thespian', pronunciation:'THES-pee-un', ipa:'/ˈθɛspiən/', pos:'noun', def:'An actor or actress; relating to drama and the theater.', lang:'Greek, from Thespis, a Greek poet of the 6th century BCE traditionally regarded as the founder of Greek tragedy.', example:'The talented thespian delivered a powerful performance as Hamlet, earning a standing ovation on opening night.', isNoun:true },
+  { word:'thicket', pronunciation:'THIK-it', ipa:'/ˈθɪkɪt/', pos:'noun', def:'A dense group of bushes or trees; a tangled mass of undergrowth.', lang:'Old English, from thiccet (\'a dense growth\'), from thicce (\'thick\'), of Germanic origin.', example:'The rabbit darted into the thicket to escape the fox, disappearing among the tangled branches and thorny bushes.', isNoun:true },
+  { word:'thorn', pronunciation:'THORN', ipa:'/θɔːrn/', pos:'noun', def:'A stiff, sharp-pointed projection on a plant stem; a source of discomfort, annoyance, or difficulty.', lang:'Old English, from thorn (\'a thorn, prickle\'), of Germanic origin.', example:'She pricked her finger on a thorn while picking roses, a small drop of blood appearing on her fingertip.', isNoun:true },
+  { word:'thrift', pronunciation:'THRIFT', ipa:'/θrɪft/', pos:'noun', def:'The quality of using money and other resources carefully and not wastefully; frugality and prudent management.', lang:'Old Norse, from thrift (\'prosperity\'), from thrifa (\'to grasp, thrive\'), of Germanic origin.', example:'Her grandmother\'s thrift during the lean years taught the whole family the value of saving and avoiding waste.', isNoun:true },
+  { word:'throughout', pronunciation:'throo-OWT', ipa:'/θruːˈaʊt/', pos:'adverb', def:'In or to every part of a place or period of time; from beginning to end.', lang:'English, from through (from Old English thurh, \'from one side to the other\') + out (from Old English ut).', example:'The aroma of baking cookies spread throughout the house, drawing everyone toward the kitchen in anticipation.', isNoun:false },
+  { word:'tickled', pronunciation:'TIK-uld', ipa:'/ˈtɪkəld/', pos:'verb', def:'Lightly touched in a way that causes laughter or twitching; amused or pleased greatly.', lang:'Middle English, from tikelen (\'to tickle\'), possibly of frequentative origin, related to tick.', example:'The baby giggled uncontrollably when her father tickled the bottoms of her tiny feet with a feather.', isNoun:false },
+  { word:'timber', pronunciation:'TIM-bur', ipa:'/ˈtɪmbər/', pos:'noun', def:'Wood prepared for use in building and carpentry; trees grown for their wood; a warning shout when a tree is about to fall.', lang:'Old English, from timber (\'building material, trees for building\'), of Germanic origin.', example:'The lumberjacks shouted \'timber!\' as the tall pine tree began to lean and then crashed to the forest floor.', isNoun:true },
+  { word:'toastmaster', pronunciation:'TOHST-mas-tur', ipa:'/ˈtoʊstˌmæstər/', pos:'noun', def:'A person who announces speakers and proposes toasts at a public event or formal dinner.', lang:'English, from toast (\'a call to drink in honor of someone\') + master (\'one who presides\'), from Latin magister.', example:'The toastmaster welcomed each speaker with a witty introduction that kept the audience entertained between presentations.', isNoun:true },
+  { word:'toilsome', pronunciation:'TOYL-sum', ipa:'/ˈtɔɪlsəm/', pos:'adjective', def:'Involving hard or tedious work; laborious and exhausting.', lang:'English, from toil (from Old French toil, \'turmoil, dispute\', from Latin tudiculare, \'to stir about\') + -some.', example:'The toilsome climb up the steep mountain trail left even the fittest hikers breathless and eager for a rest.', isNoun:false },
+  { word:'touted', pronunciation:'TOW-tid', ipa:'/ˈtaʊtɪd/', pos:'verb', def:'Attempted to sell something by making exaggerated claims; promoted or praised enthusiastically.', lang:'Middle English, from tuten (\'to peep, look out\'), possibly of Germanic origin.', example:'The new restaurant was touted as the best dining experience in the city, attracting long lines from its very first night.', isNoun:false },
+  { word:'transference', pronunciation:'TRANS-fur-unce', ipa:'/ˈtrænsfərəns/', pos:'noun', def:'The action of transferring something from one place or person to another; in psychology, the redirection of feelings to a new object.', lang:'Latin, from transferre (\'to carry across\'), from trans (\'across\') + ferre (\'to carry\'), + -ence.', example:'The therapist recognized the patient\'s transference, understanding that the anger directed at her was really meant for someone else.', isNoun:true },
+  { word:'traverse', pronunciation:'truh-VURS', ipa:'/trəˈvɜːrs/', pos:'verb', def:'To travel across or through; to move back and forth or sideways; to cross an area of land or water.', lang:'Old French, from traverser (\'to cross\'), from Latin transversare, from transversus (\'turned across\'), from trans (\'across\') + vertere (\'to turn\').', example:'The explorers had to traverse a vast desert before reaching the lush oasis on the other side.', isNoun:false },
+  { word:'travesty', pronunciation:'TRAV-uh-stee', ipa:'/ˈtrævɪsti/', pos:'noun', def:'A false, absurd, or distorted representation of something; a mockery or parody.', lang:'French, from travesti (\'disguised\'), past participle of travestir (\'to disguise\'), from Italian travestire, from tra (\'across\') + vestire (\'to clothe\').', example:'The rushed trial was widely condemned as a travesty of justice, with key evidence excluded and witnesses intimidated.', isNoun:true },
+  { word:'treasury', pronunciation:'TREZH-uh-ree', ipa:'/ˈtrɛʒəri/', pos:'noun', def:'The funds or revenue of a government, corporation, or institution; a place where treasure is stored; a valuable collection.', lang:'Old French, from tresorie (\'treasury\'), from tresor (\'treasure\'), from Latin thesaurus (\'treasure, storehouse\'), from Greek thesauros.', example:'The national treasury funded the construction of new schools and hospitals in underserved communities across the country.', isNoun:true },
+  { word:'treatise', pronunciation:'TREE-tis', ipa:'/ˈtriːtɪs/', pos:'noun', def:'A written work dealing formally and systematically with a subject; a detailed, scholarly essay or book.', lang:'Old French, from traitié (\'treatise\'), from traiter (\'to treat, handle\'), from Latin tractare (\'to handle, discuss\').', example:'The philosopher\'s treatise on ethics became required reading for university students across the continent.', isNoun:true },
+  { word:'trendy', pronunciation:'TREN-dee', ipa:'/ˈtrɛndi/', pos:'adjective', def:'Very fashionable or up to date in style or influence; following the latest trends.', lang:'English, from trend (\'a general direction or tendency\'), from Old English trendan (\'to revolve, turn\'), + -y.', example:'The trendy new cafe featured exposed brick, indoor plants, and oat milk lattes that attracted a young, hip crowd.', isNoun:false },
+  { word:'trespass', pronunciation:'TRES-pus', ipa:'/ˈtrɛspəs/', pos:'verb', def:'To enter someone\'s land or property without permission; to commit an offense against a person or moral law.', lang:'Old French, from trespasser (\'to pass beyond\'), from tres (\'across, beyond\') + passer (\'to pass\'), from Latin passus (\'step\').', example:'Signs along the fence warned hikers not to trespass on the private ranch land bordering the public trail.', isNoun:false },
+  { word:'trifle', pronunciation:'TRY-ful', ipa:'/ˈtraɪfəl/', pos:'noun', def:'A thing of little value or importance; a cold dessert of sponge cake, fruit, custard, and cream; to treat without seriousness.', lang:'Old French, from trufle (\'mockery, diminutive thing\'), of uncertain origin.', example:'The English trifle, layered with sherry-soaked sponge, berries, custard, and whipped cream, was the highlight of the dessert table.', isNoun:true },
+  { word:'trinkets', pronunciation:'TRING-kits', ipa:'/ˈtrɪŋkɪts/', pos:'noun', def:'Small ornaments or items of jewelry that are of little value; knickknacks or small decorative objects.', lang:'English, of uncertain origin, possibly from Old French trenquet (\'small knife\'), or related to trick.', example:'The market stall was covered with colorful trinkets — beaded bracelets, tiny bells, and hand-painted wooden figurines.', isNoun:true },
+  { word:'troll', pronunciation:'TROHL', ipa:'/troʊl/', pos:'noun', def:'A mythical, ugly creature in Scandinavian folklore; a person who posts deliberately provocative messages online to cause conflict.', lang:'Old Norse, from troll (\'giant, fiend, demon\'), of uncertain origin; the internet sense emerged in the 1990s.', example:'In the fairy tale, a fearsome troll lived under the bridge and demanded payment from anyone who tried to cross.', isNoun:true },
+  { word:'troop', pronunciation:'TROOP', ipa:'/truːp/', pos:'noun', def:'Soldiers or armed forces; a group of people or animals; a unit of Girl Scouts or Boy Scouts.', lang:'French, from troupe (\'a band, company\'), from Old French trope (\'flock, band\'), of Germanic origin.', example:'The Scout troop spent the weekend camping in the forest, learning survival skills and earning merit badges.', isNoun:true },
+  { word:'trounce', pronunciation:'TROWNSS', ipa:'/traʊns/', pos:'verb', def:'To defeat heavily in a contest; to beat overwhelmingly; to punish severely.', lang:'English, of uncertain origin, possibly from Old French tronce (\'a stump, log\'), used figuratively for a beating.', example:'The home team trounced the visitors by a score of seven to one, dominating every quarter of the game.', isNoun:false },
+  { word:'trove', pronunciation:'TROHV', ipa:'/troʊv/', pos:'noun', def:'A store of valuable or delightful things; a treasure trove; a rich collection or source.', lang:'French, from trouver (\'to find\'), from Latin tropare (\'to compose\'), from tropus (\'a figure of speech\'). Short for treasure trove.', example:'The attic turned out to be a trove of family heirlooms, including century-old photographs and handwritten letters.', isNoun:true },
+  { word:'truffle', pronunciation:'TRUF-ul', ipa:'/ˈtrʌfəl/', pos:'noun', def:'A strong-smelling underground fungus regarded as a culinary delicacy; a soft chocolate candy.', lang:'French, from truffe (\'truffle\'), from Provencal trufa, possibly from Latin tuber (\'swelling, lump, truffle\').', example:'The chef shaved thin slices of black truffle over the pasta, adding an earthy, luxurious flavor to the simple dish.', isNoun:true },
+  { word:'truly', pronunciation:'TROO-lee', ipa:'/ˈtruːli/', pos:'adverb', def:'In a truthful way; to the fullest degree; genuinely and sincerely.', lang:'Old English, from treowlice (\'faithfully\'), from treowe (\'faithful, true\'), of Germanic origin, + -ly.', example:'She was truly grateful for the kindness of strangers who helped her find her way when she was lost in the city.', isNoun:false },
+  { word:'truncate', pronunciation:'TRUN-kayt', ipa:'/ˈtrʌŋkeɪt/', pos:'verb', def:'To shorten something by cutting off the top or the end; to reduce in length or duration.', lang:'Latin, from truncatus, past participle of truncare (\'to cut off, maim\'), from truncus (\'trunk, maimed\').', example:'The editor had to truncate the article by five hundred words to fit it within the magazine\'s page limit.', isNoun:false },
+  { word:'trustee', pronunciation:'trus-TEE', ipa:'/trʌˈstiː/', pos:'noun', def:'A person or member of a board given control or powers of administration of property in trust for a beneficiary.', lang:'English, from trust (from Old Norse traust, \'confidence, protection\') + -ee (suffix denoting a recipient).', example:'The university\'s board of trustees voted to approve the construction of a new science building on campus.', isNoun:true },
+  { word:'tubers', pronunciation:'TOO-burz', ipa:'/ˈtjuːbərz/', pos:'noun', def:'Thick underground parts of stems or roots of certain plants, such as potatoes, used as food storage organs.', lang:'Latin, from tuber (\'swelling, lump, truffle\').', example:'The farmer harvested baskets full of tubers in the autumn, including potatoes, yams, and Jerusalem artichokes.', isNoun:true },
+  { word:'tunnel', pronunciation:'TUN-ul', ipa:'/ˈtʌnəl/', pos:'noun', def:'An artificial underground passage, especially one built through a hill or under a building, road, or river.', lang:'Old French, from tonel (\'cask, barrel\'), diminutive of tonne (\'tun, barrel\'), referring to the barrel-like shape of the passage.', example:'The train disappeared into the dark tunnel carved through the mountain and emerged on the other side into bright sunlight.', isNoun:true },
+  { word:'tutorial', pronunciation:'too-TOR-ee-ul', ipa:'/tjuːˈtɔːriəl/', pos:'noun', def:'A period of instruction given by a tutor; an account or explanation of a subject intended for self-study.', lang:'Latin, from tutorialis, from tutor (\'guardian, teacher\'), from tutus (\'safe, watched over\'), from tueri (\'to watch, guard\').', example:'She followed an online tutorial to learn how to edit videos, pausing and replaying each step until she mastered it.', isNoun:true }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Slider
+  const totalA = a.length;
+  const pct = totalA > 1 ? s / (totalA - 1) * 100 : 0;
+  document.getElementById("sliderFill").style.width = pct + "%";
+  const sliderArea = document.getElementById("sliderArea");
+  const areaW = sliderArea.offsetWidth || 200;
+  const pad = 10;
+  const thumbLeft = pad + (pct / 100) * (areaW - pad * 2);
+  const thumb = document.getElementById("sliderThumb");
+  if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
+
+  // Ticks - show ~20 evenly spaced markers
+  const tickCount = Math.min(totalA, 20);
+  let ticksHtml = '';
+  for(let t=0; t<tickCount; t++){
+    const ti = Math.round(t / (tickCount-1) * (totalA-1));
+    const cls = ti===s ? 'active' : (t % 5 === 0 ? 'major' : '');
+    ticksHtml += `<div class="slider-tick ${cls}"></div>`;
+  }
+  document.getElementById("sliderDots").innerHTML = ticksHtml;
+  document.getElementById("sliderCounter").textContent = `${s+1} / ${totalA}`;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Slider drag
+const slArea=document.getElementById("sliderArea");
+const slThumb=document.getElementById("sliderThumb");
+let slDragging=false;
+function sliderFromX(cx){
+  const r=slArea.getBoundingClientRect();
+  const pad=10;
+  const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
+  const a=aw(),idx=Math.round(p*(a.length-1));
+  // Move thumb immediately for smooth feel
+  const thumbLeft=pad+(p)*(r.width-pad*2);
+  slThumb.style.left=thumbLeft+"px";
+  if(idx!==si()){
+    const g=WORDS.findIndex(w=>w.word===a[idx].word);
+    flipped=false; currentIndex=g; render();
+  }
+}
+slArea.addEventListener("touchstart",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(slDragging) sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    // Speak the word after releasing
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+slArea.addEventListener("mousedown",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.clientX); e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(slDragging) sliderFromX(e.clientX);
+});
+document.addEventListener("mouseup",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>

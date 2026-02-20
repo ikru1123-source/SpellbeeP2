@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 900;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 18px; height: 18px; }
+.slider-area {
+  flex: 1; height: 32px; position: relative;
+  display: flex; align-items: center;
+  touch-action: none; cursor: pointer;
+}
+.slider-track-bg {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
+}
+.slider-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(212,175,55,0.5));
+  transition: width 0.15s ease;
+}
+.slider-dots {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; padding: 0 2px;
+}
+.slider-tick {
+  width: 2px; height: 8px; border-radius: 1px;
+  background: rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.slider-tick.major { height: 12px; background: rgba(255,255,255,0.12); }
+.slider-tick.active { background: var(--gold); height: 14px; width: 3px; border-radius: 1.5px; box-shadow: 0 0 6px rgba(212,175,55,0.4); }
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px solid #1a1528;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  cursor: grab; transition: left 0.12s ease;
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
+.slider-thumb.dragging { transition: none; transform: translate(-50%, -50%) scale(1.15); }
+.slider-counter {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.08em;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1>Spelling Bee</h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="slider-area" id="sliderArea">
+      <div class="slider-track-bg">
+        <div class="slider-fill" id="sliderFill"></div>
+      </div>
+      <div class="slider-dots" id="sliderDots"></div>
+      <div class="slider-thumb" id="sliderThumb"></div>
+    </div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'sacrifice', pronunciation:'SAK-rih-fyce', ipa:'/ˈsækrɪˌfaɪs/', pos:'noun', def:'An act of giving up something valued for the sake of something else regarded as more important; an offering to a deity.', lang:'Latin, from sacrificium (\'a making sacred\'), from sacer (\'sacred\') + facere (\'to make\').', example:'The soldiers made the ultimate sacrifice, giving their lives to protect their country and its people.', isNoun:true },
+  { word:'salivate', pronunciation:'SAL-ih-vayt', ipa:'/ˈsælɪˌveɪt/', pos:'verb', def:'To produce saliva, especially in anticipation of food; to show great excitement or desire for something.', lang:'Latin, from salivatus, past participle of salivare (\'to produce saliva\'), from saliva (\'spittle\').', example:'The aroma of freshly baked bread wafting from the kitchen was enough to make everyone salivate.', isNoun:false },
+  { word:'sallow', pronunciation:'SAL-oh', ipa:'/ˈsæloʊ/', pos:'adjective', def:'Having an unhealthy yellowish or pale brown complexion.', lang:'Old English, from salu (\'dusky, dark\'), of Germanic origin.', example:'After weeks of illness, his sallow complexion worried his family, who urged him to see a doctor immediately.', isNoun:false },
+  { word:'satchel', pronunciation:'SACH-ul', ipa:'/ˈsætʃəl/', pos:'noun', def:'A bag carried on the shoulder by a long strap, used especially for school books.', lang:'Old French, from sachel, from Latin saccellus (\'small bag\'), diminutive of saccus (\'sack, bag\').', example:'The student slung her leather satchel over her shoulder and headed off to class with her books and notebooks inside.', isNoun:true },
+  { word:'scalp', pronunciation:'SKALP', ipa:'/skælp/', pos:'noun', def:'The skin covering the top and back of the head.', lang:'Scandinavian, probably from Old Norse skálpr (\'sheath, shell\'), of Germanic origin.', example:'The dermatologist examined his scalp carefully to determine the cause of the persistent itching and flaking.', isNoun:true },
+  { word:'scammed', pronunciation:'SKAMD', ipa:'/skæmd/', pos:'verb', def:'Deceived or cheated someone, typically by means of a dishonest scheme to obtain money or personal information.', lang:'English, from scam (\'a fraudulent scheme\'), possibly from carnival slang, of uncertain origin.', example:'She realized she had been scammed when the online store took her payment but never shipped the merchandise.', isNoun:false },
+  { word:'scandal', pronunciation:'SKAN-dul', ipa:'/ˈskændəl/', pos:'noun', def:'An action or event regarded as morally or legally wrong and causing general public outrage.', lang:'Greek, from skandalon (\'trap, stumbling block\'), from Latin scandalum (\'cause of offense\').', example:'The financial scandal forced the CEO to resign after it was revealed that millions had been mismanaged.', isNoun:true },
+  { word:'scanty', pronunciation:'SKAN-tee', ipa:'/ˈskænti/', pos:'adjective', def:'Small or insufficient in quantity or amount; barely adequate.', lang:'Old Norse, from skamt (\'short, brief\'), neuter of skammr (\'short\').', example:'The scanty rainfall that year left the reservoirs dangerously low and forced the city to impose water restrictions.', isNoun:false },
+  { word:'scenario', pronunciation:'suh-NAIR-ee-oh', ipa:'/sɪˈnɛərioʊ/', pos:'noun', def:'A postulated sequence of possible events; a written outline of a movie or stage work; a particular situation.', lang:'Italian, from scenario (\'scenery\'), from Latin scaenarium, from scaena (\'scene, stage\'), from Greek skene (\'tent, stage\').', example:'The emergency team practiced several disaster scenarios so they would be prepared for any real-world situation.', isNoun:true },
+  { word:'scent', pronunciation:'SENT', ipa:'/sɛnt/', pos:'noun', def:'A distinctive smell, especially one that is pleasant; a trail indicated by the characteristic smell of an animal.', lang:'Old French, from sentir (\'to feel, smell\'), from Latin sentire (\'to feel, perceive\').', example:'The scent of jasmine filled the evening air as they strolled through the moonlit garden.', isNoun:true },
+  { word:'scholarship', pronunciation:'SKOL-ur-ship', ipa:'/ˈskɒlərˌʃɪp/', pos:'noun', def:'A grant of money awarded to a student to help pay for their education; academic study or achievement.', lang:'English, from scholar (from Latin scholaris, from schola, \'school\') + -ship.', example:'She earned a full scholarship to the university thanks to her outstanding grades and community service record.', isNoun:true },
+  { word:'sci-fi', pronunciation:'SY-fy', ipa:'/ˈsaɪˌfaɪ/', pos:'noun', def:'A genre of fiction dealing with imaginative and futuristic concepts such as space exploration, time travel, and alien life.', lang:'English, informal abbreviation of science fiction, coined in the 1950s, modeled on hi-fi.', example:'The bookstore had an entire section devoted to sci-fi novels, from classic space operas to modern dystopian thrillers.', isNoun:true },
+  { word:'sconce', pronunciation:'SKONSS', ipa:'/skɒns/', pos:'noun', def:'A wall-mounted light fixture that directs light upward or downward; historically, a candleholder attached to a wall.', lang:'Old French, from esconse (\'lantern, hiding place\'), from Latin absconsus (\'hidden\'), from abscondere (\'to hide away\').', example:'Elegant brass sconces lined the hallway of the historic hotel, casting a warm golden glow on the patterned wallpaper.', isNoun:true },
+  { word:'scooter', pronunciation:'SKOO-tur', ipa:'/ˈskuːtər/', pos:'noun', def:'A light two-wheeled vehicle propelled by pushing against the ground with one foot or by a small engine.', lang:'English, from scoot (\'to move quickly\'), possibly from Old Norse skjota (\'to shoot, move quickly\'), + -er.', example:'The child zipped down the sidewalk on her scooter, weaving skillfully around pedestrians and park benches.', isNoun:true },
+  { word:'scornfully', pronunciation:'SKORN-fuh-lee', ipa:'/ˈskɔːrnfəli/', pos:'adverb', def:'In a manner that shows open contempt or disdain for someone or something.', lang:'Old French, from escarn (\'mockery, derision\'), of Germanic origin, + -ful + -ly.', example:'She scornfully rejected the low offer, telling the buyer that the antique was worth at least ten times that amount.', isNoun:false },
+  { word:'scrape', pronunciation:'SKRAYP', ipa:'/skreɪp/', pos:'verb', def:'To drag or pull a hard or sharp implement across a surface to remove dirt or other matter.', lang:'Old Norse, from skrapa (\'to scrape\'), of Germanic origin.', example:'He had to scrape the ice off the windshield every morning during the bitter cold January that seemed to last forever.', isNoun:false },
+  { word:'scrapple', pronunciation:'SKRAP-ul', ipa:'/ˈskræpəl/', pos:'noun', def:'A savory dish of pork scraps combined with cornmeal and flour, formed into a loaf and sliced and fried; popular in the mid-Atlantic US.', lang:'English, diminutive of scrap (\'small piece of leftover food\'), from Old Norse skrap (\'scraps, trifles\').', example:'The Pennsylvania diner served crispy golden scrapple alongside eggs and toast as part of their hearty country breakfast.', isNoun:true },
+  { word:'screeno', pronunciation:'SKREE-noh', ipa:'/ˈskriːnoʊ/', pos:'noun', def:'A form of bingo or lottery played in movie theaters during the 1930s and 1940s as a promotional attraction.', lang:'English, from screen + -o (suffix used in game names like bingo), referring to the movie screen where numbers were displayed.', example:'During the Great Depression, theaters offered screeno games between films to attract audiences with the chance of winning prizes.', isNoun:true },
+  { word:'scripture', pronunciation:'SKRIP-chur', ipa:'/ˈskrɪptʃər/', pos:'noun', def:'The sacred writings of Christianity contained in the Bible; the sacred writings of another religion.', lang:'Latin, from scriptura (\'a writing\'), from scriptus, past participle of scribere (\'to write\').', example:'The pastor opened the morning service by reading a passage of scripture that spoke about compassion and forgiveness.', isNoun:true },
+  { word:'scrooge', pronunciation:'SKROOJ', ipa:'/skruːdʒ/', pos:'noun', def:'A person who is mean with money; a miser. From Ebenezer Scrooge in Dickens\'s A Christmas Carol.', lang:'English, from Scrooge, the miserly character in Dickens\'s A Christmas Carol (1843), possibly from dialect scrouge (\'to squeeze\').', example:'Don\'t be such a scrooge — it\'s the holiday season, and a small donation to charity won\'t break the bank.', isNoun:true },
+  { word:'scrounge', pronunciation:'SKROUNJ', ipa:'/skraʊndʒ/', pos:'verb', def:'To seek to obtain something at the expense or through the generosity of others; to rummage around.', lang:'English, variant of dialectal scrunge (\'to search stealthily\'), of uncertain origin.', example:'The resourceful camper managed to scrounge enough dry firewood from under the trees to build a decent campfire.', isNoun:false },
+  { word:'scrutiny', pronunciation:'SKROO-tih-nee', ipa:'/ˈskruːtɪni/', pos:'noun', def:'Critical observation or examination; close and careful inspection or study.', lang:'Latin, from scrutinium (\'a searching, examination\'), from scrutari (\'to examine\'), from scruta (\'trash, rags\').', example:'Every detail of the contract came under intense scrutiny from the legal team before the deal was signed.', isNoun:true },
+  { word:'sculpture', pronunciation:'SKULP-chur', ipa:'/ˈskʌlptʃər/', pos:'noun', def:'The art of making three-dimensional figures by carving, modeling, or casting; a work of art made in this way.', lang:'Latin, from sculptura (\'a carving\'), from sculptus, past participle of sculpere (\'to carve\').', example:'The marble sculpture of the Greek goddess stood in the center of the museum gallery, drawing admiring crowds.', isNoun:true },
+  { word:'seclusion', pronunciation:'sih-KLOO-zhun', ipa:'/sɪˈkluːʒən/', pos:'noun', def:'The state of being private and away from other people; isolation or withdrawal from the world.', lang:'Latin, from seclusio (\'a shutting off\'), from secludere (\'to shut off\'), from se- (\'apart\') + claudere (\'to close\').', example:'The writer sought seclusion in a remote cabin where she could work without the distractions of city life.', isNoun:true },
+  { word:'seize', pronunciation:'SEEZ', ipa:'/siːz/', pos:'verb', def:'To take hold of suddenly and forcibly; to capture or take possession of; to take advantage of eagerly.', lang:'Old French, from seisir (\'to take possession\'), from Medieval Latin sacire, of Germanic origin.', example:'The detective ordered officers to seize all the documents from the suspect\'s office as evidence for the trial.', isNoun:false },
+  { word:'selfie', pronunciation:'SEL-fee', ipa:'/ˈsɛlfi/', pos:'noun', def:'A photograph that one takes of oneself, typically with a smartphone and shared on social media.', lang:'English, from self + -ie (diminutive suffix), first widely used in Australian English around 2002.', example:'The group gathered at the overlook and squeezed together for a selfie with the stunning mountain sunset behind them.', isNoun:true },
+  { word:'seller', pronunciation:'SEL-ur', ipa:'/ˈsɛlər/', pos:'noun', def:'A person who sells something; a product that sells in a specified way.', lang:'English, from sell (from Old English sellan, \'to give, hand over\') + -er.', example:'The online seller shipped orders within twenty-four hours, earning a reputation for fast and reliable service.', isNoun:true },
+  { word:'semester', pronunciation:'suh-MES-tur', ipa:'/sɪˈmɛstər/', pos:'noun', def:'A half-year term in a school or college, typically lasting fifteen to eighteen weeks.', lang:'German, from Semester, from Latin semestris (\'of six months\'), from sex (\'six\') + mensis (\'month\').', example:'She signed up for five courses during the fall semester, knowing it would be challenging but eager to graduate on time.', isNoun:true },
+  { word:'sensory', pronunciation:'SEN-suh-ree', ipa:'/ˈsɛnsəri/', pos:'adjective', def:'Of or relating to the physical senses; transmitted or perceived by the senses.', lang:'Latin, from sensorium, from sensus (\'perception, feeling\'), from sentire (\'to feel\'), + -ory.', example:'The children\'s museum featured a sensory room filled with textured walls, soothing lights, and calming sounds.', isNoun:false },
+  { word:'sepal', pronunciation:'SEE-pul', ipa:'/ˈsiːpəl/', pos:'noun', def:'Each of the parts of the calyx of a flower, enclosing the petals and typically green and leaflike.', lang:'French, from sepale, coined by botanist Necker, possibly from Greek skepe (\'covering\').', example:'The biology student used a magnifying glass to examine the tiny green sepals that protected the rosebud before it bloomed.', isNoun:true },
+  { word:'September', pronunciation:'sep-TEM-bur', ipa:'/sɛpˈtɛmbər/', pos:'noun', def:'The ninth month of the year, originally the seventh month in the Roman calendar.', lang:'Latin, from September (\'seventh month\'), from septem (\'seven\'), because it was the seventh month in the original Roman calendar.', example:'September brought cooler weather and golden leaves, signaling the end of summer and the beginning of autumn.', isNoun:true },
+  { word:'sequel', pronunciation:'SEE-kwul', ipa:'/ˈsiːkwəl/', pos:'noun', def:'A published or recorded work that continues the story of an earlier one; something that follows as a consequence.', lang:'Latin, from sequela (\'that which follows\'), from sequi (\'to follow\').', example:'Fans waited three years for the sequel to the blockbuster film, and the second installment did not disappoint.', isNoun:true },
+  { word:'serenade', pronunciation:'SAIR-uh-NAYD', ipa:'/ˌsɛrəˈneɪd/', pos:'noun', def:'A piece of music sung or played outdoors at night, especially by a lover under the beloved\'s window.', lang:'Italian, from serenata (\'evening song\'), from sereno (\'serene, calm\'), from Latin serenus (\'clear, fair\').', example:'He stood beneath her balcony with a guitar and played a serenade under the light of the full moon.', isNoun:true },
+  { word:'service', pronunciation:'SUR-vis', ipa:'/ˈsɜːrvɪs/', pos:'noun', def:'The action of helping or doing work for someone; a system supplying a public need; a ceremony of religious worship.', lang:'Old French, from servise, from Latin servitium (\'slavery, servitude\'), from servus (\'slave\').', example:'The restaurant was known for its exceptional service, with attentive staff who anticipated every guest\'s needs.', isNoun:true },
+  { word:'servitude', pronunciation:'SUR-vih-tood', ipa:'/ˈsɜːrvɪˌtjuːd/', pos:'noun', def:'The state of being a slave or completely subject to someone more powerful.', lang:'Latin, from servitudo (\'slavery\'), from servus (\'slave\').', example:'The abolition movement fought tirelessly to end the servitude of millions who had been denied their basic human rights.', isNoun:true },
+  { word:'sewage', pronunciation:'SOO-ij', ipa:'/ˈsuːɪdʒ/', pos:'noun', def:'Waste water and excrement conveyed in sewers; the refuse matter carried away by drains and pipes.', lang:'English, from sewer (from Anglo-French sewere, \'channel to carry off overflow\') + -age.', example:'The city invested millions in upgrading its sewage treatment plant to prevent contaminated water from reaching the river.', isNoun:true },
+  { word:'shaggy', pronunciation:'SHAG-ee', ipa:'/ˈʃæɡi/', pos:'adjective', def:'Having long, thick, untidy hair or fur; covered with rough, tangled growth.', lang:'Old English, from sceacga (\'rough matted hair or wool\'), of uncertain origin, + -y.', example:'The shaggy dog bounded through the puddles, its matted fur collecting mud and leaves with every joyful leap.', isNoun:false },
+  { word:'shamrock', pronunciation:'SHAM-rok', ipa:'/ˈʃæmˌrɒk/', pos:'noun', def:'A low-growing, clover-like plant with three-lobed leaves, used as the national emblem of Ireland.', lang:'Irish, from seamrog (\'little clover\'), diminutive of seamar (\'clover\').', example:'On St. Patrick\'s Day, everyone wore a shamrock pinned to their lapel as a nod to Irish tradition.', isNoun:true },
+  { word:'sheaves', pronunciation:'SHEEVZ', ipa:'/ʃiːvz/', pos:'noun', def:'Bundles of grain stalks tied together after reaping; bundles of papers or other similar items.', lang:'Old English, from sceaf (\'sheaf, bundle\'), of Germanic origin.', example:'The farm workers gathered the golden sheaves of wheat and loaded them onto the cart as the harvest sun set.', isNoun:true },
+  { word:'shindig', pronunciation:'SHIN-dig', ipa:'/ˈʃɪndɪɡ/', pos:'noun', def:'A large, lively party or celebration, especially one with dancing and music.', lang:'English, possibly from shindy (\'a noisy disturbance or party\'), of uncertain origin.', example:'The neighborhood threw a massive shindig to celebrate the Fourth of July, complete with fireworks, barbecue, and live music.', isNoun:true },
+  { word:'shipping', pronunciation:'SHIP-ing', ipa:'/ˈʃɪpɪŋ/', pos:'noun', def:'The transport of goods by sea, air, or land; ships collectively; the cost of sending goods.', lang:'English, from ship (from Old English scip, of Germanic origin) + -ing.', example:'Free shipping on orders over fifty dollars encouraged customers to add a few extra items to their online carts.', isNoun:true },
+  { word:'shore', pronunciation:'SHOR', ipa:'/ʃɔːr/', pos:'noun', def:'The land along the edge of a sea, lake, or other large body of water; the coast.', lang:'Middle English, from Middle Dutch or Middle Low German schore (\'shore, foreland\').', example:'The children built sandcastles along the shore while the waves gently lapped at their feet.', isNoun:true },
+  { word:'shrapnel', pronunciation:'SHRAP-nul', ipa:'/ˈʃræpnəl/', pos:'noun', def:'Fragments of a bomb or shell thrown out by an explosion; small metal pieces scattered by a blast.', lang:'English, named after General Henry Shrapnel (1761-1842), who invented an exploding shell filled with shot.', example:'The blast sent shrapnel flying in every direction, embedding fragments of metal in the surrounding walls.', isNoun:true },
+  { word:'simmer', pronunciation:'SIM-ur', ipa:'/ˈsɪmər/', pos:'verb', def:'To stay just below boiling while being heated gently; to be in a state of suppressed emotion.', lang:'English, alteration of simper (\'to simmer\'), possibly of imitative origin.', example:'Let the soup simmer on low heat for thirty minutes so the flavors have time to blend together perfectly.', isNoun:false },
+  { word:'sister', pronunciation:'SIS-tur', ipa:'/ˈsɪstər/', pos:'noun', def:'A woman or girl in relation to other children of her parents; a close female friend or colleague.', lang:'Old English, from sweostor, of Germanic origin, from an Indo-European root shared by Latin soror.', example:'Her sister was not only her closest friend but also her most trusted confidant throughout every chapter of her life.', isNoun:true },
+  { word:'situation', pronunciation:'SIT-yoo-AY-shun', ipa:'/ˌsɪtʃuˈeɪʃən/', pos:'noun', def:'A set of circumstances in which one finds oneself; the location and surroundings of a place.', lang:'Latin, from situatio (\'position, location\'), from situare (\'to place\'), from situs (\'place, position\').', example:'The hostage situation required delicate negotiations that lasted for several tense hours before everyone was safely released.', isNoun:true },
+  { word:'skimmed', pronunciation:'SKIMD', ipa:'/skɪmd/', pos:'verb', def:'Removed a substance from the surface of a liquid; read through quickly; moved lightly over a surface.', lang:'Old French, from escumer (\'to skim, remove scum\'), from escume (\'foam, scum\'), of Germanic origin.', example:'She skimmed the article quickly during her lunch break, picking out the key points before the meeting.', isNoun:false },
+  { word:'skirmish', pronunciation:'SKUR-mish', ipa:'/ˈskɜːrmɪʃ/', pos:'noun', def:'An episode of irregular or unpremeditated fighting, especially between small groups; a brief conflict.', lang:'Old French, from eskirmir (\'to fence, fight\'), from Frankish *skirmjan (\'to defend\'), of Germanic origin.', example:'A brief skirmish broke out between the rival groups before police arrived and quickly restored order.', isNoun:true },
+  { word:'skydiving', pronunciation:'SKY-dy-ving', ipa:'/ˈskaɪˌdaɪvɪŋ/', pos:'noun', def:'The sport of jumping from an aircraft and performing maneuvers in free fall before opening a parachute.', lang:'English, from sky (from Old Norse sky, \'cloud\') + diving (from Old English dyfan, \'to dip\').', example:'For her thirtieth birthday, she went skydiving for the first time, free-falling from fifteen thousand feet above the desert.', isNoun:true },
+  { word:'slab', pronunciation:'SLAB', ipa:'/slæb/', pos:'noun', def:'A large, thick, flat piece of stone, concrete, or wood; a thick slice or piece of something.', lang:'Middle English, of uncertain origin, possibly from Old French esclabe (\'splinter, fragment\').', example:'The mason carefully laid each slab of limestone to create a beautiful patio behind the newly built house.', isNoun:true },
+  { word:'slender', pronunciation:'SLEN-dur', ipa:'/ˈslɛndər/', pos:'adjective', def:'Gracefully thin; attractively narrow; small in width in proportion to height or length.', lang:'Middle English, of unknown origin, possibly from Old French esclendre (\'thin, slender\').', example:'The slender birch trees swayed gracefully in the breeze, their white bark gleaming in the afternoon sunlight.', isNoun:false },
+  { word:'sloop', pronunciation:'SLOOP', ipa:'/sluːp/', pos:'noun', def:'A single-masted sailboat with one headsail set from the forestay.', lang:'Dutch, from sloep (\'sloop\'), of uncertain origin.', example:'The sloop glided smoothly across the harbor, its single white sail catching the steady afternoon breeze.', isNoun:true },
+  { word:'slurry', pronunciation:'SLUR-ee', ipa:'/ˈslɜːri/', pos:'noun', def:'A semiliquid mixture, typically of fine particles of a substance mixed with water; thin, watery mud or cement.', lang:'English, related to slur (\'to smear\'), from Middle English sloor (\'thin mud\'), of uncertain origin.', example:'The construction crew poured a thick slurry of cement into the foundation forms before it began to set.', isNoun:true },
+  { word:'snitch', pronunciation:'SNICH', ipa:'/snɪtʃ/', pos:'noun', def:'An informer; a person who tells authorities about the activities of others.', lang:'English, of uncertain origin, possibly related to snatch, first appearing in the late 17th century.', example:'Nobody wanted to be called a snitch, so the students kept quiet about who had broken the classroom window.', isNoun:true },
+  { word:'snobbery', pronunciation:'SNOB-uh-ree', ipa:'/ˈsnɒbəri/', pos:'noun', def:'The character or quality of being a snob; looking down on those considered inferior in taste or social standing.', lang:'English, from snob (originally slang for a townsman, later \'one who imitates social betters\') + -ery.', example:'The snobbery of the exclusive club was evident in its strict dress code and refusal to admit anyone without a referral.', isNoun:true },
+  { word:'snowy', pronunciation:'SNOH-ee', ipa:'/ˈsnoʊi/', pos:'adjective', def:'Covered with snow; resembling snow, especially in being pure white; characterized by snowfall.', lang:'Old English, from snāwig (\'snowy\'), from snāw (\'snow\'), of Germanic origin, + -y.', example:'The snowy landscape stretched endlessly before them, a pristine blanket of white covering the fields and rooftops.', isNoun:false },
+  { word:'sodden', pronunciation:'SOD-un', ipa:'/ˈsɒdən/', pos:'adjective', def:'Soaked through; saturated with liquid; extremely wet and heavy.', lang:'Old English, past participle of seothan (\'to boil, cook\'), of Germanic origin.', example:'The hikers trudged home in their sodden boots after being caught in a sudden downpour on the mountain trail.', isNoun:false },
+  { word:'solace', pronunciation:'SOL-us', ipa:'/ˈsɒləs/', pos:'noun', def:'Comfort or consolation in a time of distress or sadness; a source of comfort.', lang:'Old French, from solas (\'comfort\'), from Latin solacium (\'a comforting\'), from solari (\'to console\').', example:'She found solace in music during the difficult months, letting the melodies carry her through the darkest days.', isNoun:true },
+  { word:'solicit', pronunciation:'suh-LIS-it', ipa:'/səˈlɪsɪt/', pos:'verb', def:'To ask for or try to obtain something from someone; to make a formal request.', lang:'Latin, from sollicitare (\'to disturb, agitate\'), from sollicitus (\'anxious\'), from sollus (\'whole\') + citus (\'aroused\').', example:'The charity volunteers went door to door to solicit donations for the new community health clinic.', isNoun:false },
+  { word:'solitude', pronunciation:'SOL-ih-tood', ipa:'/ˈsɒlɪˌtjuːd/', pos:'noun', def:'The state or situation of being alone; a lonely or uninhabited place.', lang:'Latin, from solitudo (\'loneliness\'), from solus (\'alone\').', example:'He cherished his morning solitude, sipping coffee on the porch while the rest of the world was still asleep.', isNoun:true },
+  { word:'solstice', pronunciation:'SOL-stis', ipa:'/ˈsɒlstɪs/', pos:'noun', def:'Either of the two times in the year when the sun reaches its highest or lowest point, marking the longest and shortest days.', lang:'Latin, from solstitium (\'point at which the sun stands still\'), from sol (\'sun\') + sistere (\'to stand still\').', example:'The summer solstice in June is the longest day of the year, celebrated in many cultures with festivals and bonfires.', isNoun:true },
+  { word:'somber', pronunciation:'SOM-bur', ipa:'/ˈsɒmbər/', pos:'adjective', def:'Dark or dull in color or tone; gloomy; oppressively solemn or serious.', lang:'French, from sombre (\'dark\'), from Latin subumbrare (\'to shadow\'), from sub (\'under\') + umbra (\'shade\').', example:'The somber mood at the memorial service reflected the deep loss felt by everyone who had known the beloved teacher.', isNoun:false },
+  { word:'sonnet', pronunciation:'SON-it', ipa:'/ˈsɒnɪt/', pos:'noun', def:'A poem of fourteen lines using a fixed rhyme scheme, traditionally written in iambic pentameter.', lang:'Italian, from sonetto (\'a little sound or song\'), from suono (\'sound\'), from Latin sonus (\'sound\').', example:'Shakespeare wrote 154 sonnets exploring themes of love, beauty, mortality, and the passage of time.', isNoun:true },
+  { word:'soot', pronunciation:'SUHT', ipa:'/sʊt/', pos:'noun', def:'A black powdery substance consisting largely of carbon, produced by the incomplete burning of organic matter.', lang:'Old English, from sot, of Germanic origin.', example:'The chimney sweep emerged covered in soot from head to toe after cleaning the narrow flue of the old fireplace.', isNoun:true },
+  { word:'sophomore', pronunciation:'SOF-uh-mor', ipa:'/ˈsɒfəˌmɔːr/', pos:'noun', def:'A second-year student at a university or high school.', lang:'Greek, probably from sophos (\'wise\') + moros (\'foolish\'), suggesting a person who thinks they know more than they do.', example:'As a sophomore, she joined the debate team and quickly became one of its most confident and skilled members.', isNoun:true },
+  { word:'sorrow', pronunciation:'SOR-oh', ipa:'/ˈsɒroʊ/', pos:'noun', def:'A feeling of deep distress caused by loss, disappointment, or other misfortune; grief or sadness.', lang:'Old English, from sorg (\'grief, anxiety\'), of Germanic origin.', example:'The sorrow in her eyes was unmistakable as she said goodbye to the home where she had raised her children.', isNoun:true },
+  { word:'sought', pronunciation:'SAWT', ipa:'/sɔːt/', pos:'verb', def:'Past tense of seek; attempted to find or obtain; tried to reach or achieve.', lang:'Old English, from sohte, past tense of secan (\'to seek, search for\'), of Germanic origin.', example:'The journalist sought the truth behind the scandal, interviewing dozens of sources over the course of several months.', isNoun:false },
+  { word:'souvenir', pronunciation:'SOO-vuh-NEER', ipa:'/ˌsuːvəˈnɪər/', pos:'noun', def:'A thing that is kept as a reminder of a person, place, or event; a memento.', lang:'French, from souvenir (\'to remember\'), from Latin subvenire (\'to come to mind\'), from sub (\'up\') + venire (\'to come\').', example:'She brought home a small ceramic tile as a souvenir from Portugal, a colorful reminder of the sunny coast.', isNoun:true },
+  { word:'sovereign', pronunciation:'SOV-rin', ipa:'/ˈsɒvrɪn/', pos:'noun', def:'A supreme ruler, especially a monarch; a former British gold coin worth one pound.', lang:'Old French, from soverain (\'supreme\'), from Latin superanus (\'chief\'), from super (\'above\').', example:'The sovereign addressed the nation in a televised speech, calling for unity during the national crisis.', isNoun:true },
+  { word:'sparrow', pronunciation:'SPAR-oh', ipa:'/ˈspæroʊ/', pos:'noun', def:'A small, typically brown and gray bird of the family Passeridae, found throughout the world.', lang:'Old English, from spearwa (\'sparrow\'), of Germanic origin.', example:'A sparrow hopped along the cafe railing, pecking at bread crumbs left behind by the morning\'s customers.', isNoun:true },
+  { word:'spatula', pronunciation:'SPAT-yoo-luh', ipa:'/ˈspætʃʊlə/', pos:'noun', def:'A utensil with a broad, flat, blunt blade, used for mixing, spreading, or lifting food.', lang:'Latin, from spatula (\'flat piece\'), diminutive of spatha (\'broad blade\'), from Greek spathe.', example:'She used a spatula to flip the golden pancakes, stacking them high on the plate for a family breakfast.', isNoun:true },
+  { word:'specialty', pronunciation:'SPESH-ul-tee', ipa:'/ˈspɛʃəlti/', pos:'noun', def:'A pursuit, area of study, or skill to which someone has devoted much time; a product for which a place is well known.', lang:'Latin, from specialitas, from specialis (\'individual, particular\'), from species (\'kind\'), + -ty.', example:'The bakery\'s specialty was a layered chocolate cake so decadent that people drove across town just to buy a slice.', isNoun:true },
+  { word:'spectacle', pronunciation:'SPEK-tuh-kul', ipa:'/ˈspɛktəkəl/', pos:'noun', def:'A visually striking performance or display; an event or scene regarded in terms of its visual impact.', lang:'Latin, from spectaculum (\'a show\'), from spectare (\'to watch\'), from specere (\'to look\').', example:'The fireworks display was a magnificent spectacle, with bursts of color illuminating the night sky over the harbor.', isNoun:true },
+  { word:'speculate', pronunciation:'SPEK-yoo-layt', ipa:'/ˈspɛkjʊˌleɪt/', pos:'verb', def:'To form a theory without firm evidence; to invest in stocks or property in the hope of gain but with risk of loss.', lang:'Latin, from speculatus, past participle of speculari (\'to observe\'), from specula (\'watchtower\'), from specere (\'to look\').', example:'Scientists speculate that there may be liquid water beneath the icy surface of Jupiter\'s moon Europa.', isNoun:false },
+  { word:'sphere', pronunciation:'SFEER', ipa:'/sfɪər/', pos:'noun', def:'A round solid figure with every point on its surface equidistant from its center; an area of activity or expertise.', lang:'Greek, from sphaira (\'globe, ball\'), via Latin sphaera.', example:'The globe on her desk was a perfect sphere, showing the continents and oceans in vivid, accurate detail.', isNoun:true },
+  { word:'sphinx', pronunciation:'SFINKS', ipa:'/sfɪŋks/', pos:'noun', def:'A mythical creature with the body of a lion and a human head; an enigmatic or mysterious person.', lang:'Greek, from Sphinx, from sphingein (\'to squeeze, strangle\'), because the sphinx strangled those who could not answer its riddle.', example:'The Great Sphinx of Giza has guarded the pyramids for over four thousand years, its expression unchanged by time.', isNoun:true },
+  { word:'spindle', pronunciation:'SPIN-dul', ipa:'/ˈspɪndəl/', pos:'noun', def:'A slender rounded rod used in hand spinning to twist and wind thread; a rod serving as an axis of rotation.', lang:'Old English, from spindel (\'spindle\'), from spinnan (\'to spin\'), of Germanic origin.', example:'In the fairy tale, the princess pricked her finger on the spindle of a spinning wheel and fell into a deep sleep.', isNoun:true },
+  { word:'spiral', pronunciation:'SPY-rul', ipa:'/ˈspaɪrəl/', pos:'noun', def:'A curve on a plane that winds around a fixed center point at a continuously changing distance from that point.', lang:'Latin, from spiralis (\'winding\'), from spira (\'a coil\'), from Greek speira (\'a winding, a coil\').', example:'The spiral staircase wound upward through the lighthouse tower, offering breathtaking views at each turn.', isNoun:true },
+  { word:'splash', pronunciation:'SPLASH', ipa:'/splæʃ/', pos:'noun', def:'A sound made by something striking or falling into liquid; a small quantity of liquid dashed on a surface.', lang:'English, alteration of plash (\'a pool, puddle\'), of imitative origin.', example:'The child jumped into the puddle with a tremendous splash, sending muddy water flying in every direction.', isNoun:true },
+  { word:'sponsor', pronunciation:'SPON-sur', ipa:'/ˈspɒnsər/', pos:'noun', def:'A person or organization that provides funds for a project or event in return for advertising or promotion.', lang:'Latin, from sponsor (\'surety, guarantor\'), from spondere (\'to promise solemnly\').', example:'The marathon\'s main sponsor donated fifty thousand dollars and provided water stations along the entire race route.', isNoun:true },
+  { word:'spoonful', pronunciation:'SPOON-ful', ipa:'/ˈspuːnfʊl/', pos:'noun', def:'As much as a spoon can hold; a quantity of food or liquid that fills a spoon.', lang:'English, from spoon (from Old English spon, \'chip of wood, spoon\') + -ful.', example:'She added just a spoonful of sugar to her tea, stirring gently before taking her first sip.', isNoun:true },
+  { word:'sporadic', pronunciation:'spuh-RAD-ik', ipa:'/spəˈrædɪk/', pos:'adjective', def:'Occurring at irregular intervals or only in a few places; scattered or isolated.', lang:'Greek, from sporadikos (\'scattered\'), from sporas (\'scattered\'), from speirein (\'to sow, scatter\').', example:'Sporadic gunfire could be heard in the distance throughout the night, keeping the villagers on edge until dawn.', isNoun:false },
+  { word:'sprightly', pronunciation:'SPRYTE-lee', ipa:'/ˈspraɪtli/', pos:'adjective', def:'Lively, energetic, and cheerful, especially of an older person.', lang:'English, from sprite (\'spirit\'), from Old French esprit, from Latin spiritus (\'spirit\'), + -ly.', example:'The sprightly ninety-year-old danced at her birthday party with more energy than guests half her age.', isNoun:false },
+  { word:'spurious', pronunciation:'SPYOOR-ee-us', ipa:'/ˈspjʊəriəs/', pos:'adjective', def:'Not being what it purports to be; false or fake; based on false reasoning.', lang:'Latin, from spurius (\'false, illegitimate\'), of uncertain origin.', example:'The detective identified the document as spurious, noting several inconsistencies in the handwriting and paper quality.', isNoun:false },
+  { word:'squabble', pronunciation:'SKWOB-ul', ipa:'/ˈskwɒbəl/', pos:'noun', def:'A noisy quarrel about something petty or trivial; a minor disagreement.', lang:'Scandinavian, probably from Swedish dialect skvabbel (\'a dispute\'), of imitative origin.', example:'The siblings got into a squabble over who would sit in the front seat of the car, as they did every morning.', isNoun:true },
+  { word:'squalor', pronunciation:'SKWOL-ur', ipa:'/ˈskwɒlər/', pos:'noun', def:'A state of being extremely dirty and unpleasant, especially as a result of poverty or neglect.', lang:'Latin, from squalor (\'roughness, filth\'), from squalere (\'to be rough or dirty\').', example:'The charity worked to rescue animals living in squalor, providing them with medical care and clean shelters.', isNoun:true },
+  { word:'squander', pronunciation:'SKWON-dur', ipa:'/ˈskwɒndər/', pos:'verb', def:'To waste something, especially money or time, in a reckless or foolish manner.', lang:'English, of uncertain origin, possibly related to dialectal squatter (\'to scatter, splash\').', example:'He squandered his entire inheritance on luxury cars and extravagant vacations, leaving nothing for his future.', isNoun:false },
+  { word:'squeamish', pronunciation:'SKWEE-mish', ipa:'/ˈskwiːmɪʃ/', pos:'adjective', def:'Easily made to feel sick or disgusted, especially by unpleasant images or situations.', lang:'Anglo-French, from escoymous (\'disdainful\'), of uncertain origin.', example:'The squeamish student turned away during the dissection in biology class, unable to look at the specimen on the tray.', isNoun:false },
+  { word:'squint', pronunciation:'SKWINT', ipa:'/skwɪnt/', pos:'verb', def:'To look at someone or something with partially closed eyes.', lang:'English, possibly from squint-eyed, of uncertain origin, perhaps related to Dutch schuinte (\'slope, slant\').', example:'She had to squint to read the tiny print on the medicine bottle, wishing she had brought her reading glasses.', isNoun:false },
+  { word:'stagger', pronunciation:'STAG-ur', ipa:'/ˈstæɡər/', pos:'verb', def:'To walk or move unsteadily as if about to fall; to astonish or deeply shock.', lang:'Old Norse, from stakra (\'to push, stagger\'), frequentative of staka (\'to push\').', example:'The shocking news made her stagger backward in disbelief before she sank into the nearest chair.', isNoun:false },
+  { word:'stamina', pronunciation:'STAM-ih-nuh', ipa:'/ˈstæmɪnə/', pos:'noun', def:'The ability to sustain prolonged physical or mental effort; endurance.', lang:'Latin, plural of stamen (\'warp thread\'), from stare (\'to stand\'), used figuratively for essential strength.', example:'Marathon runners need incredible stamina to maintain their pace over the full twenty-six-mile course.', isNoun:true },
+  { word:'standard', pronunciation:'STAN-durd', ipa:'/ˈstændərd/', pos:'noun', def:'A level of quality or attainment; a required or agreed level of quality; a flag or banner.', lang:'Old French, from estandart (\'rallying place, banner\'), of Germanic origin.', example:'The restaurant maintained the highest standard of food safety, passing every health inspection with perfect scores.', isNoun:true },
+  { word:'staple', pronunciation:'STAY-pul', ipa:'/ˈsteɪpəl/', pos:'noun', def:'A main or important element; a basic food item; a small U-shaped wire used to fasten papers together.', lang:'Old English, from stapol (\'post, pillar\'), of Germanic origin.', example:'Rice is a staple food for more than half the world\'s population, eaten at nearly every meal in many cultures.', isNoun:true },
+  { word:'starboard', pronunciation:'STAR-burd', ipa:'/ˈstɑːrbərd/', pos:'noun', def:'The right side of a ship or aircraft when facing forward.', lang:'Old English, from steorbord (\'rudder side\'), from steor (\'rudder\') + bord (\'side of a ship\').', example:'The captain called out \'hard to starboard\' and the helmsman turned the wheel sharply to the right to avoid the reef.', isNoun:true },
+  { word:'steadfast', pronunciation:'STED-fast', ipa:'/ˈstɛdˌfæst/', pos:'adjective', def:'Resolutely or dutifully firm and unwavering; loyal and committed.', lang:'Old English, from stedefæst (\'fixed in place\'), from stede (\'place\') + fæst (\'firmly fixed\').', example:'Her steadfast determination to finish medical school despite numerous setbacks inspired everyone around her.', isNoun:false },
+  { word:'stealth', pronunciation:'STELTH', ipa:'/stɛlθ/', pos:'noun', def:'Cautious and surreptitious action or movement; the quality of being secretive and undetectable.', lang:'Middle English, from stelen (\'to steal\'), of Germanic origin + -th.', example:'The cat moved with remarkable stealth across the garden, creeping silently toward the unsuspecting bird.', isNoun:true },
+  { word:'stencil', pronunciation:'STEN-sul', ipa:'/ˈstɛnsəl/', pos:'noun', def:'A thin sheet with a pattern cut out, used to produce the design by applying paint through the holes.', lang:'Old French, from estenceler (\'to sparkle\'), from estencele (\'a spark\'), from Latin scintilla (\'spark\').', example:'The artist used a stencil to create perfectly uniform letters on the cafe\'s chalkboard menu each morning.', isNoun:true },
+  { word:'stereo', pronunciation:'STAIR-ee-oh', ipa:'/ˈstɛrioʊ/', pos:'noun', def:'Sound reproduction using two or more channels to create a sense of spatial dimension; a device for playing music.', lang:'Greek, from stereos (\'solid, three-dimensional\'), used to describe sound that creates depth.', example:'He cranked up the stereo and filled the whole house with his favorite classic rock album on a lazy Sunday afternoon.', isNoun:true },
+  { word:'stigma', pronunciation:'STIG-muh', ipa:'/ˈstɪɡmə/', pos:'noun', def:'A mark of disgrace associated with a particular circumstance or quality; the part of a flower\'s pistil that receives pollen.', lang:'Greek, from stigma (\'mark, brand, tattoo\'), from stizein (\'to prick, brand\').', example:'The campaign worked to reduce the stigma surrounding mental health, encouraging people to seek help without shame.', isNoun:true },
+  { word:'stimulus', pronunciation:'STIM-yoo-lus', ipa:'/ˈstɪmjʊləs/', pos:'noun', def:'A thing or event that provokes activity or energy; something that causes a physical or emotional response.', lang:'Latin, from stimulus (\'a goad, spur\'), from a root meaning \'to prick or push\'.', example:'The sudden drop in temperature served as a stimulus for the trees to begin changing their leaves to autumn colors.', isNoun:true },
+  { word:'stingy', pronunciation:'STIN-jee', ipa:'/ˈstɪndʒi/', pos:'adjective', def:'Unwilling to give or spend; mean or miserly; not generous with money or resources.', lang:'English, possibly from sting or from dialectal stinge, of uncertain origin.', example:'The stingy landlord refused to fix the leaking roof, insisting the tenants place buckets under the drips instead.', isNoun:false },
+  { word:'stirrup', pronunciation:'STIR-up', ipa:'/ˈstɪrəp/', pos:'noun', def:'Each of a pair of metal or leather loops attached to a horse\'s saddle, used to support the rider\'s feet.', lang:'Old English, from stigrap (\'climbing rope\'), from stigan (\'to climb\') + rap (\'rope\').', example:'She placed her foot firmly in the stirrup and swung herself up into the saddle with practiced ease.', isNoun:true },
+  { word:'stoic', pronunciation:'STOH-ik', ipa:'/ˈstoʊɪk/', pos:'adjective', def:'Enduring pain or hardship without showing feelings or complaining; calm and seemingly indifferent.', lang:'Greek, from Stoikos (\'of the Stoa\'), from Stoa Poikile (\'Painted Porch\'), where the philosopher Zeno taught.', example:'Despite the painful injury, the veteran athlete remained stoic on the sidelines, showing no outward sign of distress.', isNoun:false },
+  { word:'stout', pronunciation:'STOWT', ipa:'/staʊt/', pos:'adjective', def:'Somewhat fat or heavy build; strong and thick; brave and determined.', lang:'Old French, from estout (\'brave, fierce, proud\'), of Germanic origin.', example:'The stout wooden door withstood the battering of the storm, keeping the family safe and dry inside.', isNoun:false },
+  { word:'straddle', pronunciation:'STRAD-ul', ipa:'/ˈstrædəl/', pos:'verb', def:'To sit or stand with one leg on either side of something; to extend across both sides of.', lang:'English, frequentative of stride, from Old English stridan (\'to stride\'), of Germanic origin.', example:'The old stone bridge straddled the narrow river, connecting the two halves of the village for centuries.', isNoun:false },
+  { word:'strategy', pronunciation:'STRAT-uh-jee', ipa:'/ˈstrætədʒi/', pos:'noun', def:'A plan of action designed to achieve a long-term or overall aim; the art of planning operations.', lang:'Greek, from strategia (\'generalship\'), from strategos (\'general\'), from stratos (\'army\') + agein (\'to lead\').', example:'The coach\'s brilliant strategy of switching to zone defense in the second half completely shut down the opposing team.', isNoun:true },
+  { word:'stray', pronunciation:'STRAY', ipa:'/streɪ/', pos:'verb', def:'To move away aimlessly from a group or from the right course; to wander from the intended path.', lang:'Old French, from estraier (\'to wander\'), from Latin extra (\'outside\') + vagari (\'to wander\').', example:'The hikers were careful not to stray from the marked trail, knowing the dense forest could easily disorient them.', isNoun:false },
+  { word:'strenuous', pronunciation:'STREN-yoo-us', ipa:'/ˈstrɛnjuəs/', pos:'adjective', def:'Requiring or using great exertion; vigorous and demanding.', lang:'Latin, from strenuus (\'active, vigorous\'), of uncertain origin.', example:'The strenuous mountain climb tested their endurance, but the panoramic view from the summit made every step worthwhile.', isNoun:false },
+  { word:'stricken', pronunciation:'STRIK-un', ipa:'/ˈstrɪkən/', pos:'adjective', def:'Seriously affected by an undesirable condition; severely damaged or destroyed.', lang:'Old English, past participle of strike, from strican (\'to stroke, rub\'), of Germanic origin.', example:'The drought-stricken region received emergency water supplies that kept communities alive through the worst of the crisis.', isNoun:false },
+  { word:'stride', pronunciation:'STRYDE', ipa:'/straɪd/', pos:'noun', def:'A long, decisive step; the manner of walking with long steps.', lang:'Old English, from stride (\'a stride\'), from stridan (\'to stride\'), of Germanic origin.', example:'She crossed the stage in a few confident strides and accepted the diploma with a proud smile.', isNoun:true },
+  { word:'stringent', pronunciation:'STRIN-junt', ipa:'/ˈstrɪndʒənt/', pos:'adjective', def:'Of regulations or conditions: strict, precise, and exacting.', lang:'Latin, from stringentem, present participle of stringere (\'to draw tight, compress\').', example:'The laboratory followed stringent safety protocols to prevent contamination and protect researchers from hazardous materials.', isNoun:false },
+  { word:'strive', pronunciation:'STRYVE', ipa:'/straɪv/', pos:'verb', def:'To make great efforts to achieve or obtain something; to struggle or fight vigorously.', lang:'Old French, from estriver (\'to compete, quarrel\'), of Germanic origin.', example:'She continued to strive for excellence in every assignment, never settling for anything less than her very best.', isNoun:false },
+  { word:'stroll', pronunciation:'STROHL', ipa:'/stroʊl/', pos:'verb', def:'To walk in a leisurely way; to take a relaxed, unhurried walk.', lang:'German, from strollen (\'to stroll, wander\'), or from Swiss German strolen (\'to wander idly\').', example:'They decided to stroll along the riverbank after dinner, enjoying the cool evening breeze and the fading sunset.', isNoun:false },
+  { word:'structure', pronunciation:'STRUK-chur', ipa:'/ˈstrʌktʃər/', pos:'noun', def:'A building or object constructed from several parts; the arrangement of parts of something complex.', lang:'Latin, from structura (\'a fitting together\'), from structus, past participle of struere (\'to pile up, build\').', example:'The ancient stone structure had survived earthquakes, wars, and centuries of weathering, still standing remarkably intact.', isNoun:true },
+  { word:'stubborn', pronunciation:'STUB-urn', ipa:'/ˈstʌbərn/', pos:'adjective', def:'Having dogged determination not to change one\'s attitude or position; difficult to move or remove.', lang:'Middle English, of unknown origin, possibly related to stub (\'a short remaining piece\').', example:'The stubborn stain on the carpet refused to come out no matter how many cleaning products she tried.', isNoun:false },
+  { word:'studio', pronunciation:'STOO-dee-oh', ipa:'/ˈstjuːdioʊ/', pos:'noun', def:'A room where an artist works; a place where movies, radio, or television programs are produced.', lang:'Italian, from studio (\'a study\'), from Latin studium (\'eagerness, study\'), from studere (\'to study\').', example:'The painter spent every morning in her sunlit studio, surrounded by canvases, brushes, and jars of brightly colored paint.', isNoun:true },
+  { word:'stumble', pronunciation:'STUM-bul', ipa:'/ˈstʌmbəl/', pos:'verb', def:'To trip or momentarily lose one\'s balance; to walk unsteadily; to make a mistake.', lang:'Scandinavian, from Old Norse stumla (\'to stumble\'), related to stammer, of Germanic origin.', example:'He stumbled over a tree root on the forest path but caught himself just before falling into the mud.', isNoun:false },
+  { word:'stupendous', pronunciation:'stoo-PEN-dus', ipa:'/stjuːˈpɛndəs/', pos:'adjective', def:'Extremely impressive; amazingly large or great.', lang:'Latin, from stupendus (\'to be wondered at\'), gerundive of stupere (\'to be stunned, amazed\').', example:'The view from the top of the skyscraper was stupendous, stretching across the glittering cityscape to the distant mountains.', isNoun:false },
+  { word:'subdue', pronunciation:'sub-DOO', ipa:'/səbˈdjuː/', pos:'verb', def:'To overcome, quieten, or bring under control; to reduce the intensity of something.', lang:'Old French, from souduire (\'to seduce\'), influenced by Latin subdere (\'to subject\'), from sub (\'under\') + dare (\'to give\').', example:'The firefighters worked through the night to subdue the wildfire before it could reach the residential neighborhoods.', isNoun:false },
+  { word:'subject', pronunciation:'SUB-jikt', ipa:'/ˈsʌbdʒɪkt/', pos:'noun', def:'A person or thing being discussed or dealt with; a branch of knowledge studied in school.', lang:'Latin, from subjectus (\'brought under\'), from subjicere, from sub (\'under\') + jacere (\'to throw\').', example:'History was always her favorite subject in school, especially the chapters about ancient civilizations.', isNoun:true },
+  { word:'submerge', pronunciation:'sub-MURJ', ipa:'/səbˈmɜːrdʒ/', pos:'verb', def:'To cause to be under water; to descend below the surface of water; to completely cover.', lang:'Latin, from submergere (\'to plunge under\'), from sub (\'under\') + mergere (\'to dip, plunge\').', example:'The submarine began to submerge, disappearing beneath the waves until only a trail of bubbles marked its descent.', isNoun:false },
+  { word:'subtle', pronunciation:'SUT-ul', ipa:'/ˈsʌtəl/', pos:'adjective', def:'So delicate or precise as to be difficult to analyze; making use of clever and indirect methods.', lang:'Latin, from subtilis (\'fine, thin\'), from sub (\'under\') + tela (\'web\'), literally \'finely woven\'.', example:'The subtle flavor of truffle oil elevated the simple pasta dish into something truly extraordinary.', isNoun:false },
+  { word:'suburban', pronunciation:'suh-BUR-bun', ipa:'/səˈbɜːrbən/', pos:'adjective', def:'Of, relating to, or characteristic of a suburb; a residential area on the outskirts of a city.', lang:'Latin, from suburbanus (\'near the city\'), from sub (\'near\') + urbs (\'city\').', example:'The suburban neighborhood was quiet and tree-lined, with well-kept lawns and children riding bicycles on every street.', isNoun:false },
+  { word:'succumb', pronunciation:'suh-KUM', ipa:'/səˈkʌm/', pos:'verb', def:'To fail to resist pressure, temptation, or force; to die from the effect of a disease or injury.', lang:'Latin, from succumbere (\'to yield\'), from sub (\'under\') + -cumbere (\'to lie down\').', example:'After weeks of resisting, she finally succumbed to temptation and ate the last slice of chocolate cake.', isNoun:false },
+  { word:'suffer', pronunciation:'SUF-ur', ipa:'/ˈsʌfər/', pos:'verb', def:'To experience something bad or unpleasant; to undergo pain, distress, or hardship.', lang:'Old French, from suffrir, from Latin sufferre (\'to bear\'), from sub (\'from below\') + ferre (\'to bear\').', example:'The coastal town suffered extensive damage from the hurricane, with many homes losing their roofs.', isNoun:false },
+  { word:'suffice', pronunciation:'suh-FYCE', ipa:'/səˈfaɪs/', pos:'verb', def:'To be enough or adequate for a particular purpose; to meet the needs of.', lang:'Latin, from sufficere (\'to supply, be adequate\'), from sub (\'under\') + facere (\'to make\').', example:'A simple handshake will suffice — there\'s no need for a formal contract between friends on such a small matter.', isNoun:false },
+  { word:'sugar', pronunciation:'SHUG-ur', ipa:'/ˈʃʊɡər/', pos:'noun', def:'A sweet crystalline substance obtained from various plants, used to sweeten food and drink.', lang:'Old French, from sucre, from Arabic sukkar, from Persian shakar, from Sanskrit sharkara (\'sugar\').', example:'She measured two cups of sugar into the mixing bowl, carefully following her grandmother\'s handwritten cookie recipe.', isNoun:true },
+  { word:'summit', pronunciation:'SUM-it', ipa:'/ˈsʌmɪt/', pos:'noun', def:'The highest point of a hill or mountain; a meeting between heads of government.', lang:'Old French, from somete (\'top\'), diminutive of som (\'top\'), from Latin summum (\'highest point\').', example:'After eight hours of climbing, they finally reached the summit and were rewarded with a breathtaking panoramic view.', isNoun:true },
+  { word:'sunrise', pronunciation:'SUN-ryze', ipa:'/ˈsʌnˌraɪz/', pos:'noun', def:'The time in the morning when the sun appears above the horizon; the colors visible at this time.', lang:'English, from sun (from Old English sunne) + rise (from Old English risan, \'to rise\').', example:'They woke up early to watch the sunrise from the beach, the sky transforming from deep purple to brilliant orange.', isNoun:true },
+  { word:'superior', pronunciation:'soo-PEER-ee-ur', ipa:'/suːˈpɪəriər/', pos:'adjective', def:'Higher in rank, status, or quality; above average in quality; of a high standard.', lang:'Latin, from superior (\'higher\'), comparative of superus (\'above\'), from super (\'above, over\').', example:'The superior quality of the handmade leather bag was evident in every carefully stitched seam and polished buckle.', isNoun:false },
+  { word:'supplement', pronunciation:'SUP-luh-munt', ipa:'/ˈsʌplɪmənt/', pos:'noun', def:'A thing added to something else to complete or enhance it; a separate section added to a newspaper or periodical.', lang:'Latin, from supplementum (\'a filling up\'), from supplere (\'to fill up\'), from sub (\'from below\') + plere (\'to fill\').', example:'The doctor recommended a vitamin D supplement to help maintain healthy bones during the long, dark winter months.', isNoun:true },
+  { word:'support', pronunciation:'suh-PORT', ipa:'/səˈpɔːrt/', pos:'noun', def:'A thing that bears the weight of something or keeps it upright; assistance, encouragement, or approval.', lang:'Old French, from supporter (\'to bear, endure\'), from Latin supportare (\'to carry\'), from sub (\'from below\') + portare (\'to carry\').', example:'The community rallied in support of the family who had lost their home, donating furniture, clothes, and food.', isNoun:true },
+  { word:'supreme', pronunciation:'suh-PREEM', ipa:'/suːˈpriːm/', pos:'adjective', def:'Highest in rank or authority; greatest or most important; very great or intense.', lang:'Latin, from supremus (\'highest\'), superlative of superus (\'that is above\'), from super (\'above\').', example:'The Supreme Court\'s landmark decision changed the legal landscape of the country for generations to come.', isNoun:false },
+  { word:'surge', pronunciation:'SURJ', ipa:'/sɜːrdʒ/', pos:'noun', def:'A sudden powerful forward or upward movement; a sudden large increase in something.', lang:'Old French, from sourgier (\'to rise\'), from Latin surgere (\'to rise\'), from sub (\'from below\') + regere (\'to direct\').', example:'A surge of floodwater swept through the valley, carrying debris and uprooting trees along the riverbank.', isNoun:true },
+  { word:'surpass', pronunciation:'sur-PASS', ipa:'/sərˈpæs/', pos:'verb', def:'To exceed; to be greater than; to go beyond in degree or quality.', lang:'French, from surpasser (\'to go beyond\'), from sur (\'over, above\') + passer (\'to pass\').', example:'Her final exam score surpassed everyone\'s expectations, earning her the highest grade in the entire class.', isNoun:false },
+  { word:'surreal', pronunciation:'suh-REE-ul', ipa:'/səˈriːəl/', pos:'adjective', def:'Having the qualities of surrealism; bizarre; dreamlike and strange, beyond what seems real.', lang:'English, back-formation from surrealism, from French surréalisme, from sur (\'above, beyond\') + réalisme (\'realism\').', example:'Walking through the fog-covered ruins at dawn felt surreal, as if she had stepped into another world entirely.', isNoun:false },
+  { word:'surrender', pronunciation:'suh-REN-dur', ipa:'/səˈrɛndər/', pos:'verb', def:'To cease resistance to an enemy or opponent and submit to their authority; to give up possession of.', lang:'Old French, from surrendre (\'to deliver over\'), from sur (\'over\') + rendre (\'to give back\'), from Latin reddere.', example:'After a long standoff, the fugitive decided to surrender peacefully to the officers waiting outside.', isNoun:false },
+  { word:'survey', pronunciation:'SUR-vay', ipa:'/ˈsɜːrveɪ/', pos:'noun', def:'A general view, examination, or description of something; a questionnaire for collecting data from a group of people.', lang:'Old French, from surveoir (\'to oversee\'), from sur (\'over\') + veoir (\'to see\'), from Latin videre (\'to see\').', example:'The survey revealed that most residents supported the proposal to build a new community center in the park.', isNoun:true },
+  { word:'survive', pronunciation:'sur-VYVE', ipa:'/sərˈvaɪv/', pos:'verb', def:'To continue to live or exist, especially in spite of danger or hardship; to remain alive after an event.', lang:'Old French, from survivre (\'to outlive\'), from Latin supervivere, from super (\'over, beyond\') + vivere (\'to live\').', example:'Remarkably, all passengers managed to survive the crash landing thanks to the pilot\'s quick thinking.', isNoun:false },
+  { word:'suspect', pronunciation:'SUS-pekt', ipa:'/ˈsʌspɛkt/', pos:'noun', def:'A person thought to be guilty of a crime or offense; regarded with suspicion.', lang:'Latin, from suspectus (\'mistrusted\'), past participle of suspicere (\'to look up at, mistrust\'), from sub (\'from below\') + specere (\'to look\').', example:'The police brought the suspect in for questioning after multiple witnesses placed him near the scene of the robbery.', isNoun:true },
+  { word:'suspend', pronunciation:'suh-SPEND', ipa:'/səˈspɛnd/', pos:'verb', def:'To temporarily prevent from continuing or being in force; to hang from above; to hold in an undetermined state.', lang:'Latin, from suspendere (\'to hang up\'), from sub (\'from below\') + pendere (\'to hang\').', example:'The school decided to suspend classes for the day due to the severe weather warning issued that morning.', isNoun:false },
+  { word:'sustain', pronunciation:'suh-STAYN', ipa:'/səˈsteɪn/', pos:'verb', def:'To strengthen or support physically or mentally; to undergo or suffer; to keep something going over time.', lang:'Old French, from sustenir (\'to hold up\'), from Latin sustinere, from sub (\'from below\') + tenere (\'to hold\').', example:'The runner managed to sustain her pace for the entire race, crossing the finish line with energy to spare.', isNoun:false },
+  { word:'swagger', pronunciation:'SWAG-ur', ipa:'/ˈswæɡər/', pos:'verb', def:'To walk or behave in a very confident and arrogant way; a confident, showy manner of walking.', lang:'English, probably a frequentative of swag (\'to sway\'), of Scandinavian origin.', example:'The quarterback walked off the field with a swagger after throwing the game-winning touchdown pass.', isNoun:false },
+  { word:'swarm', pronunciation:'SWORM', ipa:'/swɔːrm/', pos:'noun', def:'A large or dense group of insects, especially flying ones; a large number of people moving together.', lang:'Old English, from swearm (\'a swarm of bees\'), of Germanic origin.', example:'A swarm of bees settled on the branch of the apple tree, creating a buzzing, golden cluster.', isNoun:true },
+  { word:'swear', pronunciation:'SWAIR', ipa:'/swɛr/', pos:'verb', def:'To make a solemn promise or oath; to use offensive language; to state something emphatically.', lang:'Old English, from swerian (\'to make an oath\'), of Germanic origin.', example:'The witness placed her hand on the book and swore to tell the truth during the court proceedings.', isNoun:false },
+  { word:'sweater', pronunciation:'SWET-ur', ipa:'/ˈswɛtər/', pos:'noun', def:'A knitted garment worn on the upper body, typically with long sleeves and made of wool or cotton.', lang:'English, from sweat (from Old English swæt) + -er, originally a garment worn during exercise to induce sweating.', example:'She pulled on a cozy wool sweater as the autumn chill crept through the open window of the cottage.', isNoun:true },
+  { word:'sweep', pronunciation:'SWEEP', ipa:'/swiːp/', pos:'verb', def:'To clean an area by brushing away dirt or litter; to move swiftly and smoothly; to win all games in a series.', lang:'Old English, from swapan (\'to sweep\'), of Germanic origin.', example:'The janitor used a wide broom to sweep the fallen leaves from the front steps of the school building.', isNoun:false },
+  { word:'swift', pronunciation:'SWIFT', ipa:'/swɪft/', pos:'adjective', def:'Happening quickly or promptly; moving or capable of moving at high speed.', lang:'Old English, from swift (\'moving quickly\'), of Germanic origin.', example:'The swift river current carried the kayak downstream at an exhilarating pace through the narrow canyon.', isNoun:false },
+  { word:'swivel', pronunciation:'SWIV-ul', ipa:'/ˈswɪvəl/', pos:'noun', def:'A coupling between two parts enabling one to revolve without turning the other; a pivoting device.', lang:'Old English, from swifan (\'to revolve, sweep\'), of Germanic origin, + -el (frequentative suffix).', example:'The office chair had a smooth swivel that let her spin around to face the bookshelf without standing up.', isNoun:true },
+  { word:'swoon', pronunciation:'SWOON', ipa:'/swuːn/', pos:'verb', def:'To faint from extreme emotion; to be overcome with admiration, adoration, or other strong feeling.', lang:'Old English, from geswogen (\'in a faint\'), past participle of a lost verb, of uncertain origin.', example:'Fans swooned when the famous singer stepped on stage, some of them screaming and others covering their faces in disbelief.', isNoun:false },
+  { word:'swoop', pronunciation:'SWOOP', ipa:'/swuːp/', pos:'verb', def:'To move rapidly downward through the air, especially to attack; to carry out a sudden raid.', lang:'Old English, from swapan (\'to sweep\'), of Germanic origin, related to sweep.', example:'The hawk swooped down from the treetop and snatched the field mouse in its talons before soaring back into the sky.', isNoun:false },
+  { word:'syllable', pronunciation:'SIL-uh-bul', ipa:'/ˈsɪləbəl/', pos:'noun', def:'A unit of pronunciation having one vowel sound, forming the whole or part of a word.', lang:'Greek, from syllabe (\'a taking together of letters\'), from syn (\'together\') + lambanein (\'to take\').', example:'The teacher clapped out the syllables of each word to help the kindergartners understand how sounds combine.', isNoun:true },
+  { word:'symbol', pronunciation:'SIM-bul', ipa:'/ˈsɪmbəl/', pos:'noun', def:'A thing that represents or stands for something else, especially an object representing an abstract idea.', lang:'Greek, from symbolon (\'token, sign\'), from syn (\'together\') + ballein (\'to throw\').', example:'The dove is widely recognized as a symbol of peace, appearing in artwork and literature across many cultures.', isNoun:true },
+  { word:'symmetry', pronunciation:'SIM-uh-tree', ipa:'/ˈsɪmɪtri/', pos:'noun', def:'The quality of being made up of exactly similar parts facing each other; correct or pleasing proportion.', lang:'Greek, from symmetria (\'agreement in dimensions\'), from syn (\'together\') + metron (\'measure\').', example:'The butterfly\'s wings displayed perfect symmetry, each side mirroring the other in an identical pattern of colors.', isNoun:true },
+  { word:'sympathy', pronunciation:'SIM-puh-thee', ipa:'/ˈsɪmpəθi/', pos:'noun', def:'Feelings of pity and sorrow for someone else\'s misfortune; understanding between people.', lang:'Greek, from sympatheia (\'fellow feeling\'), from syn (\'together\') + pathos (\'feeling, suffering\').', example:'The entire community expressed their sympathy for the family, bringing meals and flowers during their time of loss.', isNoun:true }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Slider
+  const totalA = a.length;
+  const pct = totalA > 1 ? s / (totalA - 1) * 100 : 0;
+  document.getElementById("sliderFill").style.width = pct + "%";
+  const sliderArea = document.getElementById("sliderArea");
+  const areaW = sliderArea.offsetWidth || 200;
+  const pad = 10;
+  const thumbLeft = pad + (pct / 100) * (areaW - pad * 2);
+  const thumb = document.getElementById("sliderThumb");
+  if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
+
+  // Ticks - show ~20 evenly spaced markers
+  const tickCount = Math.min(totalA, 20);
+  let ticksHtml = '';
+  for(let t=0; t<tickCount; t++){
+    const ti = Math.round(t / (tickCount-1) * (totalA-1));
+    const cls = ti===s ? 'active' : (t % 5 === 0 ? 'major' : '');
+    ticksHtml += `<div class="slider-tick ${cls}"></div>`;
+  }
+  document.getElementById("sliderDots").innerHTML = ticksHtml;
+  document.getElementById("sliderCounter").textContent = `${s+1} / ${totalA}`;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Slider drag
+const slArea=document.getElementById("sliderArea");
+const slThumb=document.getElementById("sliderThumb");
+let slDragging=false;
+function sliderFromX(cx){
+  const r=slArea.getBoundingClientRect();
+  const pad=10;
+  const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
+  const a=aw(),idx=Math.round(p*(a.length-1));
+  // Move thumb immediately for smooth feel
+  const thumbLeft=pad+(p)*(r.width-pad*2);
+  slThumb.style.left=thumbLeft+"px";
+  if(idx!==si()){
+    const g=WORDS.findIndex(w=>w.word===a[idx].word);
+    flipped=false; currentIndex=g; render();
+  }
+}
+slArea.addEventListener("touchstart",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(slDragging) sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    // Speak the word after releasing
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+slArea.addEventListener("mousedown",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.clientX); e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(slDragging) sliderFromX(e.clientX);
+});
+document.addEventListener("mouseup",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>
