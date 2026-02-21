@@ -143,7 +143,7 @@ body {
   color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
 }
 .spelling-word {
-  font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 900;
+  font-family: Verdana, Geneva, sans-serif; font-size: 36px; font-weight: 400;
   letter-spacing: 0.04em; line-height: 1.15;
   text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
 }
@@ -256,7 +256,7 @@ body {
 <div class="header">
   <div class="header-left">
     <span>🐝</span>
-    <h1>Spelling Bee</h1>
+    <h1><a href="index.html" style="color:inherit;text-decoration:none;">Spelling Bee</a></h1>
   </div>
   <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
@@ -289,11 +289,11 @@ body {
 
 <script>
 const WORDS = [
-  { word:'quantify', pronunciation:'KWON-tih-fy', ipa:'/ˈkwɒntɪˌfaɪ/', pos:'verb', def:'To express or measure the quantity of something; to determine the amount or number of something.', lang:'Latin, from quantificare, from quantus (\'how much, how great\') + facere (\'to make\').', example:'Scientists used satellite imagery to quantify the amount of ice lost from the glacier over the past decade.', isNoun:false },
-  { word:'quart', pronunciation:'KWORT', ipa:'/kwɔːrt/', pos:'noun', def:'A unit of liquid capacity equal to a quarter of a gallon or two pints; approximately 0.946 liters in the US system.', lang:'Old French, from quart (\'fourth, quarter\'), from Latin quartus (\'fourth\'), from quattuor (\'four\').', example:'The recipe called for a quart of chicken broth, which she measured carefully before pouring it into the simmering pot.', isNoun:true },
-  { word:'quickstep', pronunciation:'KWIK-step', ipa:'/ˈkwɪkˌstɛp/', pos:'noun', def:'A lively ballroom dance in rapid time, characterized by fast footwork and graceful turns; a military march in quick time.', lang:'English, from quick (from Old English cwic, \'alive, living, swift\') + step (from Old English steppan, \'to step\').', example:'The couple glided across the dance floor in a dazzling quickstep, their feet moving so fast they seemed to barely touch the ground.', isNoun:true },
-  { word:'quirky', pronunciation:'KWUR-kee', ipa:'/ˈkwɜːrki/', pos:'adjective', def:'Characterized by peculiar or unexpected traits; unconventionally appealing; charmingly odd.', lang:'English, from quirk (\'a peculiar behavioral habit\'), of unknown origin, possibly related to German quer (\'cross, oblique\'), + -y.', example:'The quirky little bookshop had mismatched furniture, a resident cat, and handwritten recommendations tucked inside every book.', isNoun:false },
-  { word:'quota', pronunciation:'KWOH-tuh', ipa:'/ˈkwoʊtə/', pos:'noun', def:'A limited quantity of a particular product that is officially permitted or required; a fixed share or proportion.', lang:'Latin, from quota (pars) (\'how great a part\'), feminine of quotus (\'how many, of what number\'), from quot (\'how many\').', example:'The fishing fleet was required to stay within its annual quota to prevent overfishing and protect marine populations.', isNoun:true }
+  { word:'quantify', pronunciation:'KWON-tih-fy', ipa:'/ˈkwɒntɪˌfaɪ/', pos:'verb', def:'To express or measure the quantity of something; to determine the amount or number of something precisely.', lang:'Latin, from quantificare, from quantus (\'how much, how great\') + facere (\'to make\').', example:'The scientists struggled to quantify the impact of the new policy, as its effects were spread across dozens of different variables.', isNoun:false },
+  { word:'quart', pronunciation:'KWORT', ipa:'/kwɔːrt/', pos:'noun', def:'A unit of liquid capacity equal to a quarter of a gallon or two pints; in the US, equivalent to approximately 0.94 liters.', lang:'Old French, from quart (\'a fourth part\'), from Latin quartus (\'fourth\'), from quattuor (\'four\').', example:'The recipe called for a full quart of chicken broth, which she measured carefully before pouring it into the simmering pot.', isNoun:true },
+  { word:'quickstep', pronunciation:'KWIK-step', ipa:'/ˈkwɪkˌstɛp/', pos:'noun', def:'A fast, lively ballroom dance in 4/4 time, characterized by quick steps, hops, and turns; a military march in quick time.', lang:'English, from quick (from Old English cwic, \'alive, lively\') + step (from Old English steppan, \'to step\').', example:'The couple glided across the dance floor in a dazzling quickstep, their feet barely seeming to touch the ground.', isNoun:true },
+  { word:'quirky', pronunciation:'KWUR-kee', ipa:'/ˈkwɜːrki/', pos:'adjective', def:'Characterized by peculiar or unexpected traits; unconventionally charming; having an unusual quality.', lang:'English, from quirk (\'a peculiarity, unexpected twist\', of uncertain origin, possibly from German quer, \'cross, oblique\') + -y.', example:'The quirky little bookshop had a resident cat, mismatched furniture, and a policy of hiding surprise notes inside random books.', isNoun:false },
+  { word:'quota', pronunciation:'KWOH-tuh', ipa:'/ˈkwoʊtə/', pos:'noun', def:'A limited quantity of a particular product that is officially allowed; a fixed share of something that a person or group is required to contribute.', lang:'Latin, from quota (pars) (\'how great a part\'), feminine of quotus (\'of what number, how many\'), from quot (\'how many\').', example:'Each sales representative had a monthly quota to meet, and those who exceeded it earned a generous performance bonus.', isNoun:true }
 ];
 
 let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
