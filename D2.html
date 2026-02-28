@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: Verdana, Geneva, sans-serif; font-size: 36px; font-weight: 400;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 18px; height: 18px; }
+.slider-area {
+  flex: 1; height: 32px; position: relative;
+  display: flex; align-items: center;
+  touch-action: none; cursor: pointer;
+}
+.slider-track-bg {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
+}
+.slider-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(212,175,55,0.5));
+  transition: width 0.15s ease;
+}
+.slider-dots {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; padding: 0 2px;
+}
+.slider-tick {
+  width: 2px; height: 8px; border-radius: 1px;
+  background: rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.slider-tick.major { height: 12px; background: rgba(255,255,255,0.12); }
+.slider-tick.active { background: var(--gold); height: 14px; width: 3px; border-radius: 1.5px; box-shadow: 0 0 6px rgba(212,175,55,0.4); }
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px solid #1a1528;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  cursor: grab; transition: left 0.12s ease;
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
+.slider-thumb.dragging { transition: none; transform: translate(-50%, -50%) scale(1.15); }
+.slider-counter {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.08em;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1><a href="index.html" style="color:inherit;text-decoration:none;">Spelling Bee</a></h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="slider-area" id="sliderArea">
+      <div class="slider-track-bg">
+        <div class="slider-fill" id="sliderFill"></div>
+      </div>
+      <div class="slider-dots" id="sliderDots"></div>
+      <div class="slider-thumb" id="sliderThumb"></div>
+    </div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'da capo', pronunciation:'dah KAH-poh', ipa:'/dɑː ˈkɑːpoʊ/', pos:'adverb', def:'A musical direction meaning from the beginning; an instruction to repeat a passage from the start.', lang:'Italian, from da (\'from\') + capo (\'head, beginning\'), literally \'from the head\'.', example:'The conductor signaled da capo, and the orchestra returned to the very first measure to play the piece again from the top.', isNoun:false },
+  { word:'dace', pronunciation:'DAYSE', ipa:'/deɪs/', pos:'noun', def:'A small freshwater fish related to the carp, found in European rivers and streams.', lang:'Old French, from dars (\'a dace\'), of uncertain origin.', example:'The angler spotted a school of silvery dace darting through the shallow stream, their scales flashing in the sunlight.', isNoun:true },
+  { word:'dactylic', pronunciation:'dak-TIL-ik', ipa:'/dækˈtɪlɪk/', pos:'adjective', def:'Of or using a metrical foot consisting of one stressed syllable followed by two unstressed syllables.', lang:'Greek, from daktylikos, from daktylos (\'finger\'), because the three joints of a finger mirror the long-short-short pattern.', example:'Homer\'s Iliad is written in dactylic hexameter, giving the ancient epic its distinctive rolling, thunderous rhythm.', isNoun:false },
+  { word:'Dalmatian', pronunciation:'dal-MAY-shun', ipa:'/dælˈmeɪʃən/', pos:'noun', def:'A breed of large dog with a white coat covered with black or brown spots, historically associated with firehouses.', lang:'Named after Dalmatia, a coastal region of Croatia, where the breed is traditionally believed to have originated.', example:'The Dalmatian rode proudly atop the fire engine during the parade, its black-spotted coat gleaming in the afternoon sun.', isNoun:true },
+  { word:'damascened', pronunciation:'DAM-uh-seend', ipa:'/ˈdæməˌsiːnd/', pos:'adjective', def:'Decorated with inlaid patterns of gold or silver on steel or iron, a technique originating in Damascus.', lang:'Named after Damascus, the capital of Syria, famous for its metalwork, from Latin Damascenus (\'of Damascus\').', example:'The damascened sword blade featured intricate swirls of gold wire hammered into the dark steel surface.', isNoun:false },
+  { word:'dambos', pronunciation:'DAM-bohz', ipa:'/ˈdæmboʊz/', pos:'noun', def:'Shallow, seasonally waterlogged depressions in the African landscape, forming grassy wetlands during the rainy season.', lang:'Bantu, from a Central African word for a type of grassland wetland found across tropical Africa.', example:'During the wet season, the dambos filled with water and became vital grazing grounds for wildlife across the savanna.', isNoun:true },
+  { word:'dandle', pronunciation:'DAN-dul', ipa:'/ˈdændəl/', pos:'verb', def:'To gently bounce a young child on one\'s knees or in one\'s arms; to pet or fondle.', lang:'English, of uncertain origin, possibly from Italian dandolare (\'to swing, rock\'), or related to Old French dandiner (\'to sway\').', example:'The grandfather dandled the giggling baby on his knee, singing a silly song that made her squeal with delight.', isNoun:false },
+  { word:'danseur', pronunciation:'dan-SUR', ipa:'/dɑːnˈsɜːr/', pos:'noun', def:'A male ballet dancer, especially one who performs leading roles.', lang:'French, from danser (\'to dance\'), from Old French dancier, of Germanic origin.', example:'The principal danseur leapt across the stage with breathtaking height and grace, landing without a sound.', isNoun:true },
+  { word:'danta', pronunciation:'DAN-tuh', ipa:'/ˈdæntə/', pos:'noun', def:'A tapir, especially the South American lowland tapir; a large herbivorous mammal with a short prehensile snout.', lang:'Spanish, from a South American indigenous language, used in Central and South America for the tapir.', example:'The danta emerged from the dense jungle at dusk to drink at the riverbank, its long snout sniffing the humid air.', isNoun:true },
+  { word:'darnel', pronunciation:'DAR-nul', ipa:'/ˈdɑːrnəl/', pos:'noun', def:'A ryegrass weed that grows among cereal crops, historically associated with poisoning due to a fungal toxin it carries.', lang:'Old French, from darnelle, of uncertain origin; the plant is the tare mentioned in the biblical Parable of the Wheat and Tares.', example:'The farmer carefully separated the darnel from the wheat at harvest, knowing the weed could spoil the entire grain supply.', isNoun:true },
+  { word:'dashiki', pronunciation:'duh-SHEE-kee', ipa:'/dəˈʃiːki/', pos:'noun', def:'A loose, brightly colored garment covering the upper body, originating in West Africa and widely worn across Africa and the diaspora.', lang:'Yoruba, from danshiki or dashiki, borrowed into English in the 1960s during the African American cultural movement.', example:'He wore a vibrant blue and gold dashiki to the cultural festival, its bold geometric patterns drawing admiring glances.', isNoun:true },
+  { word:'daubster', pronunciation:'DAWB-stur', ipa:'/ˈdɔːbstər/', pos:'noun', def:'A person who daubs; an unskilled or amateurish painter; one who applies paint crudely.', lang:'English, from daub (from Old French dauber, \'to plaster\', from Latin dealbare, \'to whitewash\') + -ster.', example:'The art critic dismissed the painter as a mere daubster, claiming his canvases looked like they had been attacked with a mop.', isNoun:true },
+  { word:'davenport', pronunciation:'DAV-un-port', ipa:'/ˈdævənˌpɔːrt/', pos:'noun', def:'A large upholstered sofa; a small decorative writing desk with drawers and a sloping top.', lang:'Named after a Captain Davenport who first commissioned the writing desk style, or from the Davenport furniture company.', example:'She curled up on the old davenport with a blanket and a cup of tea, perfectly content to read all afternoon.', isNoun:true },
+  { word:'deathin', pronunciation:'DETH-in', ipa:'/ˈdɛθɪn/', pos:'noun', def:'A rare or dialectal term relating to death or a death-like state; associated with the cessation of life.', lang:'English, from death (from Old English death, of Germanic origin) + -in (suffix).', example:'The ancient poem spoke of deathin as a quiet passage rather than an ending, a crossing from one world to the next.', isNoun:true },
+  { word:'debacle', pronunciation:'dih-BAH-kul', ipa:'/dɪˈbɑːkəl/', pos:'noun', def:'A sudden and ignominious failure; a fiasco; originally, a breaking up of ice in a river.', lang:'French, from débâcle (\'an unleashing\'), from débâcler (\'to unbar\'), from de- (\'un-\') + bâcler (\'to bar\').', example:'The product launch turned into a complete debacle when the website crashed and customers received the wrong orders.', isNoun:true },
+  { word:'debilitate', pronunciation:'dih-BIL-ih-tayt', ipa:'/dɪˈbɪlɪˌteɪt/', pos:'verb', def:'To make someone weak and infirm; to severely impair the strength or energy of.', lang:'Latin, from debilitatus, past participle of debilitare (\'to weaken\'), from debilis (\'weak\').', example:'The tropical fever debilitated the explorer so severely that he could barely stand for weeks after contracting it.', isNoun:false },
+  { word:'debutante', pronunciation:'DEB-yoo-tahnt', ipa:'/ˈdɛbjʊˌtɑːnt/', pos:'noun', def:'A young upper-class woman making her first appearance in fashionable society; someone appearing for the first time.', lang:'French, from débutante, feminine of débutant (\'a beginner\'), from débuter (\'to make a first appearance\').', example:'The debutante descended the grand staircase in a white gown, officially entering society at the annual cotillion ball.', isNoun:true },
+  { word:'deceased', pronunciation:'dih-SEEST', ipa:'/dɪˈsiːst/', pos:'adjective', def:'Recently dead; no longer living; used formally or legally to refer to someone who has died.', lang:'Latin, from decessus (\'departure, death\'), past participle of decedere (\'to depart, die\'), from de- (\'away\') + cedere (\'to go\').', example:'The lawyer read the will of the deceased, distributing the estate among the surviving family members as instructed.', isNoun:false },
+  { word:'deceitful', pronunciation:'dih-SEET-ful', ipa:'/dɪˈsiːtfʊl/', pos:'adjective', def:'Guilty of or involving deceit; deliberately misleading or dishonest.', lang:'English, from deceit (from Old French deceite, from Latin deceptus, \'deceived\') + -ful.', example:'The deceitful merchant sold counterfeit goods at genuine prices, fooling customers until an inspector exposed the scheme.', isNoun:false },
+  { word:'deceleron', pronunciation:'dih-SEL-uh-ron', ipa:'/dɪˈsɛləˌrɒn/', pos:'noun', def:'A type of aircraft control surface combining the functions of an aileron and an air brake to slow the aircraft.', lang:'English, a blend of decelerate + aileron, describing a dual-purpose flight control surface.', example:'The pilot deployed the decelerons to reduce speed rapidly during the steep approach to the short mountain airstrip.', isNoun:true },
+  { word:'decennial', pronunciation:'dih-SEN-ee-ul', ipa:'/dɪˈsɛniəl/', pos:'adjective', def:'Recurring every ten years; lasting for or relating to a period of ten years.', lang:'Latin, from decennialis, from decennium (\'a period of ten years\'), from decem (\'ten\') + annus (\'year\').', example:'The decennial census provides essential data that shapes government policy and resource allocation for the next decade.', isNoun:false },
+  { word:'deciduous', pronunciation:'dih-SIJ-oo-us', ipa:'/dɪˈsɪdʒuəs/', pos:'adjective', def:'Of a tree or shrub, shedding its leaves annually; not permanent or lasting.', lang:'Latin, from deciduus (\'falling down\'), from decidere (\'to fall off\'), from de- (\'down\') + cadere (\'to fall\').', example:'The deciduous forest blazed with red, orange, and gold each autumn before the trees shed their leaves for winter.', isNoun:false },
+  { word:'decimation', pronunciation:'DES-ih-MAY-shun', ipa:'/ˌdɛsɪˈmeɪʃən/', pos:'noun', def:'The killing or destruction of a large proportion of a group; historically, the execution of every tenth soldier as punishment.', lang:'Latin, from decimatio, from decimare (\'to take a tenth\'), from decem (\'ten\').', example:'The decimation of the coral reef by rising ocean temperatures alarmed marine biologists around the world.', isNoun:true },
+  { word:'declamatory', pronunciation:'dih-KLAM-uh-TOR-ee', ipa:'/dɪˈklæməˌtɔːri/', pos:'adjective', def:'Of or relating to formal rhetorical speaking; delivered in an impassioned or theatrical manner.', lang:'Latin, from declamatorius, from declamare (\'to practice public speaking\'), from de- + clamare (\'to shout\').', example:'The politician\'s declamatory style, full of grand gestures and booming phrases, captivated the rally crowd.', isNoun:false },
+  { word:'declension', pronunciation:'dih-KLEN-shun', ipa:'/dɪˈklɛnʃən/', pos:'noun', def:'In grammar, the variation of the form of a noun, pronoun, or adjective to indicate case, number, and gender.', lang:'Latin, from declinatio (\'a bending aside, inflection\'), from declinare (\'to bend, turn aside\').', example:'Latin students spent weeks memorizing each declension, learning how noun endings changed depending on their role in a sentence.', isNoun:true },
+  { word:'declination', pronunciation:'DEK-lih-NAY-shun', ipa:'/ˌdɛklɪˈneɪʃən/', pos:'noun', def:'The angular distance of a point north or south of the celestial equator; the act of politely refusing.', lang:'Latin, from declinatio (\'a bending, turning aside\'), from declinare (\'to bend, turn away\').', example:'The astronomer calculated the star\'s declination to pinpoint its exact position in the night sky.', isNoun:true },
+  { word:'decurion', pronunciation:'dih-KYOOR-ee-un', ipa:'/dɪˈkjʊəriən/', pos:'noun', def:'A Roman cavalry officer commanding a unit of ten soldiers; a member of a municipal senate in a Roman colony.', lang:'Latin, from decurio (\'commander of ten\'), from decem (\'ten\').', example:'The decurion led his ten mounted soldiers in formation along the dusty Roman road toward the frontier garrison.', isNoun:true },
+  { word:'defiant', pronunciation:'dih-FY-unt', ipa:'/dɪˈfaɪənt/', pos:'adjective', def:'Showing bold resistance; openly refusing to obey; challengingly bold.', lang:'French, from défiant, present participle of défier (\'to defy\'), from Latin disfidare (\'to renounce faith\').', example:'The defiant protester stood alone before the advancing line of authorities, refusing to move from her position.', isNoun:false },
+  { word:'deglaciation', pronunciation:'dee-GLAY-see-AY-shun', ipa:'/diːˌɡleɪsiˈeɪʃən/', pos:'noun', def:'The disappearance of ice from a region, especially the retreat of glaciers and ice sheets after an ice age.', lang:'English, from de- (\'removal\') + glaciation (from Latin glacies, \'ice\'), + -ation.', example:'The deglaciation following the last ice age carved valleys and filled basins that became the Great Lakes.', isNoun:true },
+  { word:'déjà vu', pronunciation:'DAY-zhah VOO', ipa:'/ˌdeɪʒɑː ˈvuː/', pos:'noun', def:'A feeling of having already experienced the present situation; an eerie sense of familiarity with something never encountered before.', lang:'French, literally \'already seen\', from déjà (\'already\') + vu (past participle of voir, \'to see\').', example:'Walking into the unfamiliar restaurant, she was struck by an intense feeling of déjà vu, as if she had been there in a dream.', isNoun:true },
+  { word:'delectable', pronunciation:'dih-LEK-tuh-bul', ipa:'/dɪˈlɛktəbəl/', pos:'adjective', def:'Extremely delicious; highly pleasing or delightful.', lang:'Latin, from delectabilis (\'delightful\'), from delectare (\'to charm\'), from de- (\'thoroughly\') + lacere (\'to entice\').', example:'The delectable chocolate torte melted on the tongue, its rich velvety layers earning sighs of pleasure from every guest.', isNoun:false },
+  { word:'deleterious', pronunciation:'DEL-ih-TEER-ee-us', ipa:'/ˌdɛlɪˈtɪəriəs/', pos:'adjective', def:'Causing harm or damage; injurious to health or well-being.', lang:'Greek, from deleterios (\'destructive\'), from deleisthai (\'to hurt, damage\').', example:'The deleterious effects of prolonged screen time on children\'s sleep patterns have been well documented by researchers.', isNoun:false },
+  { word:'deliquesce', pronunciation:'DEL-ih-KWES', ipa:'/ˌdɛlɪˈkwɛs/', pos:'verb', def:'To become liquid by absorbing moisture from the air; to dissolve gradually; to melt away.', lang:'Latin, from deliquescere (\'to melt away\'), from de- (\'away\') + liquescere (\'to become liquid\').', example:'The salt crystals began to deliquesce in the humid summer air, turning from solid granules into tiny puddles on the counter.', isNoun:false },
+  { word:'delirium', pronunciation:'dih-LEER-ee-um', ipa:'/dɪˈlɪriəm/', pos:'noun', def:'An acutely disturbed state of mind involving confusion, hallucinations, and incoherent speech; wild excitement.', lang:'Latin, from delirium (\'madness\'), from delirare (\'to be deranged\'), literally \'to go off the furrow\', from de- + lira (\'furrow\').', example:'The high fever sent the patient into a delirium, causing him to murmur incoherently and see things that were not there.', isNoun:true },
+  { word:'deltoidal', pronunciation:'del-TOY-dul', ipa:'/dɛlˈtɔɪdəl/', pos:'adjective', def:'Having the shape of a delta or triangle; resembling a triangular geometric form.', lang:'Greek, from deltoeides (\'delta-shaped\'), from delta (the Greek letter) + -oid (\'resembling\') + -al.', example:'The deltoidal crystal formation caught the geologist\'s eye, its perfectly triangular faces glinting in the lamplight.', isNoun:false },
+  { word:'dementia', pronunciation:'dih-MEN-shuh', ipa:'/dɪˈmɛnʃə/', pos:'noun', def:'A chronic condition marked by memory loss, personality changes, and impaired reasoning, caused by brain disease or injury.', lang:'Latin, from dementia (\'madness\'), from demens (\'out of one\'s mind\'), from de- (\'without\') + mens (\'mind\').', example:'The family rallied around their grandmother as her dementia progressed, ensuring she always felt loved and cared for.', isNoun:true },
+  { word:'demerits', pronunciation:'dih-MAIR-its', ipa:'/dɪˈmɛrɪts/', pos:'noun', def:'Marks given against someone for a fault or offense; disadvantages or negative qualities.', lang:'Latin, from demeritum (\'a fault\'), from demerere (\'to deserve blame\'), from de- + merere (\'to deserve\').', example:'The student earned three demerits for tardiness, one more of which would result in a meeting with the principal.', isNoun:true },
+  { word:'demersal', pronunciation:'dih-MUR-sul', ipa:'/dɪˈmɜːrsəl/', pos:'adjective', def:'Of a fish or other organism, living close to the floor of the sea or a lake.', lang:'Latin, from demersus (\'submerged\'), past participle of demergere (\'to plunge down\'), from de- + mergere (\'to dip\').', example:'Demersal fish like cod and flounder feed along the ocean floor, camouflaged against the sandy bottom.', isNoun:false },
+  { word:'Demeter', pronunciation:'dih-MEE-tur', ipa:'/dɪˈmiːtər/', pos:'noun', def:'The Greek goddess of the harvest and agriculture, mother of Persephone; her Roman equivalent is Ceres.', lang:'Greek, from Demeter, possibly from de (\'earth\') + meter (\'mother\'), meaning \'Earth Mother\'.', example:'The ancient Greeks prayed to Demeter for bountiful harvests, celebrating her with festivals at the changing of each season.', isNoun:true },
+  { word:'demographics', pronunciation:'DEM-uh-GRAF-iks', ipa:'/ˌdɛməˈɡræfɪks/', pos:'noun', def:'Statistical data relating to the population and particular groups within it, such as age, income, and education.', lang:'Greek, from demos (\'the people\') + -graphia (\'writing, description\'), + -ics.', example:'The marketing team studied the demographics of their target audience to tailor advertisements for young urban professionals.', isNoun:true },
+  { word:'demonstrative', pronunciation:'dih-MON-struh-tiv', ipa:'/dɪˈmɒnstrətɪv/', pos:'adjective', def:'Tending to show feelings openly; serving to demonstrate or prove; in grammar, indicating the thing referred to.', lang:'Latin, from demonstrativus, from demonstrare (\'to point out\'), from de- (\'thoroughly\') + monstrare (\'to show\').', example:'The demonstrative child threw her arms around everyone she met, showering friends and strangers alike with hugs.', isNoun:false },
+  { word:'demulcent', pronunciation:'dih-MUL-sunt', ipa:'/dɪˈmʌlsənt/', pos:'noun', def:'A substance that relieves irritation of mucous membranes by forming a protective film; soothing and softening.', lang:'Latin, from demulcens, present participle of demulcere (\'to caress, soothe\'), from de- + mulcere (\'to soothe\').', example:'The pharmacist recommended a demulcent throat lozenge to coat and soothe her irritated vocal cords.', isNoun:true },
+  { word:'dendrite', pronunciation:'DEN-dryt', ipa:'/ˈdɛndraɪt/', pos:'noun', def:'A short branching extension of a nerve cell that receives signals from other cells; a crystal with a branching tree-like form.', lang:'Greek, from dendrites (\'of or pertaining to a tree\'), from dendron (\'tree\').', example:'Each neuron has multiple dendrites that branch outward like tiny trees, receiving chemical signals from thousands of neighboring cells.', isNoun:true },
+  { word:'denigration', pronunciation:'DEN-ih-GRAY-shun', ipa:'/ˌdɛnɪˈɡreɪʃən/', pos:'noun', def:'The action of unfairly criticizing or belittling someone or something.', lang:'Latin, from denigratio, from denigrare (\'to blacken\'), from de- (\'completely\') + nigrare (\'to blacken\'), from niger (\'black\').', example:'The constant denigration of his ideas by coworkers eventually drove the talented engineer to seek a more supportive workplace.', isNoun:true },
+  { word:'denominator', pronunciation:'dih-NOM-ih-NAY-tur', ipa:'/dɪˈnɒmɪˌneɪtər/', pos:'noun', def:'The number below the line in a fraction; a shared characteristic of members of a group.', lang:'Latin, from denominator (\'one who names\'), from denominare (\'to name\'), from de- + nominare (\'to name\').', example:'To add fractions, you first need a common denominator so the parts you are combining represent equal-sized pieces.', isNoun:true },
+  { word:'depose', pronunciation:'dih-POHZ', ipa:'/dɪˈpoʊz/', pos:'verb', def:'To remove from office suddenly and forcefully; to testify or give evidence under oath.', lang:'Old French, from deposer (\'to put down\'), from Latin deponere (\'to put down\'), from de- (\'down\') + ponere (\'to place\').', example:'The rebels planned to depose the dictator and restore democratic elections to the war-torn country.', isNoun:false },
+  { word:'depreciate', pronunciation:'dih-PREE-shee-ayt', ipa:'/dɪˈpriːʃiˌeɪt/', pos:'verb', def:'To diminish in value over a period of time; to belittle or disparage.', lang:'Latin, from depreciatus, past participle of depreciare (\'to lower the price\'), from de- (\'down\') + pretium (\'price\').', example:'New cars depreciate rapidly, losing nearly a third of their value within the first two years of ownership.', isNoun:false },
+  { word:'depredation', pronunciation:'DEP-rih-DAY-shun', ipa:'/ˌdɛprɪˈdeɪʃən/', pos:'noun', def:'An act of attacking or plundering; ravaging and destruction, especially by invaders or predators.', lang:'Latin, from depraedatio (\'a plundering\'), from depraedari (\'to plunder\'), from de- + praedari (\'to prey upon\').', example:'The depredation of the countryside by the invading army left villages burned and fields destroyed for miles around.', isNoun:true },
+  { word:'deprivation', pronunciation:'DEP-rih-VAY-shun', ipa:'/ˌdɛprɪˈveɪʃən/', pos:'noun', def:'The damaging lack of material benefits considered to be basic necessities; the act of being denied something.', lang:'Latin, from deprivatio, from deprivare (\'to strip, deprive\'), from de- (\'entirely\') + privare (\'to rob\').', example:'Years of sleep deprivation took a toll on her health, affecting her memory, mood, and ability to concentrate.', isNoun:true },
+  { word:'derelict', pronunciation:'DAIR-uh-likt', ipa:'/ˈdɛrəˌlɪkt/', pos:'adjective', def:'In a very poor condition as a result of neglect; shamefully negligent in one\'s duties.', lang:'Latin, from derelictus (\'abandoned\'), past participle of derelinquere (\'to forsake\'), from de- + relinquere (\'to leave behind\').', example:'The derelict warehouse had broken windows, a sagging roof, and weeds growing through cracks in the concrete floor.', isNoun:false },
+  { word:'derisive', pronunciation:'dih-RY-siv', ipa:'/dɪˈraɪsɪv/', pos:'adjective', def:'Expressing contempt or ridicule; mocking and scornful.', lang:'Latin, from derisum, past participle of deridere (\'to mock, laugh at\'), from de- (\'down\') + ridere (\'to laugh\').', example:'The derisive laughter from the audience stung the nervous performer, who stumbled over his words before regaining composure.', isNoun:false },
+  { word:'derivative', pronunciation:'dih-RIV-uh-tiv', ipa:'/dɪˈrɪvətɪv/', pos:'noun', def:'Something derived from another source; in math, a measure of rate of change; a financial contract based on an underlying asset.', lang:'Latin, from derivativus, from derivare (\'to lead away, derive\'), from de- (\'away\') + rivus (\'a stream\').', example:'Critics dismissed the film as a derivative copy of earlier science fiction classics, offering nothing new to the genre.', isNoun:true },
+  { word:'deserter', pronunciation:'dih-ZUR-tur', ipa:'/dɪˈzɜːrtər/', pos:'noun', def:'A member of the armed forces who leaves without permission; a person who abandons a cause or duty.', lang:'French, from déserter (\'to abandon\'), from Latin desertare (\'to abandon\'), from desertus (\'forsaken\'), + -er.', example:'The military tribunal found the deserter guilty of abandoning his post and sentenced him to years of hard labor.', isNoun:true },
+  { word:'desertification', pronunciation:'dih-ZUR-tih-fih-KAY-shun', ipa:'/dɪˌzɜːrtɪfɪˈkeɪʃən/', pos:'noun', def:'The process by which fertile land becomes desert, typically as a result of drought, deforestation, or inappropriate farming practices.', lang:'English, from desert (from Latin desertum, \'wasteland\') + -ification (\'process of making\').', example:'Desertification threatens millions of acres of farmland across Africa, turning once-productive fields into barren, sandy wasteland.', isNoun:true },
+  { word:'desolate', pronunciation:'DES-uh-lut', ipa:'/ˈdɛsəlɪt/', pos:'adjective', def:'Deserted and empty; giving an impression of bleak and dismal emptiness; feeling wretchedly alone.', lang:'Latin, from desolatus, past participle of desolare (\'to leave alone\'), from de- (\'thoroughly\') + solare (\'to make lonely\'), from solus (\'alone\').', example:'The desolate moor stretched endlessly under a gray sky, without a tree or house to break the bleak horizon.', isNoun:false },
+  { word:'desuetude', pronunciation:'DES-wih-tood', ipa:'/ˈdɛswɪˌtjuːd/', pos:'noun', def:'A state of disuse; the condition of no longer being practiced or observed.', lang:'Latin, from desuetudo (\'disuse\'), from desuescere (\'to become unaccustomed\'), from de- + suescere (\'to become accustomed\').', example:'Many archaic laws have fallen into desuetude, remaining on the books but never enforced by modern courts.', isNoun:true },
+  { word:'detritus', pronunciation:'dih-TRY-tus', ipa:'/dɪˈtraɪtəs/', pos:'noun', def:'Waste or debris of any kind; organic matter produced by decomposition; gravel and rock fragments worn away from larger masses.', lang:'Latin, from detritus (\'a rubbing away\'), from deterere (\'to wear away\'), from de- (\'away\') + terere (\'to rub\').', example:'The beach was littered with detritus after the storm, from broken shells and seaweed to fragments of driftwood.', isNoun:true },
+  { word:'deus ex machina', pronunciation:'DAY-us eks MAH-kih-nuh', ipa:'/ˌdeɪəs ɛks ˈmækɪnə/', pos:'noun', def:'An unexpected power, event, or person that solves a seemingly impossible problem; a contrived plot device.', lang:'Latin, literally \'a god from the machine\', translating Greek apo mekhanes theos, from the theatrical device of lowering a god onto stage by crane.', example:'The surprise inheritance that saved the hero from bankruptcy felt like a deus ex machina, too convenient to be satisfying.', isNoun:true },
+  { word:'diabolical', pronunciation:'DY-uh-BOL-ih-kul', ipa:'/ˌdaɪəˈbɒlɪkəl/', pos:'adjective', def:'Belonging to or characteristic of the devil; extremely wicked or cruel; dreadfully bad.', lang:'Greek, from diabolikos (\'slanderous\'), from diabolos (\'devil, slanderer\'), from diaballein (\'to slander\'), from dia- (\'across\') + ballein (\'to throw\').', example:'The villain devised a diabolical plan to flood the city by destroying the dam upstream during the heaviest rains.', isNoun:false },
+  { word:'diacritic', pronunciation:'DY-uh-KRIT-ik', ipa:'/ˌdaɪəˈkrɪtɪk/', pos:'noun', def:'A mark added to a letter to indicate a special pronunciation, such as an accent, cedilla, or tilde.', lang:'Greek, from diakritikos (\'distinguishing\'), from diakrinein (\'to distinguish\'), from dia- (\'through\') + krinein (\'to separate\').', example:'The diacritic over the letter e in the word résumé indicates that both vowels should be pronounced distinctly.', isNoun:true },
+  { word:'diadem', pronunciation:'DY-uh-dem', ipa:'/ˈdaɪəˌdɛm/', pos:'noun', def:'A jeweled crown or headband worn as a symbol of sovereignty; a wreath of flowers or leaves.', lang:'Greek, from diadema (\'a royal headband\'), from diadein (\'to bind around\'), from dia- (\'across\') + dein (\'to bind\').', example:'The queen\'s diadem sparkled with diamonds and sapphires as she took her place upon the throne for the ceremony.', isNoun:true },
+  { word:'dialysis', pronunciation:'dy-AL-ih-sis', ipa:'/daɪˈælɪsɪs/', pos:'noun', def:'The clinical purification of blood as a substitute for the normal function of the kidney; the separation of particles by diffusion.', lang:'Greek, from dialysis (\'a dissolution\'), from dialyein (\'to dissolve\'), from dia- (\'apart\') + lyein (\'to loosen\').', example:'The patient underwent dialysis three times a week while waiting for a kidney transplant that would restore normal function.', isNoun:true },
+  { word:'Dianthus', pronunciation:'dy-AN-thus', ipa:'/daɪˈænθəs/', pos:'noun', def:'A genus of flowering plants in the carnation family, including pinks, carnations, and sweet williams.', lang:'Greek, from Dios (\'of Zeus, divine\') + anthos (\'flower\'), meaning \'flower of the gods\'.', example:'The garden border was planted with Dianthus in shades of pink and crimson, their spicy-sweet fragrance perfuming the summer air.', isNoun:true },
+  { word:'diaspora', pronunciation:'dy-AS-pur-uh', ipa:'/daɪˈæspərə/', pos:'noun', def:'The dispersion of any people from their original homeland; the community of people living outside their ancestral territory.', lang:'Greek, from diaspora (\'a scattering\'), from diaspeirein (\'to scatter\'), from dia- (\'across\') + speirein (\'to sow, scatter\').', example:'The Irish diaspora spread across the globe during the famine years, establishing vibrant communities from Boston to Melbourne.', isNoun:true },
+  { word:'diathermy', pronunciation:'DY-uh-THUR-mee', ipa:'/ˈdaɪəˌθɜːrmi/', pos:'noun', def:'A medical treatment using electrically induced heat or high-frequency electromagnetic currents to heat deep tissue.', lang:'Greek, from dia- (\'through\') + therme (\'heat\').', example:'The physical therapist used diathermy to deliver deep heat to the patient\'s injured shoulder, promoting healing in the tissue.', isNoun:true },
+  { word:'diatonic', pronunciation:'DY-uh-TON-ik', ipa:'/ˌdaɪəˈtɒnɪk/', pos:'adjective', def:'Of a musical scale, involving only notes proper to the prevailing key without chromatic alteration.', lang:'Greek, from diatonikos (\'at intervals of a tone\'), from dia- (\'through\') + tonos (\'tone, tension\').', example:'The simple diatonic melody used only the white keys of the piano, giving the folk tune its pure, unadorned beauty.', isNoun:false },
+  { word:'diatribe', pronunciation:'DY-uh-tryb', ipa:'/ˈdaɪəˌtraɪb/', pos:'noun', def:'A forceful and bitter verbal attack against someone or something; an angry, prolonged speech of criticism.', lang:'Greek, from diatribe (\'a wearing away of time, a discourse\'), from diatribein (\'to spend time\'), from dia- (\'through\') + tribein (\'to rub\').', example:'The senator launched into a fiery diatribe against the proposed legislation, speaking for nearly an hour without pause.', isNoun:true },
+  { word:'diaulos', pronunciation:'dy-OW-los', ipa:'/daɪˈaʊlɒs/', pos:'noun', def:'An ancient Greek footrace of approximately 400 meters, in which runners sprinted to the end of the stadium and back.', lang:'Greek, from diaulos (\'a double course\'), from di- (\'twice\') + aulos (\'a passage, pipe\').', example:'The diaulos was one of the most exciting events at the ancient Olympics, requiring both explosive speed and the skill to turn sharply.', isNoun:true },
+  { word:'dietetic', pronunciation:'DY-uh-TET-ik', ipa:'/ˌdaɪəˈtɛtɪk/', pos:'adjective', def:'Concerned with diet and nutrition; relating to or designed for special dietary requirements.', lang:'Greek, from diaitetikos (\'of or for a way of life\'), from diaita (\'a way of life, diet\').', example:'The hospital\'s dietetic department planned specialized menus for patients with diabetes, allergies, and heart conditions.', isNoun:false },
+  { word:'dihedral', pronunciation:'dy-HEE-drul', ipa:'/daɪˈhiːdrəl/', pos:'noun', def:'An angle formed by two plane surfaces meeting along a line; the upward angle of an aircraft\'s wing from the horizontal.', lang:'Greek, from di- (\'two\') + hedra (\'seat, base, face of a geometric solid\').', example:'The engineer increased the dihedral angle of the wing design to improve the small aircraft\'s lateral stability in crosswinds.', isNoun:true },
+  { word:'dilapidated', pronunciation:'dih-LAP-ih-DAY-tid', ipa:'/dɪˈlæpɪˌdeɪtɪd/', pos:'adjective', def:'In a state of disrepair or ruin as a result of age or neglect.', lang:'Latin, from dilapidatus, past participle of dilapidare (\'to squander, demolish\'), from di- (\'apart\') + lapidare (\'to throw stones\'), from lapis (\'stone\').', example:'The dilapidated barn leaned so far to one side that it seemed a strong gust of wind might topple it completely.', isNoun:false },
+  { word:'diligence', pronunciation:'DIL-ih-junce', ipa:'/ˈdɪlɪdʒəns/', pos:'noun', def:'Careful and persistent work or effort; steady application and attention to a task.', lang:'Latin, from diligentia (\'attentiveness, carefulness\'), from diligere (\'to value highly, love\'), from di- + legere (\'to choose\').', example:'Her diligence in studying every evening paid off when she earned the highest score in her class on the final exam.', isNoun:true },
+  { word:'diluent', pronunciation:'DIL-yoo-unt', ipa:'/ˈdɪljuənt/', pos:'noun', def:'A substance used to dilute something; a liquid that thins or weakens a concentrated solution.', lang:'Latin, from diluens, present participle of diluere (\'to wash away, dissolve\'), from di- (\'apart\') + luere (\'to wash\').', example:'The pharmacist added a measured amount of diluent to the concentrated medication to prepare it for injection.', isNoun:true },
+  { word:'dimorphism', pronunciation:'dy-MOR-fiz-um', ipa:'/daɪˈmɔːrfɪzəm/', pos:'noun', def:'The occurrence of two distinct forms within the same species, differing in size, shape, color, or other characteristics.', lang:'Greek, from di- (\'two\') + morphe (\'form\') + -ism.', example:'Sexual dimorphism is striking in peacocks, where the male displays brilliant iridescent plumage while the female is plain brown.', isNoun:true },
+  { word:'diocese', pronunciation:'DY-uh-sis', ipa:'/ˈdaɪəsɪs/', pos:'noun', def:'A district under the pastoral care of a bishop in the Christian Church.', lang:'Greek, from dioikesis (\'administration, province\'), from dioikein (\'to keep house, administer\'), from dia- (\'through\') + oikein (\'to inhabit\').', example:'The bishop traveled throughout his large diocese, visiting parishes in both bustling cities and remote rural villages.', isNoun:true },
+  { word:'diphthong', pronunciation:'DIF-thawng', ipa:'/ˈdɪfθɒŋ/', pos:'noun', def:'A sound formed by the combination of two vowels in a single syllable, in which the sound glides from one to the other.', lang:'Greek, from diphthongos (\'having two sounds\'), from di- (\'two\') + phthongos (\'voice, sound\').', example:'The English word \'coin\' contains a diphthong, as the vowel sound glides smoothly from one position to another.', isNoun:true },
+  { word:'diptych', pronunciation:'DIP-tik', ipa:'/ˈdɪptɪk/', pos:'noun', def:'A painting or carving on two panels that are hinged together; a pair of artworks intended to be displayed together.', lang:'Greek, from diptykha (\'a pair of writing tablets\'), from di- (\'two\') + ptyche (\'a fold\').', example:'The medieval diptych showed the Annunciation on one panel and the Nativity on the other, joined by golden hinges.', isNoun:true },
+  { word:'dirigible', pronunciation:'DIR-ij-uh-bul', ipa:'/ˈdɪrɪdʒɪbəl/', pos:'noun', def:'A large, powered, steerable airship with a rigid or semi-rigid framework; a navigable balloon.', lang:'Latin, from dirigere (\'to direct, steer\'), from di- + regere (\'to guide, rule\'), + -ible.', example:'The enormous silver dirigible floated majestically over the city skyline, its engines humming softly as it headed north.', isNoun:true },
+  { word:'discernment', pronunciation:'dih-SURN-munt', ipa:'/dɪˈsɜːrnmənt/', pos:'noun', def:'The ability to judge well; keen perception or insight; the quality of being able to distinguish good from bad.', lang:'French, from discerner (\'to distinguish\'), from Latin discernere (\'to separate, distinguish\'), from dis- + cernere (\'to sift\').', example:'Her discernment in choosing investments consistently outperformed the market, earning the trust of wealthy clients.', isNoun:true },
+  { word:'discombobulate', pronunciation:'DIS-kum-BOB-yoo-layt', ipa:'/ˌdɪskəmˈbɒbjʊˌleɪt/', pos:'verb', def:'To confuse or disconcert; to upset or frustrate; to throw into a state of bewilderment.', lang:'American English, a humorous alteration of discompose or discomfit, first recorded in the 1830s.', example:'The sudden change of plans completely discombobulated the tour group, who wandered around the train station looking utterly lost.', isNoun:false },
+  { word:'discountenance', pronunciation:'dis-KOWN-tuh-nunce', ipa:'/dɪsˈkaʊntɪnəns/', pos:'verb', def:'To show disapproval of; to refuse to approve of; to embarrass or abash.', lang:'French, from descontenancer (\'to put out of countenance\'), from des- (\'un-\') + contenance (\'composure, bearing\').', example:'The headmistress discountenanced any form of bullying, making clear that such behavior would not be tolerated.', isNoun:false },
+  { word:'discreetly', pronunciation:'dis-KREET-lee', ipa:'/dɪsˈkriːtli/', pos:'adverb', def:'In a careful and prudent manner; in a way that avoids attracting attention or causing embarrassment.', lang:'Latin, from discretus (\'separated, distinct\'), past participle of discernere (\'to distinguish\'), + -ly.', example:'The waiter discreetly placed the bill on the table without interrupting the couple\'s romantic dinner conversation.', isNoun:false },
+  { word:'discretionary', pronunciation:'dis-KRESH-uh-NAIR-ee', ipa:'/dɪsˈkrɛʃəˌnɛri/', pos:'adjective', def:'Available for use at the discretion of the user; not fixed or required; left to individual judgment.', lang:'Latin, from discretio (\'discernment\'), from discernere (\'to distinguish\'), + -ary.', example:'After paying all her bills, she had a small amount of discretionary income left over for entertainment and hobbies.', isNoun:false },
+  { word:'disembogue', pronunciation:'DIS-em-BOHG', ipa:'/ˌdɪsɛmˈboʊɡ/', pos:'verb', def:'To discharge or pour out at the mouth, as a stream into the sea; to emerge or flow out.', lang:'Spanish, from desembocar (\'to flow out of the mouth\'), from des- (\'out\') + embocar (\'to enter the mouth\'), from boca (\'mouth\').', example:'The mighty river disembogued into the Atlantic Ocean through a wide, marshy delta teeming with birds and wildlife.', isNoun:false },
+  { word:'disjunct', pronunciation:'dis-JUNKT', ipa:'/dɪsˈdʒʌŋkt/', pos:'adjective', def:'Not connected; separate; in music, proceeding by intervals larger than a step; in logic, involving alternatives.', lang:'Latin, from disjunctus, past participle of disjungere (\'to disjoin\'), from dis- (\'apart\') + jungere (\'to join\').', example:'The composer used disjunct melodic intervals, leaping across wide gaps between notes to create a sense of urgency.', isNoun:false },
+  { word:'Disneyfication', pronunciation:'DIZ-nee-fih-KAY-shun', ipa:'/ˌdɪznifɪˈkeɪʃən/', pos:'noun', def:'The transformation of something into a sanitized, commercialized form reminiscent of Disney theme parks or productions.', lang:'English, from Disney (the entertainment company founded by Walt Disney) + -fication (\'process of making\').', example:'Critics lamented the Disneyfication of the historic waterfront, where authentic fishing shacks were replaced by gift shops and chain restaurants.', isNoun:true },
+  { word:'disparate', pronunciation:'DIS-puh-rut', ipa:'/ˈdɪspərɪt/', pos:'adjective', def:'Essentially different in kind; not able to be compared; markedly distinct in quality or character.', lang:'Latin, from disparatus, past participle of disparare (\'to separate\'), from dis- (\'apart\') + parare (\'to prepare\').', example:'The committee tried to reconcile the disparate views of its members, but the gap between their positions proved too wide.', isNoun:false },
+  { word:'disproportionate', pronunciation:'DIS-pruh-POR-shun-ut', ipa:'/ˌdɪsprəˈpɔːrʃənɪt/', pos:'adjective', def:'Too large or too small in comparison with something else; not in proper proportion; out of balance.', lang:'English, from dis- (\'not\') + proportionate (from Latin proportio, \'comparative relation\'), + -ate.', example:'The punishment seemed disproportionate to the minor offense, drawing criticism from civil liberties groups across the country.', isNoun:false },
+  { word:'dissemble', pronunciation:'dih-SEM-bul', ipa:'/dɪˈsɛmbəl/', pos:'verb', def:'To conceal one\'s true motives, feelings, or beliefs; to disguise or pretend.', lang:'Old French, from dissembler (\'to be different\'), from Latin dissimulare (\'to disguise, conceal\'), from dis- + simulare (\'to pretend\').', example:'The spy had learned to dissemble so convincingly that even trained interrogators could not detect his deceptions.', isNoun:false },
+  { word:'dissolution', pronunciation:'DIS-uh-LOO-shun', ipa:'/ˌdɪsəˈluːʃən/', pos:'noun', def:'The closing down or dismissal of an assembly or partnership; the action of dissolving or decomposing.', lang:'Latin, from dissolutio (\'a dissolving\'), from dissolvere (\'to loosen, dissolve\'), from dis- (\'apart\') + solvere (\'to loosen\').', example:'The dissolution of parliament triggered a general election that would determine the country\'s political direction for years to come.', isNoun:true },
+  { word:'dissonance', pronunciation:'DIS-uh-nunce', ipa:'/ˈdɪsənəns/', pos:'noun', def:'A lack of harmony among musical notes; a tension or clash resulting from the combination of two disharmonious elements.', lang:'Latin, from dissonantia (\'a disagreement\'), from dissonare (\'to be discordant\'), from dis- (\'apart\') + sonare (\'to sound\').', example:'The jarring dissonance of the modern composition made some audience members wince, while others leaned forward in fascination.', isNoun:true },
+  { word:'distraught', pronunciation:'dih-STRAWT', ipa:'/dɪˈstrɔːt/', pos:'adjective', def:'Deeply upset and agitated; extremely worried and distressed.', lang:'English, an alteration of distract (from Latin distractus, \'pulled apart\'), used as an adjective meaning \'deranged with anxiety\'.', example:'The distraught mother searched frantically for her missing child, calling his name through the crowded shopping center.', isNoun:false },
+  { word:'dodecahedron', pronunciation:'DOH-DEK-uh-HEE-drun', ipa:'/ˌdoʊdɛkəˈhiːdrən/', pos:'noun', def:'A three-dimensional shape with twelve flat pentagonal faces, one of the five Platonic solids.', lang:'Greek, from dodeka (\'twelve\') + hedra (\'seat, base, face\'), meaning \'twelve faces\'.', example:'The math teacher passed around a wooden dodecahedron, letting students count its twelve pentagonal faces and thirty edges.', isNoun:true },
+  { word:'dogana', pronunciation:'doh-GAH-nuh', ipa:'/doʊˈɡɑːnə/', pos:'noun', def:'A customs house, especially in Italy; a building where import duties are collected on goods entering a port city.', lang:'Italian, from dogana (\'a customs house\'), from Arabic diwan (\'a customs office, council chamber\').', example:'The grand old dogana at the tip of Venice\'s waterfront once processed every cargo ship entering the lagoon city.', isNoun:true },
+  { word:'doldrums', pronunciation:'DOHL-drumz', ipa:'/ˈdoʊldrəmz/', pos:'noun', def:'A state of inactivity or stagnation; a belt of calms near the equator where sailing ships could be becalmed for weeks.', lang:'English, probably from dol (\'dull, stupid\', from Old English dol) + tantrum or drum, first recorded in the early 19th century.', example:'The economy was stuck in the doldrums, with sluggish growth and high unemployment dampening the national mood.', isNoun:true },
+  { word:'dolma', pronunciation:'DOHL-muh', ipa:'/ˈdoʊlmə/', pos:'noun', def:'A family of stuffed dishes common in Mediterranean and Middle Eastern cuisine, typically grape leaves filled with rice and meat.', lang:'Turkish, from dolma (\'stuffed\'), from dolmak (\'to fill, stuff\').', example:'The platter of dolma arrived beautifully arranged, each tender grape leaf wrapped around a fragrant mixture of rice, herbs, and lamb.', isNoun:true },
+  { word:'dolmen', pronunciation:'DOHL-men', ipa:'/ˈdoʊlmɛn/', pos:'noun', def:'A type of ancient megalithic tomb consisting of a large flat stone laid across upright stones, forming a chamber.', lang:'Breton, from taol (\'table\') + men (\'stone\'), literally \'stone table\'; or Cornish tolmen (\'hole of stone\').', example:'The prehistoric dolmen stood on the windswept hillside, its massive capstone balanced on three upright pillars for five thousand years.', isNoun:true },
+  { word:'domesticity', pronunciation:'DOH-mes-TIS-ih-tee', ipa:'/ˌdoʊmɛsˈtɪsɪti/', pos:'noun', def:'Home life; the quality of being domestic; devotion to home and family activities.', lang:'Latin, from domesticus (\'belonging to the house\'), from domus (\'house\'), + -ity.', example:'After years of traveling the world, she surprised everyone by embracing domesticity, finding joy in cooking and gardening.', isNoun:true },
+  { word:'domiciled', pronunciation:'DOM-ih-syld', ipa:'/ˈdɒmɪˌsaɪld/', pos:'adjective', def:'Residing or having one\'s permanent legal home in a particular place.', lang:'Latin, from domicilium (\'a dwelling place\'), from domus (\'house\') + colere (\'to inhabit\').', example:'Though domiciled in London for tax purposes, the businessman spent most of his time traveling between offices in three countries.', isNoun:false },
+  { word:'domineering', pronunciation:'DOM-ih-NEER-ing', ipa:'/ˌdɒmɪˈnɪərɪŋ/', pos:'adjective', def:'Asserting one\'s will over another in an arrogant way; overbearing and tyrannical.', lang:'Dutch, from domineren (\'to rule\'), from Latin dominari (\'to rule, govern\'), from dominus (\'lord, master\'), + -ing.', example:'The domineering coach demanded absolute obedience, and any player who questioned his decisions was immediately benched.', isNoun:false },
+  { word:'dopamine', pronunciation:'DOH-puh-meen', ipa:'/ˈdoʊpəˌmiːn/', pos:'noun', def:'A neurotransmitter in the brain that plays a role in motivation, pleasure, reward, and movement.', lang:'English, from DOPA (dihydroxyphenylalanine, the chemical precursor) + amine (a type of organic compound).', example:'The rush of dopamine released during exercise is what gives runners that euphoric feeling known as a runner\'s high.', isNoun:true },
+  { word:'Doppler', pronunciation:'DOP-lur', ipa:'/ˈdɒplər/', pos:'noun', def:'Relating to or using the Doppler effect, the change in frequency of a wave relative to a moving observer or source.', lang:'Named after Christian Doppler (1803-1853), the Austrian physicist who first described the phenomenon in 1842.', example:'The meteorologist used Doppler radar to track the tornado\'s rotation and predict its path across the county.', isNoun:true },
+  { word:'Dorking', pronunciation:'DOR-king', ipa:'/ˈdɔːrkɪŋ/', pos:'noun', def:'A breed of domestic chicken with five toes instead of the usual four, originating from the town of Dorking in Surrey, England.', lang:'Named after Dorking, a market town in Surrey, England, where this distinctive five-toed chicken breed was developed.', example:'The farmer kept a flock of Dorking chickens, prized for their tender meat and the unusual fifth toe on each foot.', isNoun:true },
+  { word:'doula', pronunciation:'DOO-luh', ipa:'/ˈduːlə/', pos:'noun', def:'A trained companion who supports a woman during labor and after childbirth, providing emotional and physical comfort.', lang:'Greek, from doule (\'a female servant, slave\'), adopted in the 1960s to describe a trained birth companion.', example:'The doula coached the mother through each contraction with calm encouragement, helping her breathe and stay focused.', isNoun:true },
+  { word:'dowager', pronunciation:'DOW-uh-jur', ipa:'/ˈdaʊədʒər/', pos:'noun', def:'A widow with a title or property derived from her late husband; a dignified elderly woman of high social status.', lang:'Old French, from douagere, from douage (\'dower\'), from douer (\'to endow\'), from Latin dotare (\'to endow\'), from dos (\'dowry\').', example:'The dowager duchess still commanded respect at every social gathering, her presence and poise undiminished at the age of ninety.', isNoun:true },
+  { word:'dowdy', pronunciation:'DOW-dee', ipa:'/ˈdaʊdi/', pos:'adjective', def:'Unfashionable and without style in appearance; dull and unattractive in dress or manner.', lang:'English, from dowd (\'an unfashionable woman\'), of uncertain origin, first recorded in the 16th century.', example:'She transformed her dowdy wardrobe with a few bold accessories, turning plain outfits into stylish ensembles.', isNoun:false },
+  { word:'Dramamine', pronunciation:'DRAM-uh-meen', ipa:'/ˈdræməˌmiːn/', pos:'noun', def:'A brand name for dimenhydrinate, an over-the-counter medication used to prevent and treat motion sickness.', lang:'English, a proprietary name, from a blend of the chemical components diphenhydramine + 8-chlorotheophylline.', example:'She took a Dramamine tablet before boarding the cruise ship, hoping to avoid the seasickness that had ruined her last voyage.', isNoun:true },
+  { word:'dromic', pronunciation:'DROH-mik', ipa:'/ˈdroʊmɪk/', pos:'adjective', def:'Relating to a racecourse or running; in architecture, having a long, straight nave or passage.', lang:'Greek, from dromos (\'a course, racecourse\'), from dramein (\'to run\').', example:'The dromic plan of the early Christian basilica featured a long central nave leading the eye directly toward the altar.', isNoun:false },
+  { word:'druid', pronunciation:'DROO-id', ipa:'/ˈdruːɪd/', pos:'noun', def:'A priest, magician, or soothsayer in the ancient Celtic religion; a member of a modern neo-pagan order.', lang:'Latin, from druidae (plural), from Gaulish druides, possibly from Celtic dru-wid (\'strong seer\'), from dru- (\'oak, strong\') + wid- (\'to know\').', example:'The ancient druids gathered at Stonehenge for the summer solstice, performing rituals as the first rays of dawn struck the stones.', isNoun:true },
+  { word:'drumlin', pronunciation:'DRUM-lin', ipa:'/ˈdrʌmlɪn/', pos:'noun', def:'A low, elongated oval hill formed by glacial action, with a steep end facing the direction from which the glacier advanced.', lang:'Irish and Scottish Gaelic, from druim (\'ridge, back\'), + -lin (diminutive suffix), meaning \'small ridge\'.', example:'The landscape was dotted with smooth drumlins left behind by the retreating glacier thousands of years ago.', isNoun:true },
+  { word:'drupiferous', pronunciation:'droo-PIF-ur-us', ipa:'/druːˈpɪfərəs/', pos:'adjective', def:'Bearing drupes; producing stone fruits such as cherries, plums, or peaches.', lang:'Latin, from drupa (\'overripe olive\') + -ferous (\'bearing\'), from ferre (\'to bear, carry\').', example:'The orchard was filled with drupiferous trees — rows of cherry, peach, and plum all heavy with ripening fruit.', isNoun:false },
+  { word:'dryad', pronunciation:'DRY-ad', ipa:'/ˈdraɪæd/', pos:'noun', def:'In Greek mythology, a nymph inhabiting a tree, especially an oak; a tree spirit.', lang:'Greek, from dryas (genitive dryados, \'tree nymph\'), from drys (\'oak tree\').', example:'The poet imagined a dryad stepping out from the ancient oak, her flowing green hair blending with the rustling leaves.', isNoun:true },
+  { word:'du jour', pronunciation:'doo ZHOOR', ipa:'/duː ˈʒʊər/', pos:'adjective', def:'Of the day; currently popular or fashionable; especially used to describe a special menu item available on a particular day.', lang:'French, literally \'of the day\', from du (\'of the\') + jour (\'day\'), from Latin diurnum (\'daily\').', example:'The soup du jour was a creamy butternut squash bisque that perfectly matched the crisp autumn afternoon.', isNoun:false },
+  { word:'dungarees', pronunciation:'DUNG-guh-REEZ', ipa:'/ˌdʌŋɡəˈriːz/', pos:'noun', def:'Work clothes or overalls made of heavy denim fabric; trousers with a bib held up by straps over the shoulders.', lang:'Hindi, from dungri (\'a type of coarse cotton cloth\'), named after the Dongri area in Mumbai where the fabric was originally made.', example:'The farmer pulled on his faded blue dungarees and headed out to the barn before the sun had fully risen.', isNoun:true },
+  { word:'duplicitous', pronunciation:'doo-PLIS-ih-tus', ipa:'/djuːˈplɪsɪtəs/', pos:'adjective', def:'Deceitful; given to or involving deliberate deception by pretending one set of feelings while acting under another.', lang:'Latin, from duplicitas (\'doubleness\'), from duplex (\'twofold\'), from duo (\'two\') + plicare (\'to fold\'), + -ous.', example:'The duplicitous advisor secretly worked against the very people he had publicly pledged to help.', isNoun:false },
+  { word:'durango', pronunciation:'doo-RANG-oh', ipa:'/dʊˈræŋɡoʊ/', pos:'noun', def:'A city and state in northwestern Mexico known for its colonial architecture; also a city in southwestern Colorado.', lang:'Basque, from Durango, a town in the Basque Country of Spain; settlers from there named the Mexican city.', example:'The historic center of Durango features stunning baroque cathedrals and cobblestone streets dating back to the colonial era.', isNoun:true },
+  { word:'dysgraphia', pronunciation:'dis-GRAF-ee-uh', ipa:'/dɪsˈɡræfiə/', pos:'noun', def:'A neurological disorder characterized by difficulty with writing, including problems with spelling, handwriting, and organizing thoughts on paper.', lang:'Greek, from dys- (\'difficult, impaired\') + graphia (\'writing\'), from graphein (\'to write\').', example:'The occupational therapist developed special exercises to help the student manage his dysgraphia and improve his handwriting.', isNoun:true },
+  { word:'dyspeptic', pronunciation:'dis-PEP-tik', ipa:'/dɪsˈpɛptɪk/', pos:'adjective', def:'Of or having indigestion; irritable, bad-tempered, or gloomy.', lang:'Greek, from dyspeptos (\'hard to digest\'), from dys- (\'difficult\') + peptos (\'digested\'), from peptein (\'to digest\').', example:'The dyspeptic critic found fault with everything on the menu, from the bread basket to the dessert trolley.', isNoun:false },
+  { word:'dystopia', pronunciation:'dis-TOH-pee-uh', ipa:'/dɪsˈtoʊpiə/', pos:'noun', def:'An imagined state or society in which there is great suffering or injustice; the opposite of utopia.', lang:'Greek, from dys- (\'bad, difficult\') + topos (\'place\'), coined as the opposite of utopia (from ou, \'not\' + topos, \'place\').', example:'The novel depicted a chilling dystopia where citizens were constantly monitored and independent thought was considered a crime.', isNoun:true }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Slider
+  const totalA = a.length;
+  const pct = totalA > 1 ? s / (totalA - 1) * 100 : 0;
+  document.getElementById("sliderFill").style.width = pct + "%";
+  const sliderArea = document.getElementById("sliderArea");
+  const areaW = sliderArea.offsetWidth || 200;
+  const pad = 10;
+  const thumbLeft = pad + (pct / 100) * (areaW - pad * 2);
+  const thumb = document.getElementById("sliderThumb");
+  if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
+
+  // Ticks - show ~20 evenly spaced markers
+  const tickCount = Math.min(totalA, 20);
+  let ticksHtml = '';
+  for(let t=0; t<tickCount; t++){
+    const ti = Math.round(t / (tickCount-1) * (totalA-1));
+    const cls = ti===s ? 'active' : (t % 5 === 0 ? 'major' : '');
+    ticksHtml += `<div class="slider-tick ${cls}"></div>`;
+  }
+  document.getElementById("sliderDots").innerHTML = ticksHtml;
+  document.getElementById("sliderCounter").textContent = `${s+1} / ${totalA}`;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Slider drag
+const slArea=document.getElementById("sliderArea");
+const slThumb=document.getElementById("sliderThumb");
+let slDragging=false;
+function sliderFromX(cx){
+  const r=slArea.getBoundingClientRect();
+  const pad=10;
+  const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
+  const a=aw(),idx=Math.round(p*(a.length-1));
+  // Move thumb immediately for smooth feel
+  const thumbLeft=pad+(p)*(r.width-pad*2);
+  slThumb.style.left=thumbLeft+"px";
+  if(idx!==si()){
+    const g=WORDS.findIndex(w=>w.word===a[idx].word);
+    flipped=false; currentIndex=g; render();
+  }
+}
+slArea.addEventListener("touchstart",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(slDragging) sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    // Speak the word after releasing
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+slArea.addEventListener("mousedown",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.clientX); e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(slDragging) sliderFromX(e.clientX);
+});
+document.addEventListener("mouseup",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>
