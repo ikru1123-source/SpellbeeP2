@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: Verdana, Geneva, sans-serif; font-size: 36px; font-weight: 400;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 18px; height: 18px; }
+.slider-area {
+  flex: 1; height: 32px; position: relative;
+  display: flex; align-items: center;
+  touch-action: none; cursor: pointer;
+}
+.slider-track-bg {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
+}
+.slider-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(212,175,55,0.5));
+  transition: width 0.15s ease;
+}
+.slider-dots {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; padding: 0 2px;
+}
+.slider-tick {
+  width: 2px; height: 8px; border-radius: 1px;
+  background: rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.slider-tick.major { height: 12px; background: rgba(255,255,255,0.12); }
+.slider-tick.active { background: var(--gold); height: 14px; width: 3px; border-radius: 1.5px; box-shadow: 0 0 6px rgba(212,175,55,0.4); }
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px solid #1a1528;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  cursor: grab; transition: left 0.12s ease;
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
+.slider-thumb.dragging { transition: none; transform: translate(-50%, -50%) scale(1.15); }
+.slider-counter {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.08em;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1><a href="index.html" style="color:inherit;text-decoration:none;">Spelling Bee</a></h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="slider-area" id="sliderArea">
+      <div class="slider-track-bg">
+        <div class="slider-fill" id="sliderFill"></div>
+      </div>
+      <div class="slider-dots" id="sliderDots"></div>
+      <div class="slider-thumb" id="sliderThumb"></div>
+    </div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'obie', pronunciation:'OH-bee', ipa:'/ˈoʊbi/', pos:'noun', def:'An award given annually for outstanding achievement in off-Broadway and off-off-Broadway theater productions in New York City.', lang:'English, from OB, an abbreviation of Off-Broadway, + -ie, modeled after other award names like Emmy and Tony.', example:'The young playwright was thrilled to receive an Obie for her debut production, a powerful one-woman show staged in a tiny downtown theater.', isNoun:true },
+  { word:'oblast', pronunciation:'OB-last', ipa:'/ˈɒblæst/', pos:'noun', def:'An administrative division or region in Russia and some other countries of the former Soviet Union.', lang:'Russian, from oblast (\'a region, province\'), from Old Church Slavonic oblastĭ (\'power, authority, domain\').', example:'The vast Siberian oblast stretched across a territory larger than most European countries, with sparse settlements separated by endless taiga.', isNoun:true },
+  { word:'oblique', pronunciation:'oh-BLEEK', ipa:'/oʊˈbliːk/', pos:'adjective', def:'Neither parallel nor at a right angle to a specified line; slanting; not straightforward or direct in meaning.', lang:'Latin, from obliquus (\'slanting, sidelong\'), of uncertain further origin.', example:'The oblique reference to the scandal was subtle enough that only those already familiar with the story understood what the speaker meant.', isNoun:false },
+  { word:'obloquy', pronunciation:'OB-luh-kwee', ipa:'/ˈɒbləkwi/', pos:'noun', def:'Strong public criticism or verbal abuse; the state of being held in disgrace or contempt.', lang:'Latin, from obloquium (\'a speaking against\'), from obloqui (\'to speak against\'), from ob- (\'against\') + loqui (\'to speak\').', example:'The disgraced politician endured years of obloquy in the press before quietly retiring from public life altogether.', isNoun:true },
+  { word:'obnebulate', pronunciation:'ob-NEB-yoo-layt', ipa:'/ɒbˈnɛbjʊˌleɪt/', pos:'verb', def:'To cloud over; to obscure or darken; to make dim or indistinct.', lang:'Latin, from obnebulare (\'to cloud over\'), from ob- (\'over\') + nebula (\'a mist, cloud\'), + -ate.', example:'The dense fog obnebulated the harbor so completely that the lighthouse beam was swallowed within a few feet of its source.', isNoun:false },
+  { word:'obsecration', pronunciation:'OB-sih-KRAY-shun', ipa:'/ˌɒbsɪˈkreɪʃən/', pos:'noun', def:'An earnest entreaty or supplication; a fervent plea, especially to a deity or authority.', lang:'Latin, from obsecratio (\'a beseeching\'), from obsecrare (\'to beseech\'), from ob- (\'before\') + sacrare (\'to make sacred\').', example:'The priest\'s obsecration for rain during the drought was so fervent that even the skeptics in the congregation bowed their heads.', isNoun:true },
+  { word:'obsolete', pronunciation:'OB-suh-leet', ipa:'/ˌɒbsəˈliːt/', pos:'adjective', def:'No longer produced or used; out of date; outmoded by newer technology or methods.', lang:'Latin, from obsoletus (\'worn out, gone out of use\'), past participle of obsolescere (\'to fall into disuse\'), from ob- + solere (\'to be accustomed\').', example:'The once-revolutionary floppy disk became obsolete almost overnight when USB flash drives offered a thousand times more storage.', isNoun:false },
+  { word:'obstetrician', pronunciation:'OB-stuh-TRISH-un', ipa:'/ˌɒbstəˈtrɪʃən/', pos:'noun', def:'A physician who specializes in pregnancy, childbirth, and the postpartum period.', lang:'Latin, from obstetrix (\'a midwife\'), from obstare (\'to stand before\'), from ob- (\'before\') + stare (\'to stand\'), + -ician.', example:'The obstetrician reassured the anxious first-time parents that both mother and baby were healthy and the delivery was progressing normally.', isNoun:true },
+  { word:'obstinacy', pronunciation:'OB-stih-nuh-see', ipa:'/ˈɒbstɪnəsi/', pos:'noun', def:'Stubborn refusal to change one\'s opinion or chosen course of action; unyielding persistence.', lang:'Latin, from obstinacia (\'stubbornness\'), from obstinatus (\'resolved, determined\'), from obstinare (\'to persist\'), from ob- + stare (\'to stand\').', example:'His obstinacy in refusing to compromise on any point turned what should have been a simple negotiation into a months-long standoff.', isNoun:true },
+  { word:'obstreperous', pronunciation:'ob-STREP-ur-us', ipa:'/ɒbˈstrɛpərəs/', pos:'adjective', def:'Noisy and difficult to control; unruly and boisterous; resisting authority with loud protest.', lang:'Latin, from obstreperus (\'noisy\'), from obstrepere (\'to make noise against\'), from ob- (\'against\') + strepere (\'to make a noise\').', example:'The obstreperous crowd refused to quiet down, drowning out the speaker with chants and shouts from every corner of the hall.', isNoun:false },
+  { word:'occultation', pronunciation:'OK-ul-TAY-shun', ipa:'/ˌɒkʌlˈteɪʃən/', pos:'noun', def:'The concealment of one celestial body by another passing between it and the observer, such as a planet hiding behind the moon.', lang:'Latin, from occultatio (\'a hiding\'), from occultare (\'to hide, conceal\'), from ob- (\'over\') + a form of celare (\'to hide\').', example:'Astronomers observed the occultation of Saturn by the moon, the ringed planet vanishing behind the lunar disk for nearly an hour.', isNoun:true },
+  { word:'Oceanian', pronunciation:'OH-shee-AN-ee-un', ipa:'/ˌoʊʃiˈæniən/', pos:'adjective', def:'Of or relating to Oceania, the vast region of the Pacific Ocean encompassing Australasia, Melanesia, Micronesia, and Polynesia.', lang:'From Oceania (coined from Greek okeanos, \'the great river surrounding the earth\'), + -ian.', example:'Oceanian cultures share a deep connection to the sea, with navigation, fishing, and ocean mythology woven into every aspect of daily life.', isNoun:false },
+  { word:'octogenarian', pronunciation:'OK-toh-juh-NAIR-ee-un', ipa:'/ˌɒktədʒɪˈnɛəriən/', pos:'noun', def:'A person who is between 80 and 89 years old.', lang:'Latin, from octogenarius (\'containing eighty\'), from octogeni (\'eighty each\'), from octo (\'eight\'), + -arian.', example:'The sprightly octogenarian ran her fifth marathon at age eighty-three, crossing the finish line to a standing ovation from the crowd.', isNoun:true },
+  { word:'octonocular', pronunciation:'OK-toh-NOK-yoo-lur', ipa:'/ˌɒktəˈnɒkjʊlər/', pos:'adjective', def:'Having eight eyes, as in certain spiders and arachnids.', lang:'Latin, from octo (\'eight\') + ocularis (\'of the eyes\'), from oculus (\'an eye\').', example:'Most spiders are octonocular, their eight eyes arranged in patterns that give them nearly 360-degree vision to detect prey and predators.', isNoun:false },
+  { word:'octuplicate', pronunciation:'ok-TOO-plih-kit', ipa:'/ɒkˈtjuːplɪkɪt/', pos:'adjective', def:'Eightfold; consisting of eight corresponding parts or copies; multiplied by eight.', lang:'Latin, from octuplicatus, from octuplus (\'eightfold\'), from octo (\'eight\') + -plus (\'fold\'), + -ate.', example:'The laboratory ran the experiment in octuplicate, performing eight identical trials to ensure the results were statistically reliable.', isNoun:false },
+  { word:'odist', pronunciation:'OH-dist', ipa:'/ˈoʊdɪst/', pos:'noun', def:'A poet who writes odes; a composer of lyric poems celebrating a person, event, or concept.', lang:'Greek, from ode (\'a song, lyric poem\'), from aeidein (\'to sing\'), + -ist.', example:'Keats remains one of the greatest odists in the English language, his odes to autumn and nightingales still studied and admired today.', isNoun:true },
+  { word:'odometer', pronunciation:'oh-DOM-uh-tur', ipa:'/oʊˈdɒmɪtər/', pos:'noun', def:'An instrument for measuring the distance traveled by a vehicle; a device that records mileage.', lang:'Greek, from hodos (\'a road, way\') + metron (\'a measure\').', example:'The used car\'s odometer showed only thirty thousand miles, remarkably low for a vehicle that was already ten years old.', isNoun:true },
+  { word:'Odysseus', pronunciation:'oh-DIS-ee-us', ipa:'/oʊˈdɪsiəs/', pos:'noun', def:'The legendary Greek hero and king of Ithaca, protagonist of Homer\'s Odyssey, famous for his cunning and ten-year journey home from Troy.', lang:'Greek, from Odysseus, possibly meaning \'wrathful\' or \'he who causes pain\', from odyssomai (\'to be angry, to hate\').', example:'Like Odysseus, the weary traveler overcame countless obstacles on her long journey home, arriving transformed by the experience.', isNoun:true },
+  { word:'oecist', pronunciation:'EE-sist', ipa:'/ˈiːsɪst/', pos:'noun', def:'The founder of an ancient Greek colony; the leader who established a new settlement and organized its initial governance.', lang:'Greek, from oikistes (\'a founder, colonizer\'), from oikizein (\'to found, colonize\'), from oikos (\'a house, dwelling\').', example:'The oecist was honored with a hero cult after his death, the colony he founded erecting a shrine to his memory in the central agora.', isNoun:true },
+  { word:'officinal', pronunciation:'oh-FIS-ih-nul', ipa:'/ɒˈfɪsɪnəl/', pos:'adjective', def:'Of a drug or herb, used in medicine; available without prescription; kept in stock by a pharmacist.', lang:'Latin, from officinalis (\'of a workshop or pharmacy\'), from officina (\'a workshop\'), from opus (\'work\') + facere (\'to do\').', example:'The herbalist grew rows of officinal plants — chamomile, lavender, and echinacea — all with recognized medicinal properties.', isNoun:false },
+  { word:'Oglala', pronunciation:'oh-GLAH-lah', ipa:'/oʊˈɡlɑːlə/', pos:'noun', def:'A band of the Lakota Sioux people, historically one of the most prominent groups of the Great Plains, based in present-day South Dakota.', lang:'Lakota, from Oglala (\'to scatter one\'s own\'), a self-designation of this division of the Teton Lakota people.', example:'The Oglala Lakota have called the Black Hills sacred ground for centuries, and their fight to protect the land continues to this day.', isNoun:true },
+  { word:'okapi', pronunciation:'oh-KAH-pee', ipa:'/oʊˈkɑːpi/', pos:'noun', def:'A rare African mammal related to the giraffe, with a dark body and distinctive white-striped legs, found only in the Congo rainforest.', lang:'From a local Central African language, possibly Lese or Mbuba, the name used by indigenous peoples of the Ituri Forest.', example:'The elusive okapi was not discovered by Western scientists until 1901, its striped legs camouflaging it perfectly in the dappled forest light.', isNoun:true },
+  { word:'oleo', pronunciation:'OH-lee-oh', ipa:'/ˈoʊlioʊ/', pos:'noun', def:'Margarine or oleomargarine; a butter substitute made from vegetable oils.', lang:'French, shortened from oléomargarine, from Latin oleum (\'oil\') + margarine (from Greek margaron, \'pearl\', for its pearly color).', example:'During the war, when butter was rationed, families spread oleo on their bread and mixed in yellow dye to make it look more appealing.', isNoun:true },
+  { word:'olfactory', pronunciation:'ol-FAK-tuh-ree', ipa:'/ɒlˈfæktəri/', pos:'adjective', def:'Of or relating to the sense of smell.', lang:'Latin, from olfactorius, from olfactare (\'to smell at\'), from olere (\'to smell\') + facere (\'to make, do\').', example:'The bakery\'s olfactory appeal was irresistible — the warm aroma of fresh bread and cinnamon rolls drew customers in from the street.', isNoun:false },
+  { word:'olingo', pronunciation:'oh-LING-oh', ipa:'/oʊˈlɪŋɡoʊ/', pos:'noun', def:'A small, nocturnal, tree-dwelling mammal of Central and South American rainforests, related to raccoons and kinkajous.', lang:'Spanish, from a South American indigenous language, the local name for this small arboreal carnivore.', example:'The olingo crept along the branch in the moonlight, its large eyes gleaming as it reached for fruit high in the canopy.', isNoun:true },
+  { word:'omnilegent', pronunciation:'om-NIL-uh-junt', ipa:'/ɒmˈnɪlədʒənt/', pos:'adjective', def:'Reading or having read everything; characterized by encyclopedic reading habits.', lang:'Latin, from omnis (\'all\') + legens, present participle of legere (\'to read\').', example:'The omnilegent scholar seemed to have read every book ever printed, citing sources from ancient philosophy to modern neuroscience.', isNoun:false },
+  { word:'omniscient', pronunciation:'om-NISH-unt', ipa:'/ɒmˈnɪʃənt/', pos:'adjective', def:'Knowing everything; having infinite awareness, understanding, and insight.', lang:'Latin, from omnisciens, from omnis (\'all\') + sciens, present participle of scire (\'to know\').', example:'The novel\'s omniscient narrator revealed the innermost thoughts of every character, giving readers access to secrets no single person could know.', isNoun:false },
+  { word:'onus', pronunciation:'OH-nus', ipa:'/ˈoʊnəs/', pos:'noun', def:'Something that is one\'s duty or responsibility; a burden or obligation.', lang:'Latin, from onus (\'a load, burden\').', example:'The onus fell on the prosecution to prove beyond a reasonable doubt that the defendant had committed the crime.', isNoun:true },
+  { word:'oompah', pronunciation:'OOM-pah', ipa:'/ˈuːmpɑː/', pos:'noun', def:'The rhythmic sound of deep brass instruments in a band, especially in traditional German music; a marching beat.', lang:'English, imitative of the sound made by tubas and bass instruments playing a characteristic two-beat pattern: oom (bass note) + pah (chord).', example:'The oompah band in the beer tent played lively polkas, their tubas and trumpets setting the crowd swaying and clapping in time.', isNoun:true },
+  { word:'opacity', pronunciation:'oh-PAS-ih-tee', ipa:'/oʊˈpæsɪti/', pos:'noun', def:'The condition of lacking transparency or translucence; obscurity of meaning; the quality of being difficult to understand.', lang:'Latin, from opacitas (\'shadiness\'), from opacus (\'shady, dark\'), + -ity.', example:'The opacity of the legal language in the contract made it nearly impossible for ordinary consumers to understand their rights.', isNoun:true },
+  { word:'opaleye', pronunciation:'OH-pul-eye', ipa:'/ˈoʊpəlˌaɪ/', pos:'noun', def:'A marine fish of the Pacific coast with distinctive opalescent blue eyes, found in kelp forests from California to Baja.', lang:'English, from opal (from Latin opalus, a precious stone) + eye, describing the fish\'s striking iridescent blue eyes.', example:'The opaleye nibbled on seaweed in the shallow kelp forest, its shimmering blue eyes flashing as it turned in the current.', isNoun:true },
+  { word:'operose', pronunciation:'OP-uh-rohss', ipa:'/ˈɒpəˌroʊs/', pos:'adjective', def:'Involving or displaying a great deal of effort; industrious and painstaking; laborious.', lang:'Latin, from operosus (\'painstaking, busy\'), from opera (\'work, effort\'), from opus (\'a work\').', example:'The operose restoration of the medieval manuscript took three conservators over two years of painstaking, meticulous work.', isNoun:false },
+  { word:'ophthalmologist', pronunciation:'OF-thal-MOL-uh-jist', ipa:'/ˌɒfθælˈmɒlədʒɪst/', pos:'noun', def:'A medical doctor specializing in the diagnosis and treatment of eye diseases and disorders, including surgery.', lang:'Greek, from ophthalmos (\'the eye\') + -ology (\'study of\'), from logos, + -ist.', example:'The ophthalmologist examined the patient\'s retina with a specialized scope and detected early signs of glaucoma that needed treatment.', isNoun:true },
+  { word:'opprobrious', pronunciation:'uh-PROH-bree-us', ipa:'/əˈproʊbriəs/', pos:'adjective', def:'Expressing scorn or harsh criticism; shamefully disgraceful; bringing infamy or reproach.', lang:'Latin, from opprobriosus (\'reproachful\'), from opprobrium (\'a reproach, disgrace\'), from ob- (\'against\') + probrum (\'a shameful act\').', example:'The opprobrious remarks hurled at the referee by the losing team\'s fans resulted in several ejections from the stadium.', isNoun:false },
+  { word:'oppugn', pronunciation:'uh-PYOON', ipa:'/əˈpjuːn/', pos:'verb', def:'To call into question; to dispute or oppose; to attack by argument or criticism.', lang:'Latin, from oppugnare (\'to fight against, attack\'), from ob- (\'against\') + pugnare (\'to fight\').', example:'The defense attorney oppugned every piece of evidence presented by the prosecution, casting doubt on the reliability of each witness.', isNoun:false },
+  { word:'Orion', pronunciation:'oh-RY-un', ipa:'/oʊˈraɪən/', pos:'noun', def:'A prominent constellation on the celestial equator depicting a hunter, featuring the bright stars Betelgeuse and Rigel; in Greek mythology, a giant huntsman.', lang:'Greek, from Orion, a legendary hunter placed among the stars by Zeus; the etymology of the name itself is uncertain.', example:'On clear winter nights, the constellation Orion dominates the southern sky, his belt of three bright stars unmistakable even to beginners.', isNoun:true },
+  { word:'orthogonal', pronunciation:'or-THOG-uh-nul', ipa:'/ɔːrˈθɒɡənəl/', pos:'adjective', def:'Of or involving right angles; at right angles; statistically independent; in computing, able to vary independently.', lang:'Greek, from orthogonios (\'right-angled\'), from orthos (\'straight, right\') + gonia (\'an angle\'), + -al.', example:'The architect designed the building on a strict orthogonal grid, with every wall meeting at precisely ninety degrees.', isNoun:false },
+  { word:'orthros', pronunciation:'OR-thros', ipa:'/ˈɔːrθrɒs/', pos:'noun', def:'The morning service of prayer in the Eastern Orthodox Church, typically celebrated before dawn; the canonical hour of matins.', lang:'Greek, from orthros (\'dawn, early morning\'), the liturgical service marking the transition from darkness to light.', example:'The monks rose before dawn to chant orthros in the candlelit chapel, their voices echoing through the stone walls as the sky slowly brightened.', isNoun:true },
+  { word:'oscitation', pronunciation:'OS-ih-TAY-shun', ipa:'/ˌɒsɪˈteɪʃən/', pos:'noun', def:'The act of yawning; drowsiness; a state of being inattentive or dull.', lang:'Latin, from oscitatio (\'a yawning\'), from oscitare (\'to yawn, gape\'), from os (\'mouth\') + citare (\'to move\').', example:'The professor noticed the widespread oscitation in the lecture hall and decided it was time to liven up the presentation.', isNoun:true },
+  { word:'osculatory', pronunciation:'OS-kyoo-luh-TOR-ee', ipa:'/ˈɒskjʊləˌtɔːri/', pos:'adjective', def:'Of or relating to kissing; of a curve or surface, having contact of a higher order than simple tangency.', lang:'Latin, from osculari (\'to kiss\'), from osculum (\'a little mouth, a kiss\'), diminutive of os (\'mouth\'), + -atory.', example:'The osculatory greeting common in many European cultures — a kiss on each cheek — initially surprised the American visitor.', isNoun:false },
+  { word:'Osloite', pronunciation:'OZ-loh-yt', ipa:'/ˈɒzloʊˌaɪt/', pos:'noun', def:'A native or resident of Oslo, the capital city of Norway.', lang:'From Oslo (from Old Norse Áslo, possibly meaning \'meadow of the gods\') + -ite (\'inhabitant of\').', example:'The proud Osloite jogged along the harbor promenade each morning, passing the angular white marble of the Opera House as the sun rose.', isNoun:true },
+  { word:'osmium', pronunciation:'OZ-mee-um', ipa:'/ˈɒzmiəm/', pos:'noun', def:'A hard, dense, bluish-white metallic element, the densest naturally occurring element, used in specialized alloys and pen tips.', lang:'Greek, from osme (\'a smell\'), because of the pungent odor of its volatile oxide; discovered in 1803 by Smithson Tennant, + -ium.', example:'Osmium is the densest naturally occurring element on Earth, twice as heavy as lead and nearly as hard as diamond.', isNoun:true },
+  { word:'osprey', pronunciation:'OS-pray', ipa:'/ˈɒspreɪ/', pos:'noun', def:'A large bird of prey that feeds on fish, found on every continent except Antarctica, also known as a fish hawk.', lang:'Old French, from ospreit, from Latin ossifraga (\'bone-breaker\'), from os (\'bone\') + frangere (\'to break\'), originally referring to a different bird.', example:'The osprey plunged feet-first into the lake and emerged with a wriggling fish clenched in its powerful talons.', isNoun:true },
+  { word:'ossicle', pronunciation:'OS-ih-kul', ipa:'/ˈɒsɪkəl/', pos:'noun', def:'A small bone, especially one of the three tiny bones in the middle ear that transmit sound vibrations.', lang:'Latin, from ossiculum (\'a small bone\'), diminutive of os (genitive ossis, \'bone\').', example:'The three ossicles of the middle ear — the hammer, anvil, and stirrup — are the smallest bones in the human body.', isNoun:true },
+  { word:'ossuary', pronunciation:'OSH-oo-AIR-ee', ipa:'/ˈɒʃuˌɛri/', pos:'noun', def:'A container or room in which the bones of dead people are placed; a repository for skeletal remains.', lang:'Latin, from ossuarium (\'a bone repository\'), from os (genitive ossis, \'bone\'), + -ary.', example:'The ancient ossuary beneath the church held the carefully arranged bones of thousands of monks who had lived in the monastery over the centuries.', isNoun:true },
+  { word:'ostensibly', pronunciation:'os-TEN-sih-blee', ipa:'/ɒsˈtɛnsɪbli/', pos:'adverb', def:'Apparently or purportedly, but perhaps not actually; as appears or is stated to be true, though not necessarily so.', lang:'Latin, from ostensibilis, from ostendere (\'to show, display\'), from ob- (\'in front of\') + tendere (\'to stretch\'), + -ly.', example:'He was ostensibly there to help with the project, but everyone suspected his real motive was to spy on the competition.', isNoun:false },
+  { word:'osteopath', pronunciation:'OS-tee-oh-path', ipa:'/ˈɒstioʊˌpæθ/', pos:'noun', def:'A practitioner of osteopathy, a system of medicine based on the manipulation of bones and muscles to treat various conditions.', lang:'Greek, from osteon (\'bone\') + pathos (\'suffering, disease\').', example:'The osteopath used gentle spinal manipulation to relieve the chronic back pain that had plagued her patient for years.', isNoun:true },
+  { word:'ottoman', pronunciation:'OT-uh-mun', ipa:'/ˈɒtəmən/', pos:'noun', def:'A low, cushioned seat without a back or arms; a padded footstool; also relating to the Ottoman Empire.', lang:'French, from ottoman (\'Turkish\'), named after Osman I (also called Othman), the founder of the Ottoman dynasty.', example:'She propped her feet up on the leather ottoman and settled into the armchair with a cup of tea and a thick novel.', isNoun:true },
+  { word:'oxalis', pronunciation:'OK-suh-lis', ipa:'/ˈɒksəlɪs/', pos:'noun', def:'A genus of plants with clover-like leaves and small flowers, commonly called wood sorrels, known for their sour taste.', lang:'Greek, from oxalis (\'a sorrel plant\'), from oxys (\'sharp, sour, acid\'), because of the plant\'s tart, acidic leaves.', example:'The delicate purple oxalis growing in the shade of the oak tree folded its clover-shaped leaves each evening as the sun went down.', isNoun:true }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Slider
+  const totalA = a.length;
+  const pct = totalA > 1 ? s / (totalA - 1) * 100 : 0;
+  document.getElementById("sliderFill").style.width = pct + "%";
+  const sliderArea = document.getElementById("sliderArea");
+  const areaW = sliderArea.offsetWidth || 200;
+  const pad = 10;
+  const thumbLeft = pad + (pct / 100) * (areaW - pad * 2);
+  const thumb = document.getElementById("sliderThumb");
+  if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
+
+  // Ticks - show ~20 evenly spaced markers
+  const tickCount = Math.min(totalA, 20);
+  let ticksHtml = '';
+  for(let t=0; t<tickCount; t++){
+    const ti = Math.round(t / (tickCount-1) * (totalA-1));
+    const cls = ti===s ? 'active' : (t % 5 === 0 ? 'major' : '');
+    ticksHtml += `<div class="slider-tick ${cls}"></div>`;
+  }
+  document.getElementById("sliderDots").innerHTML = ticksHtml;
+  document.getElementById("sliderCounter").textContent = `${s+1} / ${totalA}`;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Slider drag
+const slArea=document.getElementById("sliderArea");
+const slThumb=document.getElementById("sliderThumb");
+let slDragging=false;
+function sliderFromX(cx){
+  const r=slArea.getBoundingClientRect();
+  const pad=10;
+  const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
+  const a=aw(),idx=Math.round(p*(a.length-1));
+  // Move thumb immediately for smooth feel
+  const thumbLeft=pad+(p)*(r.width-pad*2);
+  slThumb.style.left=thumbLeft+"px";
+  if(idx!==si()){
+    const g=WORDS.findIndex(w=>w.word===a[idx].word);
+    flipped=false; currentIndex=g; render();
+  }
+}
+slArea.addEventListener("touchstart",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(slDragging) sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    // Speak the word after releasing
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+slArea.addEventListener("mousedown",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.clientX); e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(slDragging) sliderFromX(e.clientX);
+});
+document.addEventListener("mouseup",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>

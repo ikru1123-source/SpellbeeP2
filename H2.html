@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: Verdana, Geneva, sans-serif; font-size: 36px; font-weight: 400;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 18px; height: 18px; }
+.slider-area {
+  flex: 1; height: 32px; position: relative;
+  display: flex; align-items: center;
+  touch-action: none; cursor: pointer;
+}
+.slider-track-bg {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
+}
+.slider-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(212,175,55,0.5));
+  transition: width 0.15s ease;
+}
+.slider-dots {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; padding: 0 2px;
+}
+.slider-tick {
+  width: 2px; height: 8px; border-radius: 1px;
+  background: rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.slider-tick.major { height: 12px; background: rgba(255,255,255,0.12); }
+.slider-tick.active { background: var(--gold); height: 14px; width: 3px; border-radius: 1.5px; box-shadow: 0 0 6px rgba(212,175,55,0.4); }
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px solid #1a1528;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  cursor: grab; transition: left 0.12s ease;
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
+.slider-thumb.dragging { transition: none; transform: translate(-50%, -50%) scale(1.15); }
+.slider-counter {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.08em;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1><a href="index.html" style="color:inherit;text-decoration:none;">Spelling Bee</a></h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="slider-area" id="sliderArea">
+      <div class="slider-track-bg">
+        <div class="slider-fill" id="sliderFill"></div>
+      </div>
+      <div class="slider-dots" id="sliderDots"></div>
+      <div class="slider-thumb" id="sliderThumb"></div>
+    </div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'habeas corpus', pronunciation:'HAY-bee-us KOR-pus', ipa:'/ˌheɪbiəs ˈkɔːrpəs/', pos:'noun', def:'A legal writ requiring a person under arrest to be brought before a judge, ensuring they are not unlawfully detained.', lang:'Latin, literally \'you shall have the body\', from habeas (\'you shall have\') + corpus (\'body\'), commanding the jailer to produce the prisoner.', example:'The defense attorney filed a writ of habeas corpus, demanding that the court review the legality of her client\'s imprisonment.', isNoun:true },
+  { word:'habiliments', pronunciation:'huh-BIL-ih-munts', ipa:'/həˈbɪlɪmənts/', pos:'noun', def:'Clothing or attire, especially the distinctive garb associated with a particular occupation or occasion.', lang:'Old French, from habillement (\'clothing\'), from habiller (\'to dress\'), from habile (\'fit, suitable\'), from Latin habilis.', example:'The actors donned their medieval habiliments backstage, transforming into kings and peasants before the curtain rose.', isNoun:true },
+  { word:'hackneyed', pronunciation:'HAK-need', ipa:'/ˈhæknid/', pos:'adjective', def:'Lacking significance through overuse; unoriginal and trite; repeated too often to be interesting.', lang:'English, from hackney (\'a horse for ordinary riding\'), because such horses were overworked and commonplace, + -ed.', example:'The graduation speaker relied on hackneyed phrases like \'follow your dreams\' instead of offering the students fresh, original advice.', isNoun:false },
+  { word:'hadith', pronunciation:'hah-DEETH', ipa:'/hɑːˈdiːθ/', pos:'noun', def:'A record of the traditions and sayings of the Prophet Muhammad, used as a source of religious law and moral guidance in Islam.', lang:'Arabic, from hadith (\'speech, report, account\'), from hadatha (\'to happen, to tell\').', example:'Islamic scholars study the hadith alongside the Quran to understand the Prophet\'s teachings and apply them to daily life.', isNoun:true },
+  { word:'hagiographer', pronunciation:'HAG-ee-OG-ruh-fur', ipa:'/ˌhæɡiˈɒɡrəfər/', pos:'noun', def:'A writer of the lives of saints; a person who writes in an uncritically admiring way about someone.', lang:'Greek, from hagios (\'holy, sacred\') + graphein (\'to write\'), + -er.', example:'The hagiographer painted such a glowing portrait of the CEO that critics dismissed the biography as little more than flattery.', isNoun:true },
+  { word:'halal', pronunciation:'hah-LAHL', ipa:'/hɑːˈlɑːl/', pos:'adjective', def:'Permissible according to Islamic law, especially relating to the preparation of food; religiously acceptable.', lang:'Arabic, from halal (\'lawful, permitted\'), from halla (\'to be lawful\').', example:'The restaurant proudly displayed its halal certification, assuring Muslim diners that all meat was prepared according to Islamic law.', isNoun:false },
+  { word:'Halifax', pronunciation:'HAL-ih-faks', ipa:'/ˈhælɪˌfæks/', pos:'noun', def:'The capital city of Nova Scotia, Canada, a major Atlantic port with deep maritime history.', lang:'English, named after George Montagu-Dunk, 2nd Earl of Halifax, when the city was founded in 1749.', example:'The harbor at Halifax has served as a gateway to the Atlantic for centuries, from colonial times through both world wars.', isNoun:true },
+  { word:'hallucinate', pronunciation:'huh-LOO-sih-nayt', ipa:'/həˈluːsɪˌneɪt/', pos:'verb', def:'To experience a perception of something that is not present; to see, hear, or sense things that exist only in the mind.', lang:'Latin, from alucinatus, past participle of alucinari (\'to wander in mind, dream\'), of uncertain origin.', example:'The extreme fever caused the patient to hallucinate, seeing vivid images of people and places that existed only in his mind.', isNoun:false },
+  { word:'halocline', pronunciation:'HAL-oh-klyn', ipa:'/ˈhæloʊˌklaɪn/', pos:'noun', def:'A strong vertical gradient in salinity in the ocean, separating layers of water with different salt concentrations.', lang:'Greek, from hals (\'salt\') + klinein (\'to lean, slope\'), describing the zone where salinity changes rapidly with depth.', example:'Divers swimming through the halocline experienced a strange visual shimmer as the freshwater layer met the denser saltwater below.', isNoun:true },
+  { word:'haplography', pronunciation:'hap-LOG-ruh-fee', ipa:'/hæpˈlɒɡrəfi/', pos:'noun', def:'The accidental omission of a repeated letter or syllable when writing or copying a text.', lang:'Greek, from haplos (\'single, simple\') + graphia (\'writing\'), from graphein (\'to write\').', example:'The scribal error was a case of haplography, where the copyist accidentally wrote one letter where two identical ones should have appeared.', isNoun:true },
+  { word:'harangue', pronunciation:'huh-RANG', ipa:'/həˈræŋ/', pos:'noun', def:'A lengthy and aggressive speech; a forceful or angry lecture directed at someone.', lang:'Old French, from harangue (\'a public address\'), from Italian aringa (\'a public speech\'), possibly from Germanic hring (\'a ring of listeners\').', example:'The coach launched into a fifteen-minute harangue about the team\'s lack of effort, his voice echoing through the silent locker room.', isNoun:true },
+  { word:'harbinger', pronunciation:'HAR-bin-jur', ipa:'/ˈhɑːrbɪndʒər/', pos:'noun', def:'A person or thing that announces or signals the approach of something; a forerunner or herald.', lang:'Old French, from herbergeor (\'one who provides lodging\'), from herberge (\'a lodging\'), because harbingers rode ahead to arrange accommodation.', example:'The first robin hopping across the lawn was a welcome harbinger of spring after the long, gray winter.', isNoun:true },
+  { word:'harrier', pronunciation:'HAIR-ee-ur', ipa:'/ˈhæriər/', pos:'noun', def:'A hound used for hunting hares; a slender-bodied bird of prey with long wings and tail; a cross-country runner.', lang:'English, from hare (from Old English hara) + -ier, or from harry (\'to harass\'), + -ier.', example:'The northern harrier glided low over the marsh, its keen eyes scanning the tall grass for mice and voles.', isNoun:true },
+  { word:'Hathor', pronunciation:'HATH-or', ipa:'/ˈhæθɔːr/', pos:'noun', def:'An ancient Egyptian goddess of love, beauty, music, and joy, typically depicted with cow horns encircling a sun disk.', lang:'Egyptian, from Hwt-Hr (\'House of Horus\'), meaning the sky in which the sun god Horus resides.', example:'The temple of Hathor at Dendera features magnificent columns carved with the goddess\'s serene, cow-eared face.', isNoun:true },
+  { word:'hauberk', pronunciation:'HAW-burk', ipa:'/ˈhɔːbɜːrk/', pos:'noun', def:'A full-length coat of chainmail armor, typically reaching to the knees, worn by medieval knights and soldiers.', lang:'Old French, from hauberc, from Germanic halsberg (\'neck protection\'), from hals (\'neck\') + berg (\'protection\').', example:'The knight pulled the heavy hauberk of interlocking iron rings over his head, its thousands of links clinking softly.', isNoun:true },
+  { word:'hauteur', pronunciation:'hoh-TUR', ipa:'/hoʊˈtɜːr/', pos:'noun', def:'Haughtiness of manner; disdainful pride; an attitude of superiority.', lang:'French, from haut (\'high\'), from Latin altus (\'high, deep\').', example:'The aristocrat regarded the common folk with such hauteur that even a simple greeting felt like a royal condescension.', isNoun:true },
+  { word:'Hawaiian', pronunciation:'hah-WY-un', ipa:'/həˈwaɪən/', pos:'adjective', def:'Of or relating to Hawaii, its people, or their language and culture.', lang:'Hawaiian, from Hawaiʻi, possibly from Proto-Polynesian Sawaiki (\'homeland\'), the legendary ancestral homeland of Polynesian peoples.', example:'The Hawaiian ukulele music drifted across the beach, its gentle melodies blending perfectly with the sound of breaking waves.', isNoun:false },
+  { word:'hawok', pronunciation:'HAW-ok', ipa:'/ˈhɔːɒk/', pos:'noun', def:'A dialectal or archaic variant related to havoc; destruction, devastation, or chaos.', lang:'English, variant of havoc, from Anglo-French havok (\'plundering\'), from Old French havot (\'pillage\').', example:'The invading forces cried hawok as they swept through the village, leaving a trail of destruction in their path.', isNoun:true },
+  { word:'hearse', pronunciation:'HURSE', ipa:'/hɜːrs/', pos:'noun', def:'A vehicle for carrying a coffin to a funeral; historically, a framework over a coffin for holding candles.', lang:'Old French, from herce (\'a harrow, frame for candles\'), from Latin hirpex (\'a large rake\'), because the candle frame resembled a harrow.', example:'The black hearse moved slowly through the streets, followed by a long procession of mourners walking in solemn silence.', isNoun:true },
+  { word:'hedonism', pronunciation:'HEE-dun-iz-um', ipa:'/ˈhiːdənˌɪzəm/', pos:'noun', def:'The pursuit of pleasure as the highest good; the ethical theory that pleasure is the chief good in life.', lang:'Greek, from hedone (\'pleasure, delight\'), from hedys (\'sweet, pleasant\'), + -ism.', example:'The philosopher argued that hedonism, taken to its extreme, ultimately leads to emptiness rather than lasting happiness.', isNoun:true },
+  { word:'hegemony', pronunciation:'hih-JEM-uh-nee', ipa:'/hɪˈdʒɛməni/', pos:'noun', def:'Leadership or dominance, especially by one country or social group over others.', lang:'Greek, from hegemonia (\'leadership, rule\'), from hegemon (\'a leader\'), from hegeisthai (\'to lead\').', example:'For decades, the superpower maintained its hegemony over the region through a combination of military strength and economic influence.', isNoun:true },
+  { word:'Heian', pronunciation:'HAY-ahn', ipa:'/ˈheɪɑːn/', pos:'adjective', def:'Of or relating to the Heian period in Japanese history, from 794 to 1185, known for its flourishing arts and court culture.', lang:'Japanese, from Heian-kyō (\'Capital of Peace\'), the original name for Kyoto, from hei (\'peace\') + an (\'tranquility\').', example:'The Heian era produced some of Japan\'s greatest literary masterpieces, including The Tale of Genji by Murasaki Shikibu.', isNoun:false },
+  { word:'heleoplankton', pronunciation:'HEE-lee-oh-PLANK-tun', ipa:'/ˌhiːlioʊˈplæŋktən/', pos:'noun', def:'Plankton living in marshy or pond habitats; organisms that float freely in the still waters of marshes and bogs.', lang:'Greek, from helos (\'a marsh\') + plankton (\'wandering, drifting\'), from plazesthai (\'to wander\').', example:'The biologist collected samples of heleoplankton from the swamp, examining the tiny organisms thriving in the murky water.', isNoun:true },
+  { word:'heliacal', pronunciation:'hih-LY-uh-kul', ipa:'/hɪˈlaɪəkəl/', pos:'adjective', def:'Relating to or near the sun; of a star, rising just before or setting just after the sun.', lang:'Greek, from heliakos (\'of the sun\'), from helios (\'the sun\'), + -al.', example:'The heliacal rising of Sirius in ancient Egypt signaled the annual flooding of the Nile and the beginning of the new year.', isNoun:false },
+  { word:'hennery', pronunciation:'HEN-ur-ee', ipa:'/ˈhɛnəri/', pos:'noun', def:'A farm or enclosure for keeping poultry; a place where hens are bred and raised.', lang:'English, from hen (from Old English henn, of Germanic origin) + -ery (\'a place for\').', example:'The farmer expanded her hennery to house two hundred chickens, each one producing fresh eggs for the local market.', isNoun:true },
+  { word:'heptad', pronunciation:'HEP-tad', ipa:'/ˈhɛptæd/', pos:'noun', def:'A group or set of seven; the number seven.', lang:'Greek, from heptas (genitive heptados, \'a group of seven\'), from hepta (\'seven\').', example:'The ancient text described a heptad of celestial bodies visible to the naked eye, each one governing a day of the week.', isNoun:true },
+  { word:'hermeneutics', pronunciation:'HUR-muh-NOO-tiks', ipa:'/ˌhɜːrməˈnjuːtɪks/', pos:'noun', def:'The branch of knowledge dealing with interpretation, especially of the Bible or literary texts; the theory of understanding.', lang:'Greek, from hermeneutikos (\'of or for interpreting\'), from hermeneuein (\'to interpret\'), from Hermes, the messenger god.', example:'The theology students studied hermeneutics to develop rigorous methods for interpreting ancient biblical texts in their original context.', isNoun:true },
+  { word:'hermetically', pronunciation:'hur-MET-ih-klee', ipa:'/hɜːrˈmɛtɪkli/', pos:'adverb', def:'In a way that is completely airtight; so as to be protected from outside influences.', lang:'Latin, from hermeticus (\'of Hermes Trismegistus\'), the legendary founder of alchemy who supposedly invented a way to seal vessels airtight.', example:'The ancient tomb was hermetically sealed for three thousand years, preserving its contents in remarkably pristine condition.', isNoun:false },
+  { word:'heterochromia', pronunciation:'HET-ur-oh-KROH-mee-uh', ipa:'/ˌhɛtəroʊˈkroʊmiə/', pos:'noun', def:'A condition in which the irises of the eyes are different colors, or one iris contains more than one color.', lang:'Greek, from heteros (\'other, different\') + khroma (\'color\'), + -ia.', example:'The cat\'s striking heterochromia gave it one brilliant blue eye and one vivid green eye, making it instantly recognizable.', isNoun:true },
+  { word:'heterophony', pronunciation:'HET-ur-OF-uh-nee', ipa:'/ˌhɛtəˈrɒfəni/', pos:'noun', def:'The simultaneous performance of slightly different versions of the same melody by two or more musicians.', lang:'Greek, from heteros (\'other, different\') + phone (\'voice, sound\'), + -y.', example:'The traditional Japanese ensemble created a rich heterophony, each instrument playing the same tune with subtle individual variations.', isNoun:true },
+  { word:'hetman', pronunciation:'HET-mun', ipa:'/ˈhɛtmən/', pos:'noun', def:'A Cossack military commander; the supreme leader of Ukrainian or Polish Cossack communities.', lang:'Polish, from hetman (\'a commander\'), from German Hauptmann (\'captain\'), from Haupt (\'head\') + Mann (\'man\').', example:'The legendary hetman led his Cossack cavalry in a thunderous charge across the steppe, scattering the invading army.', isNoun:true },
+  { word:'heuristic', pronunciation:'hyoo-RIS-tik', ipa:'/hjuːˈrɪstɪk/', pos:'adjective', def:'Enabling a person to discover or learn something for themselves; using practical experience-based methods to solve problems.', lang:'Greek, from heuriskein (\'to find, discover\'), the same root as eureka (\'I have found it\'), + -istic.', example:'The teacher favored a heuristic approach, guiding students to discover answers through experimentation rather than rote memorization.', isNoun:false },
+  { word:'hibernaculum', pronunciation:'HY-bur-NAK-yoo-lum', ipa:'/ˌhaɪbərˈnækjʊləm/', pos:'noun', def:'A shelter occupied during the winter by a dormant animal; a protective structure for overwintering organisms.', lang:'Latin, from hibernaculum (\'winter quarters\'), from hibernare (\'to spend the winter\'), from hiems (\'winter\').', example:'Thousands of bats crowded into the limestone cave hibernaculum, hanging in dense clusters to conserve warmth through the cold months.', isNoun:true },
+  { word:'hierurgical', pronunciation:'HY-ur-UR-jih-kul', ipa:'/ˌhaɪərˈɜːrdʒɪkəl/', pos:'adjective', def:'Of or relating to sacred rites or ceremonies; pertaining to priestly functions or religious rituals.', lang:'Greek, from hierourgia (\'holy work, sacred rite\'), from hieros (\'holy\') + ergon (\'work\'), + -ical.', example:'The hierurgical chanting of the monks echoed through the stone chapel as they performed the ancient consecration ceremony.', isNoun:false },
+  { word:'hinoki', pronunciation:'hih-NOH-kee', ipa:'/hɪˈnoʊki/', pos:'noun', def:'A Japanese cypress tree prized for its fragrant, rot-resistant wood, traditionally used in temple and shrine construction.', lang:'Japanese, from hinoki (\'Japanese cypress\'), a highly valued timber tree native to central Japan.', example:'The ancient shrine was built entirely of hinoki wood, its warm, lemony fragrance still perceptible centuries after construction.', isNoun:true },
+  { word:'hipsterism', pronunciation:'HIP-stur-iz-um', ipa:'/ˈhɪpstərˌɪzəm/', pos:'noun', def:'The culture, attitudes, or lifestyle associated with hipsters; a tendency toward countercultural fashion and tastes.', lang:'English, from hipster (from hip, \'aware, in the know\', of uncertain origin) + -ism.', example:'The neighborhood\'s rapid hipsterism transformed abandoned warehouses into craft breweries, vintage shops, and artisanal coffee roasters.', isNoun:true },
+  { word:'Hiroshima', pronunciation:'HEER-oh-SHEE-muh', ipa:'/ˌhɪroʊˈʃiːmə/', pos:'noun', def:'A city in western Japan, devastated by the first atomic bomb used in warfare on August 6, 1945.', lang:'Japanese, from hiro (\'wide, broad\') + shima (\'island\'), referring to the delta islands on which the city was built.', example:'The Hiroshima Peace Memorial stands as a solemn reminder of the devastating power of nuclear weapons and the importance of peace.', isNoun:true },
+  { word:'histrionics', pronunciation:'HIS-tree-ON-iks', ipa:'/ˌhɪstriˈɒnɪks/', pos:'noun', def:'Exaggerated dramatic behavior designed to attract attention; theatrical or overblown emotional display.', lang:'Latin, from histrionicus (\'of actors\'), from histrio (\'an actor\'), + -ics.', example:'Her histrionics over the minor scheduling change — complete with tears and dramatic sighs — exhausted everyone in the office.', isNoun:true },
+  { word:'Hitchcockian', pronunciation:'HICH-kok-ee-un', ipa:'/ˌhɪtʃˈkɒkiən/', pos:'adjective', def:'Resembling or reminiscent of the suspenseful filmmaking style of director Alfred Hitchcock.', lang:'Named after Sir Alfred Hitchcock (1899-1980), the British film director known as the \'Master of Suspense\', + -ian.', example:'The film\'s Hitchcockian tension built slowly through lingering camera shots and an eerie silence that kept the audience on edge.', isNoun:false },
+  { word:'hoity-toity', pronunciation:'HOY-tee-TOY-tee', ipa:'/ˌhɔɪtiˈtɔɪti/', pos:'adjective', def:'Snobbish and haughty; pretentiously self-important; behaving as if superior to others.', lang:'English, a rhyming compound, possibly from hoit (\'to romp, behave wildly\'), of uncertain origin.', example:'The hoity-toity socialite refused to eat at any restaurant without a Michelin star, turning her nose up at everything else.', isNoun:false },
+  { word:'holmium', pronunciation:'HOHL-mee-um', ipa:'/ˈhoʊlmiəm/', pos:'noun', def:'A soft, silvery metallic element of the lanthanide series, with the highest magnetic strength of any element.', lang:'Named after Holmia, the Latin name for Stockholm, Sweden, where it was discovered in 1878, + -ium.', example:'Holmium is used in powerful magnets and in medical lasers for eye and kidney surgeries due to its unique magnetic properties.', isNoun:true },
+  { word:'Holocaust', pronunciation:'HOL-uh-kost', ipa:'/ˈhɒləˌkɔːst/', pos:'noun', def:'The systematic, state-sponsored genocide of six million Jews by the Nazi regime during World War II; destruction on a mass scale.', lang:'Greek, from holokauston (\'a wholly burnt offering\'), from holos (\'whole\') + kaustos (\'burnt\'), from kaiein (\'to burn\').', example:'The Holocaust memorial honors the millions of victims whose lives were destroyed by one of the greatest atrocities in human history.', isNoun:true },
+  { word:'hologram', pronunciation:'HOL-uh-gram', ipa:'/ˈhɒləˌɡræm/', pos:'noun', def:'A three-dimensional image formed by the interference of light beams; a photographic recording that appears three-dimensional.', lang:'Greek, from holos (\'whole\') + gramma (\'something written or drawn\'), from graphein (\'to write\').', example:'The hologram on the credit card shimmered with rainbow colors when tilted, serving as a security feature against counterfeiting.', isNoun:true },
+  { word:'holotype', pronunciation:'HOL-oh-typ', ipa:'/ˈhɒloʊˌtaɪp/', pos:'noun', def:'A single physical specimen designated as the definitive example used to formally describe and name a new species.', lang:'Greek, from holos (\'whole, entire\') + typos (\'a blow, impression, model\').', example:'The holotype of the newly discovered beetle species was carefully preserved in the museum\'s entomology collection for future study.', isNoun:true },
+  { word:'Holstein', pronunciation:'HOHL-styn', ipa:'/ˈhoʊlstaɪn/', pos:'noun', def:'A breed of large black-and-white dairy cattle originally from the Netherlands and northern Germany, the world\'s highest-producing dairy animal.', lang:'Named after Holstein, a region in northern Germany (now Schleswig-Holstein) where the breed was developed.', example:'The Holstein cow in the pasture produced over nine gallons of milk daily, her distinctive black-and-white patches visible from the road.', isNoun:true },
+  { word:'homeostasis', pronunciation:'HOH-mee-oh-STAY-sis', ipa:'/ˌhoʊmioʊˈsteɪsɪs/', pos:'noun', def:'The tendency of a biological system to maintain stable internal conditions regardless of outside disturbances.', lang:'Greek, from homoios (\'similar, like\') + stasis (\'a standing still\'), meaning \'staying the same\'.', example:'The human body maintains homeostasis by regulating temperature, blood pressure, and pH levels within narrow, life-sustaining ranges.', isNoun:true },
+  { word:'homester', pronunciation:'HOHM-stur', ipa:'/ˈhoʊmstər/', pos:'noun', def:'A person who prefers staying at home rather than going out; a homebody.', lang:'English, from home (from Old English ham, \'a dwelling, estate\') + -ster (\'one who does\').', example:'The self-described homester was perfectly content spending the weekend on the couch with a good book and a pot of tea.', isNoun:true },
+  { word:'homiletics', pronunciation:'HOM-ih-LET-iks', ipa:'/ˌhɒmɪˈlɛtɪks/', pos:'noun', def:'The art of preaching or writing sermons; the study and practice of composing and delivering religious addresses.', lang:'Greek, from homiletikos (\'of conversation\'), from homilein (\'to converse\'), from homilos (\'a crowd, assembly\'), + -ics.', example:'The seminary offered a rigorous course in homiletics, teaching future ministers how to craft and deliver compelling sermons.', isNoun:true },
+  { word:'Honolulu', pronunciation:'HON-uh-LOO-loo', ipa:'/ˌhɒnəˈluːluː/', pos:'noun', def:'The capital and largest city of Hawaii, located on the island of Oahu, known for its beaches and Pacific setting.', lang:'Hawaiian, from Honolulu, meaning \'sheltered harbor\' or \'calm port\', from hono (\'bay, harbor\') + lulu (\'calm, shelter\').', example:'The skyline of Honolulu rose against the backdrop of Diamond Head crater, palm trees swaying along Waikiki Beach.', isNoun:true },
+  { word:'humectant', pronunciation:'hyoo-MEK-tunt', ipa:'/hjuːˈmɛktənt/', pos:'noun', def:'A substance used to keep things moist; an ingredient in cosmetics and food that retains moisture.', lang:'Latin, from humectans, present participle of humectare (\'to moisten\'), from humere (\'to be moist\').', example:'Glycerin is a common humectant in skincare products, drawing moisture from the air to keep the skin hydrated throughout the day.', isNoun:true },
+  { word:'humerus', pronunciation:'HYOO-mur-us', ipa:'/ˈhjuːmərəs/', pos:'noun', def:'The bone of the upper arm, extending from the shoulder to the elbow.', lang:'Latin, from humerus (\'the upper arm, shoulder\'), related to Greek omos (\'shoulder\').', example:'The X-ray confirmed a clean fracture of the humerus just above the elbow, which would require a cast for six weeks.', isNoun:true },
+  { word:'humidistat', pronunciation:'hyoo-MID-ih-stat', ipa:'/hjuːˈmɪdɪˌstæt/', pos:'noun', def:'A device that measures and controls the humidity level in an enclosed space, similar to a thermostat for temperature.', lang:'English, from humid (from Latin humidus, \'moist\') + -stat (from Greek statos, \'standing, stationary\').', example:'The museum\'s humidistat maintained the gallery at exactly 50 percent relative humidity to protect the delicate oil paintings.', isNoun:true },
+  { word:'hummock', pronunciation:'HUM-uk', ipa:'/ˈhʌmək/', pos:'noun', def:'A small mound or knoll; a raised area of ground rising above a marsh or swamp; a ridge of ice.', lang:'English, of uncertain origin, possibly from hump + -ock (diminutive suffix), first recorded in the 16th century.', example:'The hikers rested on a grassy hummock that rose just above the boggy marshland, enjoying a dry seat amid the wetlands.', isNoun:true },
+  { word:'Hungary', pronunciation:'HUNG-guh-ree', ipa:'/ˈhʌŋɡəri/', pos:'noun', def:'A landlocked country in Central Europe, known for its thermal baths, rich history, and the Danube River flowing through Budapest.', lang:'Latin, from Hungaria, from Turkic Onogur (\'ten arrows\' or \'ten tribes\'), referring to a confederation of tribal groups.', example:'Hungary\'s capital Budapest straddles the Danube River, with medieval Buda on one bank and vibrant Pest on the other.', isNoun:true },
+  { word:'hydriotaphia', pronunciation:'HY-dree-oh-TAF-ee-uh', ipa:'/ˌhaɪdrioʊˈtæfiə/', pos:'noun', def:'Burial in urns; the practice of disposing of the dead by placing cremated remains in urns; Sir Thomas Browne\'s 1658 essay on the topic.', lang:'Greek, from hydria (\'a water urn\') + taphos (\'a burial, tomb\'), + -ia.', example:'Sir Thomas Browne\'s Hydriotaphia is a meditation on mortality and burial customs, inspired by ancient urns discovered in Norfolk.', isNoun:true },
+  { word:'hydrocortisone', pronunciation:'HY-droh-KOR-tih-zohn', ipa:'/ˌhaɪdroʊˈkɔːrtɪˌzoʊn/', pos:'noun', def:'A steroid hormone produced by the adrenal gland; a synthetic form used as an anti-inflammatory medication.', lang:'English, from hydro- (from Greek hydor, \'water\') + cortisone (from cortex, \'bark, outer layer\', referring to the adrenal cortex).', example:'The dermatologist prescribed a hydrocortisone cream to reduce the itching and inflammation caused by the allergic skin reaction.', isNoun:true },
+  { word:'hydrophobia', pronunciation:'HY-droh-FOH-bee-uh', ipa:'/ˌhaɪdrəˈfoʊbiə/', pos:'noun', def:'An extreme or irrational fear of water; a symptom of rabies in which the sufferer has difficulty swallowing.', lang:'Greek, from hydor (\'water\') + phobos (\'fear\'), + -ia.', example:'Hydrophobia is one of the most recognizable symptoms of rabies, causing the infected animal to recoil violently from water.', isNoun:true },
+  { word:'hyperbole', pronunciation:'hy-PUR-buh-lee', ipa:'/haɪˈpɜːrbəli/', pos:'noun', def:'Exaggerated statements or claims not meant to be taken literally; deliberate overstatement for emphasis or effect.', lang:'Greek, from hyperbole (\'an excess, exaggeration\'), from hyperballein (\'to throw beyond\'), from hyper (\'beyond\') + ballein (\'to throw\').', example:'Saying she had a million things to do was pure hyperbole, but it conveyed just how overwhelmed she felt that morning.', isNoun:true },
+  { word:'hypochondria', pronunciation:'HY-poh-KON-dree-uh', ipa:'/ˌhaɪpəˈkɒndriə/', pos:'noun', def:'Abnormal anxiety about one\'s health, especially with an unwarranted belief that one is suffering from a serious disease.', lang:'Greek, from hypokhondria (\'the soft parts below the cartilage of the breastbone\'), from hypo (\'under\') + khondros (\'cartilage\'), where melancholy was thought to originate.', example:'His hypochondria led him to visit the doctor for every minor ache, convinced that each headache was a sign of something serious.', isNoun:true },
+  { word:'hypogeous', pronunciation:'hy-POJ-ee-us', ipa:'/haɪˈpɒdʒiəs/', pos:'adjective', def:'Growing or occurring underground; of a plant or fungus, developing below the surface of the soil.', lang:'Greek, from hypogeios (\'underground\'), from hypo (\'under\') + ge (\'earth\'), + -ous.', example:'Truffles are hypogeous fungi that grow entirely underground, which is why specially trained dogs are needed to sniff them out.', isNoun:false },
+  { word:'hypotenuse', pronunciation:'hy-POT-uh-noose', ipa:'/haɪˈpɒtəˌnjuːs/', pos:'noun', def:'The longest side of a right-angled triangle, opposite the right angle.', lang:'Greek, from hypoteinousa (grammē) (\'the (line) stretching under\'), from hypo (\'under\') + teinein (\'to stretch\').', example:'Using the Pythagorean theorem, the students calculated the hypotenuse of the triangle by squaring the other two sides and finding the root.', isNoun:true },
+  { word:'hyrax', pronunciation:'HY-raks', ipa:'/ˈhaɪræks/', pos:'noun', def:'A small, thickset herbivorous mammal native to Africa and the Middle East, surprisingly the closest living relative of the elephant.', lang:'Greek, from hyrax (\'a shrew mouse\'), applied to this animal because of its small size, despite its distant relation to elephants.', example:'The furry hyrax sunned itself on a rocky ledge in the African highlands, looking like an oversized guinea pig with tiny rounded ears.', isNoun:true }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Slider
+  const totalA = a.length;
+  const pct = totalA > 1 ? s / (totalA - 1) * 100 : 0;
+  document.getElementById("sliderFill").style.width = pct + "%";
+  const sliderArea = document.getElementById("sliderArea");
+  const areaW = sliderArea.offsetWidth || 200;
+  const pad = 10;
+  const thumbLeft = pad + (pct / 100) * (areaW - pad * 2);
+  const thumb = document.getElementById("sliderThumb");
+  if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
+
+  // Ticks - show ~20 evenly spaced markers
+  const tickCount = Math.min(totalA, 20);
+  let ticksHtml = '';
+  for(let t=0; t<tickCount; t++){
+    const ti = Math.round(t / (tickCount-1) * (totalA-1));
+    const cls = ti===s ? 'active' : (t % 5 === 0 ? 'major' : '');
+    ticksHtml += `<div class="slider-tick ${cls}"></div>`;
+  }
+  document.getElementById("sliderDots").innerHTML = ticksHtml;
+  document.getElementById("sliderCounter").textContent = `${s+1} / ${totalA}`;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Slider drag
+const slArea=document.getElementById("sliderArea");
+const slThumb=document.getElementById("sliderThumb");
+let slDragging=false;
+function sliderFromX(cx){
+  const r=slArea.getBoundingClientRect();
+  const pad=10;
+  const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
+  const a=aw(),idx=Math.round(p*(a.length-1));
+  // Move thumb immediately for smooth feel
+  const thumbLeft=pad+(p)*(r.width-pad*2);
+  slThumb.style.left=thumbLeft+"px";
+  if(idx!==si()){
+    const g=WORDS.findIndex(w=>w.word===a[idx].word);
+    flipped=false; currentIndex=g; render();
+  }
+}
+slArea.addEventListener("touchstart",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(slDragging) sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    // Speak the word after releasing
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+slArea.addEventListener("mousedown",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.clientX); e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(slDragging) sliderFromX(e.clientX);
+});
+document.addEventListener("mouseup",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>

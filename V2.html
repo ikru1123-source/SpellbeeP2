@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: Verdana, Geneva, sans-serif; font-size: 36px; font-weight: 400;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 18px; height: 18px; }
+.slider-area {
+  flex: 1; height: 32px; position: relative;
+  display: flex; align-items: center;
+  touch-action: none; cursor: pointer;
+}
+.slider-track-bg {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
+}
+.slider-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(212,175,55,0.5));
+  transition: width 0.15s ease;
+}
+.slider-dots {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; padding: 0 2px;
+}
+.slider-tick {
+  width: 2px; height: 8px; border-radius: 1px;
+  background: rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.slider-tick.major { height: 12px; background: rgba(255,255,255,0.12); }
+.slider-tick.active { background: var(--gold); height: 14px; width: 3px; border-radius: 1.5px; box-shadow: 0 0 6px rgba(212,175,55,0.4); }
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px solid #1a1528;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  cursor: grab; transition: left 0.12s ease;
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
+.slider-thumb.dragging { transition: none; transform: translate(-50%, -50%) scale(1.15); }
+.slider-counter {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.08em;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1><a href="index.html" style="color:inherit;text-decoration:none;">Spelling Bee</a></h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="slider-area" id="sliderArea">
+      <div class="slider-track-bg">
+        <div class="slider-fill" id="sliderFill"></div>
+      </div>
+      <div class="slider-dots" id="sliderDots"></div>
+      <div class="slider-thumb" id="sliderThumb"></div>
+    </div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'vaccination', pronunciation:'VAK-sih-NAY-shun', ipa:'/ˌvæksɪˈneɪʃən/', pos:'noun', def:'The administration of a vaccine to stimulate the immune system to develop protection against a specific infectious disease.', lang:'Latin, from vacca (\'a cow\'), coined by Edward Jenner in 1796 because his first vaccine used cowpox to prevent smallpox, + -ation.', example:'The widespread vaccination campaign eliminated smallpox entirely, one of the greatest achievements in the history of public health.', isNoun:true },
+  { word:'vagabonds', pronunciation:'VAG-uh-bondz', ipa:'/ˈvæɡəˌbɒndz/', pos:'noun', def:'People who wander from place to place without a fixed home; drifters and itinerant travelers.', lang:'Old French, from vagabond (\'a wanderer\'), from Latin vagabundus (\'strolling about\'), from vagari (\'to wander\'), from vagus (\'wandering\').', example:'The vagabonds traveled the countryside with nothing but bedrolls and a few coins, sleeping under the stars wherever night found them.', isNoun:true },
+  { word:'vague', pronunciation:'VAYG', ipa:'/veɪɡ/', pos:'adjective', def:'Of uncertain, indefinite, or unclear character or meaning; not clearly expressed or defined.', lang:'French, from vague (\'empty, uncertain\'), from Latin vagus (\'wandering, uncertain\').', example:'His directions were so vague that we drove in circles for an hour before finally stumbling upon the restaurant by accident.', isNoun:false },
+  { word:'vainglorious', pronunciation:'VAYN-GLOR-ee-us', ipa:'/ˌveɪnˈɡlɔːriəs/', pos:'adjective', def:'Excessively proud of oneself or one\'s achievements; showing excessive vanity and boastfulness.', lang:'Latin, from vana gloria (\'empty glory\'), from vanus (\'empty, vain\') + gloria (\'glory, fame\'), + -ous.', example:'The vainglorious general erected statues of himself throughout the conquered city, each one larger and more absurd than the last.', isNoun:false },
+  { word:'valerian', pronunciation:'vuh-LEER-ee-un', ipa:'/vəˈlɪəriən/', pos:'noun', def:'A flowering plant whose root is used as an herbal remedy for insomnia and anxiety; known for its strong, pungent odor.', lang:'Latin, from valeriana, possibly from Valeria, a Roman province, or from valere (\'to be strong, healthy\').', example:'She brewed valerian root tea before bed each night, finding that the pungent herb helped her fall asleep more easily.', isNoun:true },
+  { word:'valiant', pronunciation:'VAL-yunt', ipa:'/ˈvæljənt/', pos:'adjective', def:'Possessing or showing courage and determination; brave and heroic.', lang:'Old French, from vaillant (\'brave, worthy\'), present participle of valoir (\'to be worth\'), from Latin valere (\'to be strong\').', example:'The valiant firefighters charged into the burning building without hesitation, rescuing three trapped families before the roof collapsed.', isNoun:false },
+  { word:'vallecula', pronunciation:'vuh-LEK-yoo-luh', ipa:'/vəˈlɛkjʊlə/', pos:'noun', def:'A shallow groove or depression on the surface of an organ or structure, especially one of the spaces between the base of the tongue and the epiglottis.', lang:'Latin, from vallecula (\'a small valley\'), diminutive of vallis (\'a valley\').', example:'The doctor examined the vallecula at the base of the tongue, checking for any signs of inflammation or obstruction.', isNoun:true },
+  { word:'valuator', pronunciation:'VAL-yoo-AY-tur', ipa:'/ˈvæljuˌeɪtər/', pos:'noun', def:'A person who estimates the value or worth of something; an appraiser.', lang:'English, from value (from Old French valoir, \'to be worth\', from Latin valere) + -ator (\'one who does\').', example:'The insurance company sent a valuator to assess the damage to the property before approving the homeowner\'s claim.', isNoun:true },
+  { word:'vandalize', pronunciation:'VAN-duh-lyz', ipa:'/ˈvændəˌlaɪz/', pos:'verb', def:'To deliberately destroy or damage public or private property.', lang:'Named after the Vandals, the Germanic tribe that sacked Rome in 455 AD, from Latin Vandalus, + -ize.', example:'Overnight, someone vandalized the freshly painted mural, spraying graffiti over the artwork that had taken the community weeks to create.', isNoun:false },
+  { word:'vanguard', pronunciation:'VAN-gard', ipa:'/ˈvæŋˌɡɑːrd/', pos:'noun', def:'A group of people leading the way in new developments or ideas; the foremost part of an advancing army.', lang:'Old French, from avant-garde (\'the advance guard\'), from avant (\'before\') + garde (\'guard\').', example:'The company was at the vanguard of the tech revolution, developing innovations that competitors wouldn\'t match for another decade.', isNoun:true },
+  { word:'vanquish', pronunciation:'VANG-kwish', ipa:'/ˈvæŋkwɪʃ/', pos:'verb', def:'To defeat thoroughly; to overcome or conquer in battle or competition.', lang:'Old French, from vainquir (\'to conquer\'), from Latin vincere (\'to conquer, overcome\').', example:'The underdog team vanquished the reigning champions in a stunning upset that left the stadium in stunned silence.', isNoun:false },
+  { word:'vaporetto', pronunciation:'VAP-oh-RET-oh', ipa:'/ˌvæpəˈrɛtoʊ/', pos:'noun', def:'A motorized waterbus that serves as public transportation in Venice, Italy, traveling along the city\'s canals.', lang:'Italian, diminutive of vapore (\'steam, steamship\'), from Latin vapor (\'steam\'), because early models were steam-powered.', example:'The crowded vaporetto chugged down the Grand Canal, passengers pressing against the rails to photograph the magnificent palazzi gliding past.', isNoun:true },
+  { word:'varactor', pronunciation:'vuh-RAK-tur', ipa:'/vəˈræktər/', pos:'noun', def:'A semiconductor diode whose capacitance varies with the applied voltage, used in electronic tuning circuits.', lang:'English, from var(iable) + (re)actor, describing a component whose reactance changes with voltage.', example:'The radio engineer used a varactor diode to fine-tune the frequency, its variable capacitance allowing smooth electronic adjustment.', isNoun:true },
+  { word:'varicose', pronunciation:'VAR-ih-kohs', ipa:'/ˈværɪˌkoʊs/', pos:'adjective', def:'Of a vein, abnormally swollen and twisted, especially in the legs, causing discomfort and visible bulging.', lang:'Latin, from varicosus (\'having dilated veins\'), from varix (genitive varicis, \'a dilated vein\').', example:'Years of standing for long shifts left her with painful varicose veins that bulged visibly beneath the skin of her calves.', isNoun:false },
+  { word:'variegated', pronunciation:'VAIR-ee-uh-GAY-tid', ipa:'/ˈvɛəriɪˌɡeɪtɪd/', pos:'adjective', def:'Exhibiting different colors in patches or streaks; marked with varied patterns or irregular spots.', lang:'Latin, from variegatus, past participle of variegare (\'to make varied\'), from varius (\'varied, diverse\').', example:'The variegated leaves of the hosta plant displayed stunning streaks of cream and green that brightened the shady garden border.', isNoun:false },
+  { word:'varsha', pronunciation:'VAR-shuh', ipa:'/ˈvɑːrʃə/', pos:'noun', def:'The rainy season in Hindu and Buddhist calendars, traditionally a period of monastic retreat and spiritual reflection.', lang:'Sanskrit, from varsha (\'rain, rainy season\'), from the root vrsh (\'to rain\').', example:'During varsha, the Buddhist monks traditionally remained in their monasteries, using the rainy season for intensive meditation and study.', isNoun:true },
+  { word:'Vatican', pronunciation:'VAT-ih-kun', ipa:'/ˈvætɪkən/', pos:'noun', def:'The official residence of the Pope in Rome; the central government of the Roman Catholic Church; the smallest independent state in the world.', lang:'Latin, from Vaticanus (mons) (\'Vatican Hill\'), possibly from vates (\'a prophet, seer\'), or from an earlier Etruscan settlement name.', example:'The Vatican\'s art collection spans centuries and includes Michelangelo\'s breathtaking ceiling in the Sistine Chapel.', isNoun:true },
+  { word:'vaudeville', pronunciation:'VAWD-vil', ipa:'/ˈvɔːdvɪl/', pos:'noun', def:'A type of theatrical entertainment featuring a mixture of comedy, song, dance, and specialty acts, popular in the late 19th and early 20th centuries.', lang:'French, from vau de Vire (\'valley of the Vire\'), a region in Normandy famous for satirical songs, or from voix de ville (\'voice of the city\').', example:'The vaudeville show featured jugglers, comedians, trained dogs, and a tap dancer, each act more entertaining than the last.', isNoun:true },
+  { word:'veganism', pronunciation:'VEE-gun-iz-um', ipa:'/ˈviːɡənˌɪzəm/', pos:'noun', def:'The practice of abstaining from all animal products in diet and lifestyle, including meat, dairy, eggs, and leather.', lang:'English, from vegan (coined in 1944 by Donald Watson from the beginning and end of vegetarian) + -ism.', example:'Her commitment to veganism extended beyond diet to avoiding all animal-derived products, from leather shoes to wool sweaters.', isNoun:true },
+  { word:'vegetarian', pronunciation:'VEJ-uh-TAIR-ee-un', ipa:'/ˌvɛdʒɪˈtɛəriən/', pos:'noun', def:'A person who does not eat meat or fish, and sometimes other animal products, especially for moral, religious, or health reasons.', lang:'English, from vegetable (from Latin vegetare, \'to enliven\', from vegetus, \'lively\') + -arian.', example:'The restaurant offered an extensive vegetarian menu that satisfied even the most devoted carnivores with its creative plant-based dishes.', isNoun:true },
+  { word:'vehemence', pronunciation:'VEE-uh-munce', ipa:'/ˈviːəməns/', pos:'noun', def:'Great forcefulness or intensity of feeling or expression; passionate fervor.', lang:'Latin, from vehementia (\'eagerness, violence\'), from vehemens (\'impetuous, violent\'), possibly from vehere (\'to carry\') + mens (\'mind\').', example:'The vehemence of her protest surprised everyone in the room, her voice rising with a passion that could not be ignored.', isNoun:true },
+  { word:'vehicular', pronunciation:'vee-HIK-yoo-lur', ipa:'/viˈhɪkjʊlər/', pos:'adjective', def:'Of, relating to, or designed for vehicles, especially motor vehicles.', lang:'Latin, from vehiculum (\'a means of transport\'), from vehere (\'to carry\'), + -ar.', example:'The bridge was closed to vehicular traffic after the inspection revealed cracks in the support structure.', isNoun:false },
+  { word:'vellication', pronunciation:'VEL-ih-KAY-shun', ipa:'/ˌvɛlɪˈkeɪʃən/', pos:'noun', def:'A twitching or involuntary contraction of a muscle or group of muscles; the act of plucking or pinching.', lang:'Latin, from vellicatio (\'a plucking\'), from vellicare (\'to pluck, twitch\'), from vellere (\'to pull, pluck\').', example:'The vellication in his left eyelid persisted for days, the involuntary twitch annoying him during every conversation.', isNoun:true },
+  { word:'velours', pronunciation:'vuh-LOOR', ipa:'/vəˈlʊər/', pos:'noun', def:'A plush, knitted fabric resembling velvet, used for clothing, upholstery, and hats.', lang:'French, from velours (\'velvet\'), from Old French velos, from Latin villosus (\'shaggy, hairy\'), from villus (\'shaggy hair\').', example:'The vintage velours armchair was impossibly soft to the touch, its rich burgundy fabric still luxurious after decades of use.', isNoun:true },
+  { word:'vendage', pronunciation:'VEN-dij', ipa:'/ˈvɛndɪdʒ/', pos:'noun', def:'The grape harvest; the gathering of grapes for winemaking; vintage.', lang:'Old French, from vendage (\'grape harvest\'), from Latin vindemia (\'a vintage\'), from vinum (\'wine\') + demere (\'to take away\').', example:'The vendage was celebrated with a festival in the village, as workers carried baskets of ripe grapes from the sunlit hillside vineyards.', isNoun:true },
+  { word:'veneer', pronunciation:'vuh-NEER', ipa:'/vəˈnɪər/', pos:'noun', def:'A thin decorative covering of fine wood applied to a coarser surface; an attractive but deceptive outward appearance.', lang:'German, from furnieren (\'to veneer\'), from French fournir (\'to furnish\'), from Old French fornir.', example:'Beneath his polished veneer of charm and confidence lay a deeply insecure man who feared being exposed as a fraud.', isNoun:true },
+  { word:'vengeance', pronunciation:'VEN-junce', ipa:'/ˈvɛndʒəns/', pos:'noun', def:'Punishment inflicted in retaliation for an injury or offense; retribution.', lang:'Old French, from vengeance, from vengier (\'to avenge\'), from Latin vindicare (\'to claim, avenge\').', example:'The hero swore vengeance against those who had destroyed his village, dedicating his life to bringing them to justice.', isNoun:true },
+  { word:'venial', pronunciation:'VEE-nee-ul', ipa:'/ˈviːniəl/', pos:'adjective', def:'Of a fault or sin, slight and pardonable; not seriously wrong; forgivable.', lang:'Latin, from venialis (\'pardonable\'), from venia (\'forgiveness, indulgence\').', example:'Arriving five minutes late was a venial offense easily forgiven, not the grave breach of etiquette she seemed to think it was.', isNoun:false },
+  { word:'venomous', pronunciation:'VEN-uh-mus', ipa:'/ˈvɛnəməs/', pos:'adjective', def:'Producing venom; capable of injecting venom by a bite or sting; full of malice and spite.', lang:'Old French, from venimeux, from Latin venenosus (\'poisonous\'), from venenum (\'poison, drug\'), + -ous.', example:'The venomous cobra raised its hood and hissed a warning, its fangs dripping with enough toxin to kill a dozen men.', isNoun:false },
+  { word:'ventail', pronunciation:'VEN-tayl', ipa:'/ˈvɛnteɪl/', pos:'noun', def:'The lower movable part of a medieval helmet visor, covering the mouth and chin, which could be raised for breathing.', lang:'Old French, from ventaille (\'a breathing hole\'), from vent (\'wind\'), from Latin ventus (\'wind\').', example:'The knight raised the ventail of his helmet to catch his breath between jousting passes, sweat streaming down his face.', isNoun:true },
+  { word:'ventifact', pronunciation:'VEN-tih-fakt', ipa:'/ˈvɛntɪˌfækt/', pos:'noun', def:'A stone or pebble that has been shaped, polished, or faceted by wind-driven sand in a desert environment.', lang:'Latin, from ventus (\'wind\') + factum (\'something made\'), from facere (\'to make\').', example:'The geologist collected ventifacts from the desert floor, each stone sculpted into smooth, angular facets by millennia of wind-blown sand.', isNoun:true },
+  { word:'ventricle', pronunciation:'VEN-trih-kul', ipa:'/ˈvɛntrɪkəl/', pos:'noun', def:'A hollow part or cavity in an organ, especially one of the two main chambers of the heart that pump blood.', lang:'Latin, from ventriculus (\'a little belly\'), diminutive of venter (\'the belly, stomach\').', example:'The cardiologist detected a weakness in the left ventricle, the chamber responsible for pumping oxygenated blood throughout the body.', isNoun:true },
+  { word:'ventriloquy', pronunciation:'ven-TRIL-oh-kwee', ipa:'/vɛnˈtrɪləkwi/', pos:'noun', def:'The art of speaking so that the voice seems to come from another source, typically a puppet or dummy.', lang:'Latin, from ventriloquus (\'a ventriloquist\'), from venter (\'the belly\') + loqui (\'to speak\'), because the voice was thought to come from the stomach.', example:'The performer\'s mastery of ventriloquy was so convincing that children in the audience truly believed the puppet was speaking on its own.', isNoun:true },
+  { word:'veracity', pronunciation:'vuh-RAS-ih-tee', ipa:'/vəˈræsɪti/', pos:'noun', def:'Conformity to facts; accuracy and truthfulness; habitual adherence to the truth.', lang:'Latin, from veracitas (\'truthfulness\'), from verax (\'truthful\'), from verus (\'true\'), + -ity.', example:'The journalist\'s reputation for veracity was beyond question — in thirty years, she had never published an inaccurate story.', isNoun:true },
+  { word:'verbena', pronunciation:'vur-BEE-nuh', ipa:'/vɜːrˈbiːnə/', pos:'noun', def:'A genus of flowering plants with clusters of small, fragrant blooms in various colors, popular in gardens and herbal medicine.', lang:'Latin, from verbena (\'a sacred bough, leafy branch\'), used in Roman religious ceremonies.', example:'The window box overflowed with purple verbena, its clusters of tiny fragrant flowers attracting butterflies throughout the summer.', isNoun:true },
+  { word:'verboten', pronunciation:'fur-BOH-tun', ipa:'/fɜːrˈboʊtən/', pos:'adjective', def:'Forbidden, especially by an authority; not allowed; prohibited.', lang:'German, from verboten (\'forbidden\'), past participle of verbieten (\'to forbid\').', example:'Discussing salaries with coworkers was verboten according to company policy, though many employees quietly ignored the rule.', isNoun:false },
+  { word:'verism', pronunciation:'VEER-iz-um', ipa:'/ˈvɪərɪzəm/', pos:'noun', def:'Extreme realism in art or literature; the artistic use of commonplace, everyday subjects with unflinching truthfulness.', lang:'Italian, from verismo (\'realism\'), from vero (\'true\'), from Latin verus (\'true\'), + -ism.', example:'The opera composer embraced verism, setting his stories among ordinary working people rather than the mythological heroes of earlier traditions.', isNoun:true },
+  { word:'veritable', pronunciation:'VER-ih-tuh-bul', ipa:'/ˈvɛrɪtəbəl/', pos:'adjective', def:'Used to emphasize that something is genuine or real; actual and true; used for rhetorical emphasis.', lang:'Old French, from veritable (\'true\'), from Latin veritabilis, from veritas (\'truth\'), from verus (\'true\').', example:'The antique shop was a veritable treasure trove of curiosities, packed floor to ceiling with objects from every century and continent.', isNoun:false },
+  { word:'vermicide', pronunciation:'VUR-mih-syd', ipa:'/ˈvɜːrmɪˌsaɪd/', pos:'noun', def:'A substance used to kill worms, especially parasitic intestinal worms.', lang:'Latin, from vermis (\'a worm\') + -cide (from caedere, \'to kill\').', example:'The veterinarian prescribed a vermicide to eliminate the intestinal parasites that had been causing the puppy\'s digestive problems.', isNoun:true },
+  { word:'vernal', pronunciation:'VUR-nul', ipa:'/ˈvɜːrnəl/', pos:'adjective', def:'Of, in, or appropriate to spring; fresh and youthful.', lang:'Latin, from vernalis (\'of the spring\'), from vernus (\'of spring\'), from ver (\'spring\').', example:'The vernal equinox marked the official start of spring, and within days the garden exploded with crocuses and daffodils.', isNoun:false },
+  { word:'vespertine', pronunciation:'VES-pur-tyn', ipa:'/ˈvɛspərˌtaɪn/', pos:'adjective', def:'Of, relating to, or occurring in the evening; of a flower, opening in the evening; of an animal, active at dusk.', lang:'Latin, from vespertinus (\'of the evening\'), from vesper (\'evening, the evening star\').', example:'The vespertine flowers of the moonflower vine unfurled their white petals as the sun set, releasing their sweet fragrance into the night air.', isNoun:false },
+  { word:'vestibule', pronunciation:'VES-tih-byool', ipa:'/ˈvɛstɪˌbjuːl/', pos:'noun', def:'An antechamber or hall between the outer door and the interior of a building; a lobby or entrance hall.', lang:'Latin, from vestibulum (\'an entrance court, forecourt\'), of uncertain origin.', example:'The guests stamped the snow from their boots in the vestibule before entering the warm, brightly lit ballroom beyond.', isNoun:true },
+  { word:'vetiver', pronunciation:'VET-ih-vur', ipa:'/ˈvɛtɪvər/', pos:'noun', def:'A tropical grass whose fragrant roots are used in perfumery, aromatherapy, and for erosion control.', lang:'Tamil, from vettiveru (\'root that is dug up\'), from vettu (\'to cut\') + ver (\'root\').', example:'The earthy, smoky scent of vetiver gave the perfume its deep base note, grounding the lighter floral tones above it.', isNoun:true },
+  { word:'vetoed', pronunciation:'VEE-tohd', ipa:'/ˈviːtoʊd/', pos:'verb', def:'Exercised the power to reject or forbid a decision, proposal, or legislation.', lang:'Latin, from veto (\'I forbid\'), first person singular present indicative of vetare (\'to forbid\'), + -ed.', example:'The president vetoed the spending bill, sending it back to Congress with a strongly worded objection to its key provisions.', isNoun:false },
+  { word:'vicarage', pronunciation:'VIK-ur-ij', ipa:'/ˈvɪkərɪdʒ/', pos:'noun', def:'The residence of a vicar; the house provided for a Church of England clergyman.', lang:'Old French, from vicaire (\'a vicar\'), from Latin vicarius (\'a substitute, deputy\'), + -age.', example:'The charming stone vicarage stood beside the church, its garden filled with roses and the sound of bees on a summer afternoon.', isNoun:true },
+  { word:'vicarious', pronunciation:'vy-KAIR-ee-us', ipa:'/vaɪˈkɛəriəs/', pos:'adjective', def:'Experienced in the imagination through the feelings or actions of another person; felt or enjoyed through someone else.', lang:'Latin, from vicarius (\'a substitute, deputy\'), from vicis (\'a change, turn, alternation\'), + -ous.', example:'She lived vicariously through her daughter\'s travels, spending hours poring over the photographs and letters sent from distant lands.', isNoun:false },
+  { word:'vice versa', pronunciation:'VY-suh VUR-suh', ipa:'/ˌvaɪsə ˈvɜːrsə/', pos:'adverb', def:'With the main items in the preceding statement the other way around; conversely.', lang:'Latin, from vice (\'in place of, in turn\') + versa, ablative feminine of versus, past participle of vertere (\'to turn\').', example:'She admired his patience, and vice versa — he was equally impressed by her decisiveness and quick thinking.', isNoun:false },
+  { word:'vicenary', pronunciation:'VIS-uh-NAIR-ee', ipa:'/ˈvɪsɪˌnɛri/', pos:'adjective', def:'Of, relating to, or based on the number twenty; proceeding by twenties.', lang:'Latin, from vicenarius (\'of twenty each\'), from viceni (\'twenty each\'), from viginti (\'twenty\').', example:'The ancient Mayan calendar used a vicenary number system, counting in base twenty rather than the base ten we use today.', isNoun:false },
+  { word:'viceroy', pronunciation:'VYS-roy', ipa:'/ˈvaɪsrɔɪ/', pos:'noun', def:'A ruler exercising authority in a colony on behalf of a sovereign; a large orange and black butterfly that mimics the monarch.', lang:'French, from vice- (\'in place of\') + roi (\'a king\'), from Latin rex.', example:'The viceroy governed the vast colonial territory in the king\'s name, wielding enormous power thousands of miles from the throne.', isNoun:true },
+  { word:'victimology', pronunciation:'VIK-tih-MOL-uh-jee', ipa:'/ˌvɪktɪˈmɒlədʒi/', pos:'noun', def:'The study of the victims of crime, including their relationships with offenders and the criminal justice system.', lang:'Latin, from victima (\'a sacrificial animal, victim\') + Greek -ology (\'study of\').', example:'The professor of victimology examined patterns in how victims were selected, seeking to develop better prevention strategies.', isNoun:true },
+  { word:'vigil', pronunciation:'VIJ-ul', ipa:'/ˈvɪdʒɪl/', pos:'noun', def:'A period of keeping awake during the normal time for sleep, especially to keep watch or pray; a stationary, peaceful demonstration.', lang:'Latin, from vigilia (\'wakefulness, a watch\'), from vigil (\'awake, watchful\').', example:'Hundreds of mourners held a candlelight vigil in the town square, their flickering flames creating a sea of light in the darkness.', isNoun:true },
+  { word:'vincible', pronunciation:'VIN-sih-bul', ipa:'/ˈvɪnsɪbəl/', pos:'adjective', def:'Capable of being conquered or overcome; not invincible.', lang:'Latin, from vincibilis (\'conquerable\'), from vincere (\'to conquer, overcome\').', example:'Every opponent, no matter how fearsome, proved vincible when faced with the team\'s relentless preparation and unshakable determination.', isNoun:false },
+  { word:'virga', pronunciation:'VUR-guh', ipa:'/ˈvɜːrɡə/', pos:'noun', def:'Wisps of precipitation falling from a cloud but evaporating before reaching the ground, visible as streaks in the sky.', lang:'Latin, from virga (\'a rod, stripe, streak\'), describing the rod-like streaks of rain visible beneath clouds.', example:'Streaks of virga trailed from the high desert clouds like ghostly curtains, the rain evaporating in the dry air long before reaching earth.', isNoun:true },
+  { word:'virtuoso', pronunciation:'VUR-choo-OH-soh', ipa:'/ˌvɜːrtʃuˈoʊsoʊ/', pos:'noun', def:'A person highly skilled in music or another artistic pursuit; a master of technique.', lang:'Italian, from virtuoso (\'skilled, learned\'), from Latin virtuosus (\'virtuous, excellent\'), from virtus (\'excellence, worth\').', example:'The violin virtuoso played with such breathtaking speed and precision that the audience sat in stunned silence until the final note.', isNoun:true },
+  { word:'virulence', pronunciation:'VIR-yoo-lunce', ipa:'/ˈvɪrʊləns/', pos:'noun', def:'The severity or harmfulness of a disease or poison; extreme bitterness or malice in attitude.', lang:'Latin, from virulentus (\'full of poison\'), from virus (\'poison, venom\'), + -ence.', example:'The virulence of the new strain alarmed epidemiologists, who noted it caused far more severe symptoms than its predecessor.', isNoun:true },
+  { word:'vis-à-vis', pronunciation:'VEE-zah-VEE', ipa:'/ˌviːzɑːˈviː/', pos:'preposition', def:'In relation to; compared with; face to face with.', lang:'French, from vis-à-vis (\'face to face\'), from vis (\'face\'), from Latin visus (\'sight, appearance\'), from videre (\'to see\').', example:'The report examined the company\'s performance vis-à-vis its competitors, revealing surprising strengths in overseas markets.', isNoun:false },
+  { word:'viscidity', pronunciation:'vih-SID-ih-tee', ipa:'/vɪˈsɪdɪti/', pos:'noun', def:'The quality of being viscid; stickiness or glutinous consistency; the state of being thick and adhesive.', lang:'Latin, from visciditas, from viscidus (\'sticky\'), from viscum (\'birdlime, mistletoe\'), + -ity.', example:'The viscidity of the tree sap made it nearly impossible to remove from her hands, the sticky residue clinging stubbornly to her skin.', isNoun:true },
+  { word:'vitriolic', pronunciation:'VIT-ree-OL-ik', ipa:'/ˌvɪtriˈɒlɪk/', pos:'adjective', def:'Filled with bitter criticism or malice; cruelly harsh and scathing.', lang:'Latin, from vitriolum (\'sulfuric acid\'), from vitrum (\'glass\'), because the crystals resembled glass, + -ic.', example:'The vitriolic review tore the novel apart with such savage cruelty that the author reportedly refused to publish again for years.', isNoun:false },
+  { word:'vituline', pronunciation:'VIT-yoo-lyn', ipa:'/ˈvɪtjʊˌlaɪn/', pos:'adjective', def:'Of, relating to, or resembling a calf or veal.', lang:'Latin, from vitulinus (\'of a calf\'), from vitulus (\'a calf\').', example:'The chef prepared a vituline ragout, the tender young veal simmered slowly in a rich wine sauce until it fell apart at the touch of a fork.', isNoun:false },
+  { word:'volary', pronunciation:'VOH-luh-ree', ipa:'/ˈvoʊləri/', pos:'noun', def:'A large enclosure or aviary for keeping birds; a flock of birds.', lang:'French, from volière (\'an aviary\'), from voler (\'to fly\'), from Latin volare.', example:'The estate\'s volary housed exotic birds from around the world, their brilliant plumage and songs delighting every visitor.', isNoun:true },
+  { word:'volery', pronunciation:'VOH-luh-ree', ipa:'/ˈvoʊləri/', pos:'noun', def:'A variant spelling of volary; a large birdcage or aviary; a flock of birds in flight.', lang:'French, from volière (\'an aviary\'), from voler (\'to fly\'), from Latin volare (\'to fly\').', example:'A volery of starlings rose from the field in unison, their synchronized flight creating swirling patterns against the evening sky.', isNoun:true },
+  { word:'volatile', pronunciation:'VOL-uh-tul', ipa:'/ˈvɒlətəl/', pos:'adjective', def:'Liable to change rapidly and unpredictably; easily evaporated; tending to erupt in violence.', lang:'Latin, from volatilis (\'flying, fleeting\'), from volare (\'to fly\').', example:'The volatile stock market swung wildly from day to day, making even experienced investors nervous about their portfolios.', isNoun:false },
+  { word:'volition', pronunciation:'voh-LISH-un', ipa:'/voʊˈlɪʃən/', pos:'noun', def:'The faculty or power of using one\'s will; a choice or decision made by the will.', lang:'Latin, from volitio (\'an act of willing\'), from volo (\'I wish, I will\'), from velle (\'to wish\').', example:'She left the company of her own volition, choosing to pursue her dream of starting a business rather than being pushed out.', isNoun:true },
+  { word:'volumetric', pronunciation:'VOL-yoo-MET-rik', ipa:'/ˌvɒljʊˈmɛtrɪk/', pos:'adjective', def:'Of or relating to the measurement of volume; involving analysis by measuring volumes of liquids.', lang:'Latin, from volumen (\'a roll, scroll, volume\') + Greek metron (\'a measure\'), + -ic.', example:'The chemist performed a volumetric analysis, carefully measuring the exact volume of reagent needed to complete the reaction.', isNoun:false },
+  { word:'Vulcan', pronunciation:'VUL-kun', ipa:'/ˈvʌlkən/', pos:'noun', def:'The Roman god of fire, metalworking, and the forge; also a hypothetical planet once believed to orbit close to the Sun.', lang:'Latin, from Vulcanus, the Roman god of fire and smithing, of uncertain etymology, possibly Etruscan in origin.', example:'The ancient Romans prayed to Vulcan before working at the forge, asking the god of fire to protect them from burns and accidents.', isNoun:true }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Slider
+  const totalA = a.length;
+  const pct = totalA > 1 ? s / (totalA - 1) * 100 : 0;
+  document.getElementById("sliderFill").style.width = pct + "%";
+  const sliderArea = document.getElementById("sliderArea");
+  const areaW = sliderArea.offsetWidth || 200;
+  const pad = 10;
+  const thumbLeft = pad + (pct / 100) * (areaW - pad * 2);
+  const thumb = document.getElementById("sliderThumb");
+  if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
+
+  // Ticks - show ~20 evenly spaced markers
+  const tickCount = Math.min(totalA, 20);
+  let ticksHtml = '';
+  for(let t=0; t<tickCount; t++){
+    const ti = Math.round(t / (tickCount-1) * (totalA-1));
+    const cls = ti===s ? 'active' : (t % 5 === 0 ? 'major' : '');
+    ticksHtml += `<div class="slider-tick ${cls}"></div>`;
+  }
+  document.getElementById("sliderDots").innerHTML = ticksHtml;
+  document.getElementById("sliderCounter").textContent = `${s+1} / ${totalA}`;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Slider drag
+const slArea=document.getElementById("sliderArea");
+const slThumb=document.getElementById("sliderThumb");
+let slDragging=false;
+function sliderFromX(cx){
+  const r=slArea.getBoundingClientRect();
+  const pad=10;
+  const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
+  const a=aw(),idx=Math.round(p*(a.length-1));
+  // Move thumb immediately for smooth feel
+  const thumbLeft=pad+(p)*(r.width-pad*2);
+  slThumb.style.left=thumbLeft+"px";
+  if(idx!==si()){
+    const g=WORDS.findIndex(w=>w.word===a[idx].word);
+    flipped=false; currentIndex=g; render();
+  }
+}
+slArea.addEventListener("touchstart",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(slDragging) sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    // Speak the word after releasing
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+slArea.addEventListener("mousedown",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.clientX); e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(slDragging) sliderFromX(e.clientX);
+});
+document.addEventListener("mouseup",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>

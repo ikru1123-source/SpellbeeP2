@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: Verdana, Geneva, sans-serif; font-size: 36px; font-weight: 400;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 18px; height: 18px; }
+.slider-area {
+  flex: 1; height: 32px; position: relative;
+  display: flex; align-items: center;
+  touch-action: none; cursor: pointer;
+}
+.slider-track-bg {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
+}
+.slider-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(212,175,55,0.5));
+  transition: width 0.15s ease;
+}
+.slider-dots {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; padding: 0 2px;
+}
+.slider-tick {
+  width: 2px; height: 8px; border-radius: 1px;
+  background: rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.slider-tick.major { height: 12px; background: rgba(255,255,255,0.12); }
+.slider-tick.active { background: var(--gold); height: 14px; width: 3px; border-radius: 1.5px; box-shadow: 0 0 6px rgba(212,175,55,0.4); }
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px solid #1a1528;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  cursor: grab; transition: left 0.12s ease;
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
+.slider-thumb.dragging { transition: none; transform: translate(-50%, -50%) scale(1.15); }
+.slider-counter {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.08em;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1><a href="index.html" style="color:inherit;text-decoration:none;">Spelling Bee</a></h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="slider-area" id="sliderArea">
+      <div class="slider-track-bg">
+        <div class="slider-fill" id="sliderFill"></div>
+      </div>
+      <div class="slider-dots" id="sliderDots"></div>
+      <div class="slider-thumb" id="sliderThumb"></div>
+    </div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'rabato', pronunciation:'ruh-BAH-toh', ipa:'/rəˈbɑːtoʊ/', pos:'noun', def:'A wide, stiff collar of the 16th and 17th centuries, worn flat over the shoulders or standing up behind the head.', lang:'French, from rabat (\'a turned-down collar\'), from rabattre (\'to turn down, beat back\'), from re- + abattre (\'to beat down\').', example:'The Elizabethan nobleman wore an elaborate lace rabato that framed his face like a starched white halo.', isNoun:true },
+  { word:'rabbinic', pronunciation:'ruh-BIN-ik', ipa:'/rəˈbɪnɪk/', pos:'adjective', def:'Of or relating to rabbis, their teachings, writings, or traditions; pertaining to the Talmud and rabbinical literature.', lang:'Hebrew, from rabbi (\'my master, my teacher\'), from rav (\'great, master\'), + -inic.', example:'The student devoted years to rabbinic studies, immersing herself in the Talmud and centuries of scholarly commentary.', isNoun:false },
+  { word:'ramark', pronunciation:'RAY-mark', ipa:'/ˈreɪmɑːrk/', pos:'noun', def:'A radar beacon that transmits a signal enabling a ship or aircraft to determine its bearing relative to the beacon.', lang:'English, a blend of ra(dar) + mark (\'a navigational reference point\'), coined in the mid-20th century.', example:'The ship\'s navigator used the ramark signal to confirm their position as they entered the fog-shrouded harbor channel.', isNoun:true },
+  { word:'rambla', pronunciation:'RAHM-blah', ipa:'/ˈrɑːmblə/', pos:'noun', def:'A broad, tree-lined avenue or promenade, especially in Spain; a dry riverbed that fills only during heavy rains.', lang:'Spanish, from Arabic ramlah (\'sandy ground\'), from raml (\'sand\'), because such avenues were often built over seasonal streambeds.', example:'The famous Rambla in Barcelona bustled with street performers, flower sellers, and tourists strolling beneath the plane trees.', isNoun:true },
+  { word:'rambunctious', pronunciation:'ram-BUNK-shus', ipa:'/ræmˈbʌŋkʃəs/', pos:'adjective', def:'Uncontrollably exuberant; boisterous and wildly energetic; difficult to control due to high spirits.', lang:'English, of uncertain origin, possibly an alteration of rumbustious, from robustious (\'boisterous\'), from Latin robustus (\'strong\').', example:'The rambunctious puppies tumbled over each other in the yard, chasing their tails and barking at everything that moved.', isNoun:false },
+  { word:'ramson', pronunciation:'RAM-zun', ipa:'/ˈræmzən/', pos:'noun', def:'A wild garlic plant native to Europe and Asia, with broad leaves and a pungent flavor, also called bear garlic.', lang:'Old English, from hramsa (\'wild garlic\'), of Germanic origin, related to Old Norse hramsar.', example:'In spring, the forest floor was carpeted with ramson leaves, their pungent garlic scent filling the woodland air.', isNoun:true },
+  { word:'rankles', pronunciation:'RANG-kulz', ipa:'/ˈræŋkəlz/', pos:'verb', def:'Continues to cause annoyance or resentment; festers and irritates over time.', lang:'Old French, from rancler (\'to fester\'), from draoncle (\'a festering sore\'), from Latin dracunculus (\'a small serpent\'), diminutive of draco (\'a dragon\').', example:'The unfair dismissal still rankles him years later, the injustice of it resurfacing every time he drives past his old office.', isNoun:false },
+  { word:'rapscallion', pronunciation:'rap-SKAL-yun', ipa:'/ræpˈskæljən/', pos:'noun', def:'A mischievous person; a rascal or scamp, especially a charmingly roguish one.', lang:'English, an alteration of rascallion, from rascal (from Old French rascaille, \'rabble, mob\'), + -ion.', example:'The little rapscallion had stolen every cookie from the jar and was caught red-handed with crumbs all over his grinning face.', isNoun:true },
+  { word:'raptatorial', pronunciation:'RAP-tuh-TOR-ee-ul', ipa:'/ˌræptəˈtɔːriəl/', pos:'adjective', def:'Adapted for seizing prey; of a bird or insect, having limbs or appendages designed for grasping and capturing.', lang:'Latin, from raptor (\'a robber, plunderer\'), from rapere (\'to seize, snatch\'), + -atorial.', example:'The praying mantis extended its raptatorial forelegs with lightning speed, snatching the unsuspecting fly right out of the air.', isNoun:false },
+  { word:'rapturous', pronunciation:'RAP-chur-us', ipa:'/ˈræptʃərəs/', pos:'adjective', def:'Characterized by, feeling, or expressing great pleasure or enthusiasm; ecstatic and blissful.', lang:'English, from rapture (from Latin raptus, \'a carrying off\', from rapere, \'to seize\') + -ous.', example:'The audience gave the soprano a rapturous standing ovation, cheering and wiping tears after her breathtaking final aria.', isNoun:false },
+  { word:'raroria', pronunciation:'ruh-ROR-ee-uh', ipa:'/rəˈrɔːriə/', pos:'noun', def:'Rare or curious items in a collection; unusual objects gathered for their oddity or scarcity.', lang:'Latin, neuter plural of rarorius, from rarus (\'rare, uncommon\'), describing objects prized for their rarity.', example:'The cabinet of raroria contained shrunken heads, fossilized sea creatures, and a letter penned by Napoleon himself.', isNoun:true },
+  { word:'rasorial', pronunciation:'ruh-SOR-ee-ul', ipa:'/rəˈsɔːriəl/', pos:'adjective', def:'Of a bird, habitually scratching the ground in search of food; relating to birds that scratch for food, such as chickens and turkeys.', lang:'Latin, from rasor (\'a scraper\'), from radere (\'to scrape, scratch\'), + -ial.', example:'The rasorial habits of the wild turkey were evident in the scratched-up leaf litter where it had been foraging for acorns.', isNoun:false },
+  { word:'raucous', pronunciation:'RAW-kus', ipa:'/ˈrɔːkəs/', pos:'adjective', def:'Making or constituting a disturbingly harsh and loud noise; rowdy and disorderly.', lang:'Latin, from raucus (\'hoarse\'), of imitative origin.', example:'The raucous laughter from the neighboring table was so loud that the other diners could barely hear their own conversations.', isNoun:false },
+  { word:'ravioli', pronunciation:'RAV-ee-OH-lee', ipa:'/ˌræviˈoʊli/', pos:'noun', def:'Small pasta envelopes containing a filling of meat, cheese, spinach, or other ingredients, usually served with sauce.', lang:'Italian, plural of raviolo, possibly from rava (\'turnip\'), or from ravvolgere (\'to wrap\'), from Latin re- + volvere (\'to roll\').', example:'The handmade ravioli, stuffed with ricotta and fresh spinach, were so delicate they practically melted on the tongue.', isNoun:true },
+  { word:'reagent', pronunciation:'ree-AY-junt', ipa:'/riˈeɪdʒənt/', pos:'noun', def:'A substance used to produce a chemical reaction in order to detect, measure, or synthesize other substances.', lang:'Latin, from re- (\'back, again\') + agens, present participle of agere (\'to do, act\'), meaning \'something that acts back\'.', example:'The chemist added the reagent drop by drop, watching the solution change from clear to deep blue as the reaction progressed.', isNoun:true },
+  { word:'realgar', pronunciation:'ree-AL-gar', ipa:'/riˈælɡɑːr/', pos:'noun', def:'A soft, orange-red mineral consisting of arsenic sulfide, historically used as a pigment and in fireworks.', lang:'Arabic, from rahj al-ghar (\'powder of the cave\'), from rahj (\'powder\') + al-ghar (\'the cave\'), describing where the mineral was found.', example:'Renaissance painters prized realgar for its vivid orange-red color, despite the dangers of handling the arsenic-laden pigment.', isNoun:true },
+  { word:'realm', pronunciation:'RELM', ipa:'/rɛlm/', pos:'noun', def:'A kingdom; a field or domain of activity or interest; a primary biogeographic division of the earth.', lang:'Old French, from realme (\'a kingdom\'), from Latin regimen (\'rule, government\'), influenced by Old French reial (\'royal\').', example:'In the realm of classical music, few composers can rival the sheer inventiveness and emotional depth of Beethoven.', isNoun:true },
+  { word:'Realtor', pronunciation:'REEL-tur', ipa:'/ˈriːəltər/', pos:'noun', def:'A real estate agent who is a member of the National Association of Realtors; a person who arranges the selling and buying of property.', lang:'English, coined in 1916 from real (estate) + -tor (agent suffix), trademarked by the National Association of Realtors.', example:'The Realtor walked them through six houses in a single afternoon before they finally found the one that felt like home.', isNoun:true },
+  { word:'rebab', pronunciation:'reh-BAHB', ipa:'/rɛˈbɑːb/', pos:'noun', def:'A bowed or plucked string instrument found in many forms across the Middle East, North Africa, and Southeast Asia.', lang:'Arabic, from rabab (\'a stringed instrument\'), one of the oldest known bowed instruments, ancestor of the medieval European rebec.', example:'The musician drew a haunting melody from the rebab, the single-stringed instrument filling the desert night with its resonant voice.', isNoun:true },
+  { word:'rebarbative', pronunciation:'rih-BAR-buh-tiv', ipa:'/rɪˈbɑːrbətɪv/', pos:'adjective', def:'Unattractive and objectionable; repellent and irritating.', lang:'French, from rébarbatif (\'repellent\'), from rébarber (\'to face beard to beard\'), from re- + barbe (\'a beard\'), suggesting a bristly, off-putting confrontation.', example:'The professor\'s rebarbative manner discouraged students from asking questions, his scowl enough to silence the most curious minds.', isNoun:false },
+  { word:'reboation', pronunciation:'REH-boh-AY-shun', ipa:'/ˌrɛboʊˈeɪʃən/', pos:'noun', def:'The act of bellowing back; a reverberation or resounding echo; a loud, repeated noise.', lang:'Latin, from reboatio, from reboare (\'to bellow back, resound\'), from re- (\'back\') + boare (\'to cry out, roar\').', example:'The reboation of thunder through the mountain canyon was deafening, each crack echoing off the rock walls again and again.', isNoun:true },
+  { word:'recalcitrant', pronunciation:'rih-KAL-sih-trunt', ipa:'/rɪˈkælsɪtrənt/', pos:'adjective', def:'Having an obstinately uncooperative attitude; stubbornly resistant to authority or control.', lang:'Latin, from recalcitrans, present participle of recalcitrare (\'to kick back\'), from re- (\'back\') + calcitrare (\'to kick\'), from calx (\'heel\').', example:'The recalcitrant teenager refused every request, crossing her arms and glaring in defiant silence at each new instruction.', isNoun:false },
+  { word:'reciprocity', pronunciation:'RES-ih-PROS-ih-tee', ipa:'/ˌrɛsɪˈprɒsɪti/', pos:'noun', def:'The practice of exchanging things with others for mutual benefit; a mutual exchange of privileges between groups or nations.', lang:'Latin, from reciprocus (\'returning the same way, alternating\'), + -ity.', example:'The trade agreement was built on reciprocity, with each country lowering tariffs on goods the other wanted to export.', isNoun:true },
+  { word:'reconcilable', pronunciation:'REK-un-SY-luh-bul', ipa:'/ˌrɛkənˈsaɪləbəl/', pos:'adjective', def:'Capable of being brought into agreement or harmony; able to be made consistent or compatible.', lang:'Latin, from reconciliare (\'to bring together again\'), from re- (\'again\') + conciliare (\'to unite\'), + -able.', example:'The couple\'s differences proved reconcilable with patience and compromise, and their relationship emerged stronger than before.', isNoun:false },
+  { word:'reconnoiter', pronunciation:'REK-uh-NOY-tur', ipa:'/ˌrɛkəˈnɔɪtər/', pos:'verb', def:'To make a military observation of a region; to survey or inspect an area to gather information.', lang:'French, from reconnaître (\'to recognize, examine\'), from Latin recognoscere (\'to know again\'), from re- + cognoscere (\'to know\').', example:'The scouts were sent ahead to reconnoiter the enemy positions, crawling through the undergrowth to observe the camp undetected.', isNoun:false },
+  { word:'reconnoitre', pronunciation:'REK-uh-NOY-tur', ipa:'/ˌrɛkəˈnɔɪtər/', pos:'verb', def:'The British spelling of reconnoiter; to make a preliminary inspection or survey of an area, especially for military purposes.', lang:'French, from reconnaître (\'to recognize\'), the original French spelling retained in British English usage.', example:'The officer ordered his team to reconnoitre the ridge before dawn, mapping every path and defensive position they could find.', isNoun:false },
+  { word:'recreant', pronunciation:'REK-ree-unt', ipa:'/ˈrɛkriənt/', pos:'adjective', def:'Cowardly; unfaithful to duty or allegiance; craven and disloyal.', lang:'Old French, from recreant (\'surrendering, yielding\'), present participle of recroire (\'to yield in combat\'), from re- + croire (\'to believe\'), from Latin credere.', example:'The recreant knight fled the battlefield in shame, abandoning his sworn brothers to face the enemy without him.', isNoun:false },
+  { word:'recrementitious', pronunciation:'REK-ruh-men-TISH-us', ipa:'/ˌrɛkrɪmɛnˈtɪʃəs/', pos:'adjective', def:'Of or relating to waste matter secreted and then reabsorbed by the body; consisting of recrement or dross.', lang:'Latin, from recrementum (\'refuse, dross\'), from recernere (\'to sift back\'), from re- (\'back\') + cernere (\'to sift\'), + -itious.', example:'The physician described bile as a recrementitious fluid, secreted by the liver and partially reabsorbed during digestion.', isNoun:false },
+  { word:'recriminatory', pronunciation:'rih-KRIM-ih-nuh-TOR-ee', ipa:'/rɪˈkrɪmɪnəˌtɔːri/', pos:'adjective', def:'Involving or characterized by counter-accusations; making accusations in return against one\'s accuser.', lang:'Latin, from recriminari (\'to accuse in return\'), from re- (\'back\') + criminari (\'to accuse\'), from crimen (\'a charge\'), + -atory.', example:'The divorce proceedings descended into recriminatory exchanges, with each side accusing the other of increasingly outrageous behavior.', isNoun:false },
+  { word:'recrudescent', pronunciation:'REE-kroo-DES-unt', ipa:'/ˌriːkruːˈdɛsənt/', pos:'adjective', def:'Breaking out again after a period of inactivity; recurring after a dormant period, especially of a disease or conflict.', lang:'Latin, from recrudescens, present participle of recrudescere (\'to become raw again\'), from re- (\'again\') + crudescere (\'to become hard\'), from crudus (\'raw\').', example:'The recrudescent outbreak of the virus caught health officials off guard, the disease returning just months after it was thought to be contained.', isNoun:false },
+  { word:'recumbent', pronunciation:'rih-KUM-bunt', ipa:'/rɪˈkʌmbənt/', pos:'adjective', def:'Lying down; in a position of reclining or resting; leaning back.', lang:'Latin, from recumbens, present participle of recumbere (\'to lie back\'), from re- (\'back\') + cumbere (\'to lie down\').', example:'The recumbent figure carved on the medieval tomb depicted the knight in peaceful repose, his stone hands folded over his sword.', isNoun:false },
+  { word:'recusancy', pronunciation:'REK-yoo-zun-see', ipa:'/ˈrɛkjʊzənsi/', pos:'noun', def:'Refusal to submit to an established authority; historically, the refusal of Roman Catholics to attend Church of England services.', lang:'Latin, from recusans, present participle of recusare (\'to refuse, object\'), from re- (\'back\') + causari (\'to plead a cause\').', example:'During the Reformation, recusancy was a dangerous stance, with Catholic families risking fines, imprisonment, and worse for refusing to attend Protestant services.', isNoun:true },
+  { word:'redolent', pronunciation:'RED-uh-lunt', ipa:'/ˈrɛdələnt/', pos:'adjective', def:'Strongly reminiscent or suggestive of something; having a strong, pleasant smell; fragrant.', lang:'Latin, from redolens, present participle of redolere (\'to emit a scent\'), from re- (\'back, intensely\') + olere (\'to smell\').', example:'The old bookshop was redolent of leather and aged paper, its musty fragrance transporting visitors to another century.', isNoun:false },
+  { word:'refrigerant', pronunciation:'rih-FRIJ-ur-unt', ipa:'/rɪˈfrɪdʒərənt/', pos:'noun', def:'A substance used for cooling, especially in refrigerators and air conditioners; something that cools or reduces fever.', lang:'Latin, from refrigerans, present participle of refrigerare (\'to make cool\'), from re- (\'again\') + frigus (\'cold\'), + -ant.', example:'Modern refrigerants have been reformulated to reduce their impact on the ozone layer while still efficiently cooling homes and buildings.', isNoun:true },
+  { word:'refugium', pronunciation:'reh-FYOO-jee-um', ipa:'/rɛˈfjuːdʒiəm/', pos:'noun', def:'An area in which a population of organisms can survive through a period of unfavorable conditions; a biological refuge.', lang:'Latin, from refugium (\'a place of refuge\'), from refugere (\'to flee back\'), from re- (\'back\') + fugere (\'to flee\').', example:'During the ice ages, certain mountain valleys served as refugia where temperate species survived surrounded by glaciers.', isNoun:true },
+  { word:'regalia', pronunciation:'rih-GAY-lee-uh', ipa:'/rɪˈɡeɪliə/', pos:'noun', def:'The emblems or insignia of royalty, especially the crown, scepter, and other ornaments; the distinctive clothing and decorations of an order or office.', lang:'Latin, neuter plural of regalis (\'royal\'), from rex (genitive regis, \'a king\').', example:'The coronation regalia, including the golden crown and jeweled scepter, were displayed in a bulletproof case at the Tower of London.', isNoun:true },
+  { word:'regatta', pronunciation:'rih-GAT-uh', ipa:'/rɪˈɡætə/', pos:'noun', def:'A series of boat or yacht races organized as a sporting or social event.', lang:'Italian, from regatta (\'a boat race\'), originally Venetian dialect for a gondola race on the Grand Canal.', example:'The annual regatta filled the harbor with dozens of colorful sailboats, their spinnakers billowing in the brisk autumn wind.', isNoun:true },
+  { word:'reggae', pronunciation:'REG-ay', ipa:'/ˈrɛɡeɪ/', pos:'noun', def:'A style of popular music originating in Jamaica in the late 1960s, characterized by a strong rhythmic accent on the offbeat.', lang:'Jamaican English, of uncertain origin, possibly from rege-rege (\'ragged, ragged clothing\'), reflecting the music\'s origins among the poor.', example:'Bob Marley brought reggae to the world stage, its laid-back rhythms and messages of peace and justice resonating across cultures.', isNoun:true },
+  { word:'regnal', pronunciation:'REG-nul', ipa:'/ˈrɛɡnəl/', pos:'adjective', def:'Of or relating to a reign; used to number the years of a monarch\'s rule.', lang:'Latin, from regnalis (\'of a reign\'), from regnum (\'a kingdom, sovereignty\'), from rex (\'a king\').', example:'The document was dated by its regnal year as the fifth year of the king\'s reign, a common practice before standardized calendars.', isNoun:false },
+  { word:'regurgitate', pronunciation:'rih-GUR-jih-tayt', ipa:'/rɪˈɡɜːrdʒɪˌteɪt/', pos:'verb', def:'To bring swallowed food back up to the mouth; to repeat information without understanding or analyzing it.', lang:'Latin, from regurgitatus, past participle of regurgitare (\'to flood back\'), from re- (\'back\') + gurges (\'a whirlpool, gulf\').', example:'The professor urged students to analyze the material critically rather than simply regurgitate facts from the textbook on the exam.', isNoun:false },
+  { word:'reimbursable', pronunciation:'REE-im-BUR-suh-bul', ipa:'/ˌriːɪmˈbɜːrsəbəl/', pos:'adjective', def:'Eligible to be repaid; of an expense, qualifying for reimbursement or compensation.', lang:'English, from reimburse (from re- + imburse, from Medieval Latin imbursare, \'to put in a purse\', from in- + bursa, \'a purse\') + -able.', example:'The company policy listed hotel stays, meals, and transportation as reimbursable expenses for employees traveling on business.', isNoun:false },
+  { word:'reminiscent', pronunciation:'REM-ih-NIS-unt', ipa:'/ˌrɛmɪˈnɪsənt/', pos:'adjective', def:'Tending to remind one of something; suggesting something by resemblance; absorbed in memories.', lang:'Latin, from reminiscens, present participle of reminisci (\'to remember\'), from re- (\'again\') + a form of mens (\'mind\').', example:'The cobblestone streets and flower boxes were reminiscent of a small Bavarian village, though they were actually in rural Wisconsin.', isNoun:false },
+  { word:'remonstrance', pronunciation:'rih-MON-strunce', ipa:'/rɪˈmɒnstrəns/', pos:'noun', def:'A forcefully reproachful protest; a formal statement of grievance or objection.', lang:'Old French, from remonstrance, from remonstrer (\'to demonstrate, point out\'), from Latin re- + monstrare (\'to show\').', example:'The citizens presented a formal remonstrance to the city council, demanding that the planned demolition of the historic theater be halted.', isNoun:true },
+  { word:'remuda', pronunciation:'reh-MOO-dah', ipa:'/rɛˈmuːdə/', pos:'noun', def:'A herd of horses from which ranch hands choose their mounts for the day; a string of saddle horses.', lang:'Spanish, from remuda (\'a relay, exchange\'), from remudar (\'to exchange\'), from re- + mudar (\'to change\'), from Latin mutare.', example:'The cowboys gathered at dawn to rope fresh horses from the remuda, each rider selecting a mount suited to the day\'s work.', isNoun:true },
+  { word:'remuneration', pronunciation:'rih-MYOO-nuh-RAY-shun', ipa:'/rɪˌmjuːnəˈreɪʃən/', pos:'noun', def:'Money paid for work or a service; compensation, salary, or payment.', lang:'Latin, from remuneratio (\'a repaying\'), from remunerari (\'to repay, reward\'), from re- (\'back\') + munerare (\'to give\'), from munus (\'a gift\').', example:'The generous remuneration package included a competitive salary, health benefits, stock options, and four weeks of paid vacation.', isNoun:true },
+  { word:'renegotiate', pronunciation:'REE-neh-GOH-shee-ayt', ipa:'/ˌriːnɪˈɡoʊʃiˌeɪt/', pos:'verb', def:'To negotiate again in order to change the terms of a contract or agreement.', lang:'English, from re- (\'again\') + negotiate (from Latin negotiari, \'to carry on business\'), from negotium (\'business\'), from neg- (\'not\') + otium (\'leisure\').', example:'The union voted to renegotiate the contract after inflation had eroded the value of the wage increases agreed upon three years earlier.', isNoun:false },
+  { word:'renitency', pronunciation:'REN-ih-tun-see', ipa:'/ˈrɛnɪtənsi/', pos:'noun', def:'Resistance to pressure or force; the quality of being persistently opposed or reluctant.', lang:'Latin, from renitens, present participle of reniti (\'to resist, struggle against\'), from re- (\'back\') + niti (\'to press, strive\'), + -ency.', example:'The committee encountered unexpected renitency from local residents, who firmly opposed the construction of the new highway.', isNoun:true },
+  { word:'renunciant', pronunciation:'rih-NUN-see-unt', ipa:'/rɪˈnʌnsiənt/', pos:'noun', def:'A person who renounces something, especially worldly possessions or pleasures; one who formally gives up a claim or right.', lang:'Latin, from renuntians, present participle of renuntiare (\'to report back, renounce\'), from re- (\'back\') + nuntiare (\'to announce\').', example:'The renunciant monk gave away all his possessions and withdrew to a remote hermitage, seeking only silence and spiritual peace.', isNoun:true },
+  { word:'reparations', pronunciation:'REP-uh-RAY-shunz', ipa:'/ˌrɛpəˈreɪʃənz/', pos:'noun', def:'The making of amends for wrongdoing; compensation demanded by a victorious nation from a defeated one after war.', lang:'Latin, from reparatio (\'a restoring\'), from reparare (\'to repair, restore\'), from re- (\'again\') + parare (\'to prepare, make ready\'), + -tion + -s.', example:'The Treaty of Versailles imposed massive reparations on Germany after World War I, payments that crippled the nation\'s economy for years.', isNoun:true },
+  { word:'repentant', pronunciation:'rih-PEN-tunt', ipa:'/rɪˈpɛntənt/', pos:'adjective', def:'Feeling or expressing sincere regret and remorse for wrongdoing; penitent.', lang:'Old French, from repentant, present participle of repentir (\'to repent\'), from re- (\'intensely\') + pentir (\'to feel regret\'), from Latin paenitere.', example:'The repentant thief returned every stolen item to the shop, offering a tearful apology to the owner he had wronged.', isNoun:false },
+  { word:'repercussion', pronunciation:'REE-pur-KUSH-un', ipa:'/ˌriːpərˈkʌʃən/', pos:'noun', def:'An unintended consequence occurring some time after an event or action; a reverberating effect.', lang:'Latin, from repercussio (\'a rebounding\'), from repercutere (\'to strike back\'), from re- (\'back\') + percutere (\'to strike through\').', example:'The CEO\'s reckless decision had far-reaching repercussions, affecting thousands of employees and shaking investor confidence for months.', isNoun:true },
+  { word:'replevin', pronunciation:'rih-PLEV-in', ipa:'/rɪˈplɛvɪn/', pos:'noun', def:'A legal action to recover personal property wrongfully taken or detained, with a pledge to return it if the suit fails.', lang:'Old French, from replevir (\'to recover goods\'), from re- (\'back\') + plevir (\'to pledge\'), of Germanic origin.', example:'The art collector filed a replevin action to recover the painting she claimed had been stolen from her family during the war.', isNoun:true },
+  { word:'replicate', pronunciation:'REP-lih-kayt', ipa:'/ˈrɛplɪˌkeɪt/', pos:'verb', def:'To make an exact copy of; to reproduce or repeat an experiment, process, or result.', lang:'Latin, from replicatus, past participle of replicare (\'to fold back, repeat\'), from re- (\'back\') + plicare (\'to fold\').', example:'Other laboratories attempted to replicate the controversial experiment, but none could reproduce the original team\'s extraordinary results.', isNoun:false },
+  { word:'repository', pronunciation:'rih-POZ-ih-TOR-ee', ipa:'/rɪˈpɒzɪˌtɔːri/', pos:'noun', def:'A place where things are stored or can be found; a person or thing regarded as a store of information.', lang:'Latin, from repositorium (\'a storehouse\'), from repositus, past participle of reponere (\'to put back, store\'), from re- + ponere (\'to place\').', example:'The university library served as a repository for thousands of rare manuscripts dating back to the medieval period.', isNoun:true },
+  { word:'reprieve', pronunciation:'rih-PREEV', ipa:'/rɪˈpriːv/', pos:'noun', def:'A cancellation or postponement of a punishment; temporary relief from something unpleasant.', lang:'Old French, from repris, past participle of reprendre (\'to take back\'), from Latin reprehendere; the spelling was influenced by Middle English repreve (\'to reprove\').', example:'The governor granted a last-minute reprieve, sparing the prisoner from execution while new evidence was examined.', isNoun:true },
+  { word:'reprisal', pronunciation:'rih-PRY-zul', ipa:'/rɪˈpraɪzəl/', pos:'noun', def:'An act of retaliation; a retaliatory action taken against an enemy in response to an attack or injury.', lang:'Old French, from represaille, from Italian rappresaglia (\'a reprisal\'), from ripresa (\'a retaking\'), from Latin reprehendere (\'to seize back\').', example:'The bombing was carried out in reprisal for the attack on the convoy, escalating the cycle of violence between the two sides.', isNoun:true },
+  { word:'Requiem', pronunciation:'REK-wee-um', ipa:'/ˈrɛkwiəm/', pos:'noun', def:'A Mass for the repose of the souls of the dead; a musical composition setting parts of this Mass; an act of remembrance.', lang:'Latin, from requiem (\'rest\'), accusative of requies (\'rest, repose\'), the first word of the Mass: Requiem aeternam dona eis (\'Grant them eternal rest\').', example:'Mozart\'s Requiem remains one of the most moving choral works ever composed, its haunting melodies evoking both grief and transcendence.', isNoun:true },
+  { word:'requisition', pronunciation:'REK-wih-ZIH-shun', ipa:'/ˌrɛkwɪˈzɪʃən/', pos:'noun', def:'An official order laying claim to the use of property or materials; a formal written demand for something needed.', lang:'Latin, from requisitio (\'a searching for\'), from requirere (\'to seek again, demand\'), from re- (\'again\') + quaerere (\'to seek\').', example:'The army issued a requisition for all available trucks in the district, commandeering them for the emergency supply effort.', isNoun:true },
+  { word:'reredos', pronunciation:'REER-dos', ipa:'/ˈrɪərdɒs/', pos:'noun', def:'An ornamental screen or wall behind an altar in a church, typically decorated with carvings, paintings, or tapestries.', lang:'Old French, from areredos (\'behind the back\'), from arere (\'behind\') + dos (\'back\'), from Latin dorsum (\'back\').', example:'The carved stone reredos behind the cathedral altar depicted scenes from the life of Christ in astonishing medieval detail.', isNoun:true },
+  { word:'resilience', pronunciation:'rih-ZIL-yunce', ipa:'/rɪˈzɪljəns/', pos:'noun', def:'The capacity to recover quickly from difficulties; the ability of a substance to spring back into shape after being bent or stretched.', lang:'Latin, from resiliens, present participle of resilire (\'to spring back, rebound\'), from re- (\'back\') + salire (\'to jump, leap\').', example:'The community showed remarkable resilience after the hurricane, rebuilding homes and reopening businesses within just a few months.', isNoun:true },
+  { word:'restitutory', pronunciation:'RES-tih-TOO-tuh-ree', ipa:'/ˈrɛstɪˌtjuːtəri/', pos:'adjective', def:'Of, relating to, or involving restitution; serving to restore something to its original state or to compensate for loss.', lang:'Latin, from restituere (\'to restore, rebuild\'), from re- (\'back\') + statuere (\'to set up\'), + -ory.', example:'The court ordered restitutory damages, requiring the company to return every penny it had wrongfully taken from its customers.', isNoun:false },
+  { word:'résumé', pronunciation:'REZ-oo-may', ipa:'/ˈrɛzʊˌmeɪ/', pos:'noun', def:'A brief account of a person\'s education, qualifications, and previous employment, used when applying for jobs.', lang:'French, from résumé (\'a summary\'), past participle of résumer (\'to summarize\'), from Latin resumere (\'to take back, begin again\').', example:'She polished her résumé for hours, carefully tailoring her experience and skills to match the requirements of the dream job.', isNoun:true },
+  { word:'resurrected', pronunciation:'REZ-uh-REK-tid', ipa:'/ˌrɛzəˈrɛktɪd/', pos:'verb', def:'Restored to life; brought back from the dead; revived or renewed after a period of obscurity or inactivity.', lang:'Latin, from resurrectus, past participle of resurgere (\'to rise again\'), from re- (\'again\') + surgere (\'to rise\').', example:'The abandoned theater was resurrected by a group of passionate volunteers who spent two years restoring it to its former glory.', isNoun:false },
+  { word:'resuscitate', pronunciation:'rih-SUS-ih-tayt', ipa:'/rɪˈsʌsɪˌteɪt/', pos:'verb', def:'To revive someone from unconsciousness or apparent death; to bring back to life, consciousness, or strength.', lang:'Latin, from resuscitatus, past participle of resuscitare (\'to rouse again\'), from re- (\'again\') + suscitare (\'to raise, revive\').', example:'The paramedics worked frantically to resuscitate the drowning victim, performing CPR until she finally drew a shuddering breath.', isNoun:false },
+  { word:'reticent', pronunciation:'RET-ih-sunt', ipa:'/ˈrɛtɪsənt/', pos:'adjective', def:'Not revealing one\'s thoughts or feelings readily; reserved and uncommunicative; reluctant to speak freely.', lang:'Latin, from reticens, present participle of reticere (\'to keep silent\'), from re- (\'again, intensely\') + tacere (\'to be silent\').', example:'The reticent witness answered each question with as few words as possible, clearly uncomfortable sharing details in open court.', isNoun:false },
+  { word:'retina', pronunciation:'RET-ih-nuh', ipa:'/ˈrɛtɪnə/', pos:'noun', def:'The layer of light-sensitive tissue lining the back of the eyeball, containing photoreceptor cells that convert light into neural signals.', lang:'Latin, from rete (\'a net\'), because of the network of blood vessels visible on its surface.', example:'The ophthalmologist examined her retina with a bright light and confirmed that the delicate tissue at the back of her eye was healthy.', isNoun:true },
+  { word:'retinol', pronunciation:'RET-ih-nol', ipa:'/ˈrɛtɪˌnɒl/', pos:'noun', def:'A form of vitamin A found in food and used in skincare products for its anti-aging and skin-renewing properties.', lang:'English, from retina (because vitamin A is essential for retinal function) + -ol (a chemical suffix indicating an alcohol).', example:'The dermatologist recommended a retinol cream to reduce fine lines and improve skin texture over the course of several months.', isNoun:true },
+  { word:'retinoscopy', pronunciation:'RET-ih-NOS-kuh-pee', ipa:'/ˌrɛtɪˈnɒskəpi/', pos:'noun', def:'A technique for determining the refractive error of the eye by shining a light into it and observing the reflected light on the retina.', lang:'English, from retina (from Latin rete, \'a net\') + -scopy (from Greek skopein, \'to look at, examine\').', example:'The optometrist performed retinoscopy on the young child, using reflected light to determine her prescription without needing verbal responses.', isNoun:true },
+  { word:'retrocedence', pronunciation:'RET-roh-SEE-dunce', ipa:'/ˌrɛtroʊˈsiːdəns/', pos:'noun', def:'The act of ceding or giving back territory or rights to a former possessor; a territorial transfer in reverse.', lang:'Latin, from retro (\'back, backward\') + cedere (\'to go, yield\'), + -ence.', example:'The retrocedence of the territory to its original owners was formalized in the treaty, ending decades of disputed sovereignty.', isNoun:true },
+  { word:'retrodict', pronunciation:'RET-roh-dikt', ipa:'/ˈrɛtroʊˌdɪkt/', pos:'verb', def:'To use present information to infer or deduce facts about the past; the opposite of predict.', lang:'English, from retro- (from Latin retro, \'backward\') + dict (from Latin dicere, \'to say\'), modeled on predict.', example:'Scientists can retrodict ancient climate conditions by analyzing ice cores, tree rings, and sediment layers from thousands of years ago.', isNoun:false },
+  { word:'retrograde', pronunciation:'RET-roh-grayd', ipa:'/ˈrɛtroʊˌɡreɪd/', pos:'adjective', def:'Directed or moving backward; reverting to an earlier and inferior condition; of a planet, appearing to move westward.', lang:'Latin, from retrogradus (\'going backward\'), from retro (\'backward\') + gradus (\'a step\'), from gradi (\'to walk\').', example:'Mercury appeared to be in retrograde motion, seeming to drift backward across the night sky as Earth overtook it in orbit.', isNoun:false },
+  { word:'revenant', pronunciation:'REV-uh-nunt', ipa:'/ˈrɛvənənt/', pos:'noun', def:'A person who has returned, especially supposedly from the dead; a ghost or animated corpse.', lang:'French, from revenant (\'returning\'), present participle of revenir (\'to come back\'), from Latin revenire, from re- + venire (\'to come\').', example:'The folklore of the village was rich with tales of revenants — spirits of the dead who returned to haunt those who had wronged them.', isNoun:true },
+  { word:'reverberant', pronunciation:'rih-VUR-bur-unt', ipa:'/rɪˈvɜːrbərənt/', pos:'adjective', def:'Tending to reverberate; echoing and resounding; having a prolonged resonance.', lang:'Latin, from reverberans, present participle of reverberare (\'to beat back\'), from re- (\'back\') + verberare (\'to beat\').', example:'The reverberant acoustics of the stone cathedral made every whisper audible and transformed the choir\'s singing into a wall of sound.', isNoun:false },
+  { word:'rhapsody', pronunciation:'RAP-suh-dee', ipa:'/ˈræpsədi/', pos:'noun', def:'An effusively enthusiastic expression of feeling; a free-form musical composition of irregular structure.', lang:'Greek, from rhapsodia (\'a recitation of epic poems\'), from rhaptein (\'to stitch together\') + oide (\'a song\').', example:'Gershwin\'s Rhapsody in Blue blended jazz and classical music into a work that captured the energy of 1920s America.', isNoun:true },
+  { word:'rhizome', pronunciation:'RY-zohm', ipa:'/ˈraɪzoʊm/', pos:'noun', def:'A horizontal underground stem that sends out roots and shoots from its nodes, allowing a plant to spread.', lang:'Greek, from rhizoma (\'a mass of roots\'), from rhiza (\'a root\').', example:'Ginger is actually a rhizome — a thick underground stem — not a root, which explains its knobby, branching shape.', isNoun:true },
+  { word:'ricochet', pronunciation:'RIK-uh-shay', ipa:'/ˈrɪkəˌʃeɪ/', pos:'verb', def:'To rebound one or more times off a surface; of a bullet, to skip or bounce off a hard surface.', lang:'French, from ricochet (\'a skipping bounce\'), of uncertain origin, possibly imitative of a bouncing stone.', example:'The bullet ricocheted off the concrete wall with a sharp whine, embedding itself in the wooden fence beyond.', isNoun:false },
+  { word:'rictus', pronunciation:'RIK-tus', ipa:'/ˈrɪktəs/', pos:'noun', def:'A fixed, gaping grin or grimace; the expanse of the open mouth or beak.', lang:'Latin, from rictus (\'an open mouth\'), from ringi (\'to gape, open the mouth wide\').', example:'The carved pumpkin wore a rictus of jagged teeth that glowed eerily from the candle flickering inside.', isNoun:true },
+  { word:'rigatoni', pronunciation:'RIG-uh-TOH-nee', ipa:'/ˌrɪɡəˈtoʊni/', pos:'noun', def:'A type of pasta in the form of large, ridged tubes, ideal for holding thick sauces.', lang:'Italian, from rigato (\'ridged\'), from rigare (\'to furrow\'), + -oni (augmentative suffix meaning \'large\').', example:'The rigatoni was perfectly al dente, its ridged tubes catching every drop of the rich Bolognese sauce.', isNoun:true },
+  { word:'ritziness', pronunciation:'RIT-zee-nis', ipa:'/ˈrɪtsinɪs/', pos:'noun', def:'The quality of being luxuriously elegant and glamorous; ostentatious opulence.', lang:'English, from ritzy (from the Ritz hotels, founded by César Ritz, synonymous with luxury) + -ness.', example:'The ritziness of the gala was on full display, from crystal chandeliers to champagne fountains and designer gowns.', isNoun:true },
+  { word:'rollicking', pronunciation:'ROL-ik-ing', ipa:'/ˈrɒlɪkɪŋ/', pos:'adjective', def:'Exuberantly lively and amusing; full of high-spirited fun.', lang:'English, from rollick (\'to behave in a carefree way\'), possibly a blend of romp + frolic, + -ing.', example:'The rollicking sea shanty had the entire pub singing along, pounding their tables and raising their glasses.', isNoun:false },
+  { word:'Romano', pronunciation:'roh-MAH-noh', ipa:'/roʊˈmɑːnoʊ/', pos:'noun', def:'A hard, salty Italian cheese with a sharp, tangy flavor, used for grating.', lang:'Italian, from romano (\'Roman\'), from Roma (\'Rome\'), because the cheese originated in the region around Rome.', example:'She grated aged Romano over the pasta, its sharp flavor transforming the simple dish into something extraordinary.', isNoun:true },
+  { word:'romeite', pronunciation:'ROH-mee-yt', ipa:'/ˈroʊmiˌaɪt/', pos:'noun', def:'A rare mineral of calcium and antimony oxide, typically yellowish-brown.', lang:'Named after Romé de l\'Isle (1736-1790), the French crystallographer, + -ite.', example:'The geologist identified the yellowish crystals as romeite, a rare antimony mineral seldom found in such large specimens.', isNoun:true },
+  { word:'rosin', pronunciation:'ROZ-in', ipa:'/ˈrɒzɪn/', pos:'noun', def:'A solid amber residue from pine resin, used to treat the bows of stringed instruments.', lang:'English, a variant of resin, from Old French resine, from Latin resina, from Greek rhetine.', example:'The violinist rubbed rosin along the horsehair of her bow, helping it grip the strings and produce a clear tone.', isNoun:true },
+  { word:'rostrum', pronunciation:'ROS-trum', ipa:'/ˈrɒstrəm/', pos:'noun', def:'A raised platform for public speaking; a podium or lectern.', lang:'Latin, from rostrum (\'a beak\'), because the Roman Forum\'s speaker platform was decorated with prows of captured warships.', example:'The senator stepped up to the rostrum and paused for silence before delivering the most important speech of her career.', isNoun:true },
+  { word:'rote', pronunciation:'ROHT', ipa:'/roʊt/', pos:'noun', def:'Mechanical repetition as a means of learning; knowledge acquired by memorization rather than understanding.', lang:'English, of uncertain origin, possibly from Old French rote (\'a road\'), suggesting a well-worn path of repetition.', example:'The students memorized the multiplication tables by rote, chanting the numbers until they could recite them from memory.', isNoun:true },
+  { word:'rotogravure', pronunciation:'ROH-toh-gruh-VYOOR', ipa:'/ˌroʊtəɡrəˈvjʊər/', pos:'noun', def:'A printing process using a rotary press with an engraved cylinder; a section of a newspaper printed this way.', lang:'German, from Latin rota (\'a wheel\') + German Gravüre (\'engraving\'), from French gravure.', example:'The Sunday rotogravure section featured stunning photographic reproductions with the rich tones only engraved cylinders could produce.', isNoun:true },
+  { word:'rotulet', pronunciation:'ROT-yoo-let', ipa:'/ˈrɒtjʊlɪt/', pos:'noun', def:'A small roll or scroll; a diminutive roll of parchment or paper.', lang:'French, diminutive of rotule (\'a small wheel\'), from Latin rotula, diminutive of rota (\'a wheel\').', example:'The archivist unrolled the ancient rotulet, a tiny scroll containing a medieval property deed in faded brown ink.', isNoun:true },
+  { word:'roustabout', pronunciation:'ROWST-uh-bowt', ipa:'/ˈraʊstəˌbaʊt/', pos:'noun', def:'An unskilled laborer; a worker on an oil rig or in a circus doing heavy manual work.', lang:'English, from roust (\'to rouse\', variant of rouse) + about, originally describing itinerant laborers on riverboats.', example:'The young roustabout hauled equipment across the oil field from dawn until dusk, his muscles aching after every shift.', isNoun:true },
+  { word:'Rubicon', pronunciation:'ROO-bih-kon', ipa:'/ˈruːbɪˌkɒn/', pos:'noun', def:'A point of no return; a boundary that, once crossed, commits one to an irrevocable course.', lang:'Named after the Rubicon River, which Julius Caesar crossed with his army in 49 BC, triggering civil war.', example:'By signing the contract, she had crossed the Rubicon — there was no going back on her commitment.', isNoun:true },
+  { word:'rudiments', pronunciation:'ROO-dih-munts', ipa:'/ˈruːdɪmənts/', pos:'noun', def:'The basic principles or elements of a subject; the first stages of learning.', lang:'Latin, from rudimentum (\'a first attempt\'), from rudis (\'rough, raw\'), + -ment.', example:'Before attempting advanced techniques, the teacher insisted every student master the rudiments of drawing and composition.', isNoun:true },
+  { word:'rugose', pronunciation:'ROO-gohs', ipa:'/ˈruːɡoʊs/', pos:'adjective', def:'Wrinkled; corrugated; having a rough, ridged surface.', lang:'Latin, from rugosus (\'wrinkled\'), from ruga (\'a wrinkle\').', example:'The rugose bark of the ancient oak was deeply furrowed, each wrinkle a testament to centuries of growth.', isNoun:false },
+  { word:'ruminate', pronunciation:'ROO-mih-nayt', ipa:'/ˈruːmɪˌneɪt/', pos:'verb', def:'To think deeply about something; to chew the cud, as a cow does.', lang:'Latin, from ruminatus, past participle of ruminare (\'to chew the cud, turn over in the mind\'), from rumen (\'the throat\').', example:'She spent the long train ride ruminating on the decision, weighing each option as the countryside slid past.', isNoun:false },
+  { word:'rustication', pronunciation:'RUS-tih-KAY-shun', ipa:'/ˌrʌstɪˈkeɪʃən/', pos:'noun', def:'The action of living in or moving to the countryside; in architecture, masonry with deep joints creating a rough surface.', lang:'Latin, from rusticatio (\'living in the country\'), from rusticus (\'rural\'), from rus (\'the country\').', example:'After decades in the city, her rustication to a Cotswolds cottage brought the peace she had always craved.', isNoun:true }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Slider
+  const totalA = a.length;
+  const pct = totalA > 1 ? s / (totalA - 1) * 100 : 0;
+  document.getElementById("sliderFill").style.width = pct + "%";
+  const sliderArea = document.getElementById("sliderArea");
+  const areaW = sliderArea.offsetWidth || 200;
+  const pad = 10;
+  const thumbLeft = pad + (pct / 100) * (areaW - pad * 2);
+  const thumb = document.getElementById("sliderThumb");
+  if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
+
+  // Ticks - show ~20 evenly spaced markers
+  const tickCount = Math.min(totalA, 20);
+  let ticksHtml = '';
+  for(let t=0; t<tickCount; t++){
+    const ti = Math.round(t / (tickCount-1) * (totalA-1));
+    const cls = ti===s ? 'active' : (t % 5 === 0 ? 'major' : '');
+    ticksHtml += `<div class="slider-tick ${cls}"></div>`;
+  }
+  document.getElementById("sliderDots").innerHTML = ticksHtml;
+  document.getElementById("sliderCounter").textContent = `${s+1} / ${totalA}`;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Slider drag
+const slArea=document.getElementById("sliderArea");
+const slThumb=document.getElementById("sliderThumb");
+let slDragging=false;
+function sliderFromX(cx){
+  const r=slArea.getBoundingClientRect();
+  const pad=10;
+  const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
+  const a=aw(),idx=Math.round(p*(a.length-1));
+  // Move thumb immediately for smooth feel
+  const thumbLeft=pad+(p)*(r.width-pad*2);
+  slThumb.style.left=thumbLeft+"px";
+  if(idx!==si()){
+    const g=WORDS.findIndex(w=>w.word===a[idx].word);
+    flipped=false; currentIndex=g; render();
+  }
+}
+slArea.addEventListener("touchstart",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(slDragging) sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    // Speak the word after releasing
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+slArea.addEventListener("mousedown",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.clientX); e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(slDragging) sliderFromX(e.clientX);
+});
+document.addEventListener("mouseup",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>

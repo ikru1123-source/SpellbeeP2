@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: Verdana, Geneva, sans-serif; font-size: 36px; font-weight: 400;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 18px; height: 18px; }
+.slider-area {
+  flex: 1; height: 32px; position: relative;
+  display: flex; align-items: center;
+  touch-action: none; cursor: pointer;
+}
+.slider-track-bg {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
+}
+.slider-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(212,175,55,0.5));
+  transition: width 0.15s ease;
+}
+.slider-dots {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; padding: 0 2px;
+}
+.slider-tick {
+  width: 2px; height: 8px; border-radius: 1px;
+  background: rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.slider-tick.major { height: 12px; background: rgba(255,255,255,0.12); }
+.slider-tick.active { background: var(--gold); height: 14px; width: 3px; border-radius: 1.5px; box-shadow: 0 0 6px rgba(212,175,55,0.4); }
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px solid #1a1528;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  cursor: grab; transition: left 0.12s ease;
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
+.slider-thumb.dragging { transition: none; transform: translate(-50%, -50%) scale(1.15); }
+.slider-counter {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.08em;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1><a href="index.html" style="color:inherit;text-decoration:none;">Spelling Bee</a></h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="slider-area" id="sliderArea">
+      <div class="slider-track-bg">
+        <div class="slider-fill" id="sliderFill"></div>
+      </div>
+      <div class="slider-dots" id="sliderDots"></div>
+      <div class="slider-thumb" id="sliderThumb"></div>
+    </div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'macadam', pronunciation:'muh-KAD-um', ipa:'/məˈkædəm/', pos:'noun', def:'A type of road surface made of layers of compacted broken stone, bound together with tar or asphalt.', lang:'Named after John Loudon McAdam (1756-1836), the Scottish engineer who pioneered this method of road construction.', example:'The old macadam road crunched under the tires, its packed gravel surface holding up well despite decades of use.', isNoun:true },
+  { word:'macadamia', pronunciation:'MAK-uh-DAY-mee-uh', ipa:'/ˌmækəˈdeɪmiə/', pos:'noun', def:'A round, hard-shelled nut with a rich, buttery flavor, from an evergreen tree native to Australia.', lang:'Named after John Macadam (1827-1865), an Australian chemist and politician, + -ia.', example:'The white chocolate cookies studded with crunchy macadamia nuts were the bakery\'s bestselling item every holiday season.', isNoun:true },
+  { word:'machicolation', pronunciation:'muh-CHIK-uh-LAY-shun', ipa:'/məˌtʃɪkəˈleɪʃən/', pos:'noun', def:'An opening between the supporting corbels of a projecting parapet on a castle wall, through which stones or boiling liquid could be dropped on attackers.', lang:'Old French, from mâchicoulis, from mâcher (\'to crush\') + col (\'neck\'), describing the gap through which defenders attacked besiegers below.', example:'The castle\'s machicolations allowed defenders to pour boiling oil on anyone trying to breach the gate below.', isNoun:true },
+  { word:'machination', pronunciation:'MAK-ih-NAY-shun', ipa:'/ˌmækɪˈneɪʃən/', pos:'noun', def:'A plot or scheme, especially one with evil intent; crafty and underhanded planning.', lang:'Latin, from machinatio (\'a contrivance\'), from machinari (\'to contrive, plot\'), from machina (\'a device, machine\').', example:'The villain\'s elaborate machinations were finally exposed when a whistleblower leaked the secret documents to the press.', isNoun:true },
+  { word:'macle', pronunciation:'MAK-ul', ipa:'/ˈmækəl/', pos:'noun', def:'A twin crystal; a dark spot in a mineral, especially a diamond; a twin formation in crystallography.', lang:'French, from macle (\'a twin crystal\'), from Latin macula (\'a spot, blemish\').', example:'The jeweler examined the diamond under magnification and found a small macle, a dark twinned crystal inclusion near its center.', isNoun:true },
+  { word:'maclura', pronunciation:'muh-KLOOR-uh', ipa:'/məˈklʊərə/', pos:'noun', def:'A genus of thorny trees including the Osage orange, known for its large, bumpy, yellowish-green fruit.', lang:'Named after William Maclure (1763-1840), a Scottish-American geologist considered the father of American geology.', example:'The gnarled maclura tree along the fence row bore heavy green fruits that the children called monkey brains.', isNoun:true },
+  { word:'macular', pronunciation:'MAK-yoo-lur', ipa:'/ˈmækjʊlər/', pos:'adjective', def:'Of, relating to, or affecting the macula of the eye; characterized by spots or blotches.', lang:'Latin, from macula (\'a spot, blemish\'), + -ar.', example:'The ophthalmologist diagnosed macular degeneration, a condition gradually destroying the sharp central vision she needed for reading.', isNoun:false },
+  { word:'madder', pronunciation:'MAD-ur', ipa:'/ˈmædər/', pos:'noun', def:'A Eurasian plant with whorled leaves and small yellowish flowers, whose root yields a red dye used since antiquity.', lang:'Old English, from mædere (\'madder plant\'), of Germanic origin, one of the oldest known natural dye sources.', example:'The artisan dyed the wool with madder root, producing a rich, warm red that had been prized by textile makers for thousands of years.', isNoun:true },
+  { word:'maladaptive', pronunciation:'MAL-uh-DAP-tiv', ipa:'/ˌmæləˈdæptɪv/', pos:'adjective', def:'Not providing adequate or appropriate adjustment to the environment or situation; counterproductive as a coping mechanism.', lang:'English, from mal- (from Latin malus, \'bad\') + adaptive (from Latin adaptare, \'to fit\'), + -ive.', example:'The therapist helped her recognize that her avoidance of conflict was a maladaptive behavior that only made problems worse.', isNoun:false },
+  { word:'malady', pronunciation:'MAL-uh-dee', ipa:'/ˈmælədi/', pos:'noun', def:'A disease or ailment; an undesirable condition or problem.', lang:'Old French, from malade (\'sick\'), from Latin male habitus (\'in poor condition\'), from male (\'badly\') + habitus (\'held, kept\').', example:'The mysterious malady swept through the village, leaving dozens bedridden with fever and aching joints for weeks.', isNoun:true },
+  { word:'malapropism', pronunciation:'MAL-uh-PROP-iz-um', ipa:'/ˈmæləˌprɒpɪzəm/', pos:'noun', def:'The mistaken use of a word in place of a similar-sounding one, often with humorous effect.', lang:'Named after Mrs. Malaprop, a character in Richard Sheridan\'s 1775 play The Rivals, from French mal à propos (\'inappropriate\').', example:'Saying \'for all intensive purposes\' instead of \'for all intents and purposes\' is a common malapropism in everyday speech.', isNoun:true },
+  { word:'malevolent', pronunciation:'muh-LEV-uh-lunt', ipa:'/məˈlɛvələnt/', pos:'adjective', def:'Having or showing a wish to do evil to others; deliberately harmful and spiteful.', lang:'Latin, from malevolens (\'ill-disposed\'), from male (\'badly\') + volens, present participle of velle (\'to wish\').', example:'The malevolent sorcerer cast a curse upon the kingdom, turning every garden to dust and every stream to ice.', isNoun:false },
+  { word:'malfeasance', pronunciation:'mal-FEE-zunce', ipa:'/mælˈfiːzəns/', pos:'noun', def:'Wrongdoing or misconduct, especially by a public official; illegal or dishonest activity by someone in a position of trust.', lang:'Old French, from malfaisance (\'evildoing\'), from malfaisant (\'doing evil\'), from mal (\'badly\') + faisant (\'doing\'), from faire (\'to do\').', example:'The mayor was removed from office for malfeasance after investigators discovered he had funneled public funds into private accounts.', isNoun:true },
+  { word:'malinger', pronunciation:'muh-LING-gur', ipa:'/məˈlɪŋɡər/', pos:'verb', def:'To pretend to be ill or injured in order to escape duty or work; to feign sickness.', lang:'French, from malingre (\'sickly, weak\'), possibly from mal (\'badly\') + haingre (\'thin, weak\'), of Germanic origin.', example:'The sergeant suspected the soldier was malingering to avoid the early morning drills, since he recovered miraculously every afternoon.', isNoun:false },
+  { word:'Mancunian', pronunciation:'man-KYOO-nee-un', ipa:'/mænˈkjuːniən/', pos:'noun', def:'A native or inhabitant of Manchester, England; of or relating to Manchester.', lang:'Latin, from Mancunium, the Roman name for the fort at Manchester, + -ian.', example:'The proud Mancunian never missed a match at Old Trafford, cheering for his beloved football club through wins and losses alike.', isNoun:true },
+  { word:'mano a mano', pronunciation:'MAH-noh ah MAH-noh', ipa:'/ˌmɑːnoʊ ɑː ˈmɑːnoʊ/', pos:'adverb', def:'In direct confrontation or competition; face to face; one against one.', lang:'Spanish, literally \'hand to hand\', from mano (\'hand\'), from Latin manus (\'hand\').', example:'The two chess grandmasters finally met mano a mano in the championship finals, each determined to outplay the other.', isNoun:false },
+  { word:'manumit', pronunciation:'MAN-yoo-mit', ipa:'/ˌmænjʊˈmɪt/', pos:'verb', def:'To release from slavery; to set free from bondage or servitude.', lang:'Latin, from manumittere (\'to send from one\'s hand, set free\'), from manus (\'hand\') + mittere (\'to send, release\').', example:'The abolitionist worked tirelessly to manumit enslaved people, helping them escape to freedom through secret networks.', isNoun:false },
+  { word:'mare', pronunciation:'MAR-ay', ipa:'/ˈmɑːreɪ/', pos:'noun', def:'A dark, flat area on the surface of the moon or Mars, once thought to be seas; a female horse.', lang:'Latin, from mare (\'sea\'), because early astronomers believed these dark patches on the moon were actual bodies of water.', example:'The astronomer pointed her telescope at the Mare Tranquillitatis, the vast lunar plain where Apollo 11 first touched down.', isNoun:true },
+  { word:'marginalia', pronunciation:'MAR-jih-NAY-lee-uh', ipa:'/ˌmɑːrdʒɪˈneɪliə/', pos:'noun', def:'Notes written in the margins of a text; marginal annotations and commentary by readers.', lang:'Latin, neuter plural of marginalis (\'of the margin\'), from margo (genitive marginis, \'a margin, edge\').', example:'The rare book was valuable not just for its text but for the fascinating marginalia scrawled by a famous 18th-century reader.', isNoun:true },
+  { word:'marimba', pronunciation:'muh-RIM-buh', ipa:'/məˈrɪmbə/', pos:'noun', def:'A deep-toned xylophone of African origin, with wooden bars struck with mallets over tubular resonators.', lang:'Bantu, from marimba, the name used in several African languages for a type of xylophone, borrowed into Spanish and English.', example:'The warm, mellow tones of the marimba filled the concert hall as the percussionist danced her mallets across the wooden bars.', isNoun:true },
+  { word:'marring', pronunciation:'MAR-ing', ipa:'/ˈmɑːrɪŋ/', pos:'verb', def:'Impairing the appearance or quality of; damaging or spoiling; disfiguring.', lang:'Old English, from merran (\'to hinder, waste\'), of Germanic origin.', example:'A single scratch marring the surface of the antique mirror reduced its auction value by several thousand dollars.', isNoun:false },
+  { word:'marsupial', pronunciation:'mar-SOO-pee-ul', ipa:'/mɑːrˈsuːpiəl/', pos:'noun', def:'A mammal that carries its young in a pouch, including kangaroos, koalas, and opossums.', lang:'Latin, from marsupium (\'a pouch, purse\'), from Greek marsipion (\'a small purse\'), diminutive of marsipos (\'a bag\').', example:'The kangaroo is perhaps the most iconic marsupial, its joey peeking out from the mother\'s pouch as she bounds across the outback.', isNoun:true },
+  { word:'martyrdom', pronunciation:'MAR-tur-dum', ipa:'/ˈmɑːrtərdəm/', pos:'noun', def:'The suffering and death of a martyr; great suffering endured for a cause or belief.', lang:'Old English, from martyr (from Greek martyr, \'a witness\') + -dom (\'state, condition\').', example:'The saint\'s martyrdom inspired generations of followers, who saw in her sacrifice the ultimate expression of devotion and courage.', isNoun:true },
+  { word:'mastodon', pronunciation:'MAS-tuh-don', ipa:'/ˈmæstəˌdɒn/', pos:'noun', def:'A large, extinct elephant-like mammal with cone-shaped cusps on its teeth, which roamed North America until about 10,000 years ago.', lang:'Greek, from mastos (\'breast\') + odous (genitive odontos, \'tooth\'), because the cone-shaped tooth cusps resemble nipples.', example:'The museum\'s mastodon skeleton towered over visitors, its massive tusks curving outward like twin ivory scythes.', isNoun:true },
+  { word:'matriculation', pronunciation:'muh-TRIK-yoo-LAY-shun', ipa:'/məˌtrɪkjʊˈleɪʃən/', pos:'noun', def:'The formal process of enrolling at a college or university; admission as a member of an academic body.', lang:'Latin, from matricula (\'a register, roll\'), diminutive of matrix (\'a list, womb\'), + -ation.', example:'Her matriculation at Oxford was the proudest moment of her life, fulfilling a dream she had held since childhood.', isNoun:true },
+  { word:'matsutake', pronunciation:'MAHT-soo-TAH-keh', ipa:'/ˌmɑːtsʊˈtɑːkeɪ/', pos:'noun', def:'A highly prized edible mushroom that grows under pine trees in Asia, with a distinctive spicy aroma.', lang:'Japanese, from matsu (\'pine\') + take (\'mushroom\'), literally \'pine mushroom\'.', example:'The matsutake mushroom is so prized in Japanese cuisine that a single specimen can sell for hundreds of dollars during peak season.', isNoun:true },
+  { word:'mawkish', pronunciation:'MAW-kish', ipa:'/ˈmɔːkɪʃ/', pos:'adjective', def:'Sentimental in a feeble or sickly way; excessively emotional and insincere.', lang:'English, from mawk (\'a maggot\', from Old Norse mathkr) + -ish, originally meaning \'nauseating\', then \'sickeningly sentimental\'.', example:'The mawkish greeting card was so dripping with saccharine sentiment that it made her cringe rather than smile.', isNoun:false },
+  { word:'mea culpa', pronunciation:'MAY-uh KUL-puh', ipa:'/ˌmeɪə ˈkʌlpə/', pos:'noun', def:'An acknowledgment of one\'s fault or error; a formal admission of personal responsibility.', lang:'Latin, literally \'through my fault\', from the Catholic Confiteor prayer in which worshippers admit their sins.', example:'The CEO issued a public mea culpa, accepting full responsibility for the data breach and promising immediate reforms.', isNoun:true },
+  { word:'mecca', pronunciation:'MEK-uh', ipa:'/ˈmɛkə/', pos:'noun', def:'A place regarded as a center for a particular activity or interest; a destination that attracts many visitors.', lang:'Named after Mecca (Makkah), the holiest city of Islam in Saudi Arabia, where Muslims make pilgrimage.', example:'Nashville has long been a mecca for aspiring country musicians, who flock there hoping to launch their careers.', isNoun:true },
+  { word:'mediocrity', pronunciation:'MEE-dee-OK-rih-tee', ipa:'/ˌmiːdiˈɒkrɪti/', pos:'noun', def:'The quality or state of being mediocre; the condition of being average or undistinguished.', lang:'Latin, from mediocritas (\'a middle state\'), from mediocris (\'of middle height, moderate\'), from medius (\'middle\') + ocris (\'a rugged mountain\').', example:'She refused to accept mediocrity, pushing herself to excel in every endeavor even when others were content with average results.', isNoun:true },
+  { word:'medusa', pronunciation:'meh-DOO-suh', ipa:'/mɪˈdjuːsə/', pos:'noun', def:'A free-swimming form of a cnidarian such as a jellyfish; in Greek mythology, a Gorgon whose gaze turned onlookers to stone.', lang:'Greek, from Medousa (\'guardian, ruler\'), from medein (\'to protect, rule\'); her snake-covered head became an iconic mythological image.', example:'The translucent medusa pulsed through the warm ocean current, its trailing tentacles drifting like ghostly ribbons behind it.', isNoun:true },
+  { word:'megalomaniac', pronunciation:'MEG-uh-loh-MAY-nee-ak', ipa:'/ˌmɛɡəloʊˈmeɪniˌæk/', pos:'noun', def:'A person who has an obsessive desire for power or who has delusions of their own importance and abilities.', lang:'Greek, from megas (genitive megalou, \'great\') + mania (\'madness, frenzy\'), + -ac.', example:'The dictator was a textbook megalomaniac, building enormous statues of himself on every street corner in the capital.', isNoun:true },
+  { word:'melamine', pronunciation:'MEL-uh-meen', ipa:'/ˈmɛləˌmiːn/', pos:'noun', def:'A hard, durable thermosetting plastic resin used in laminates, dishware, and adhesives; a nitrogen-rich organic compound.', lang:'German, from Melamin, a blend of melam (a chemical compound) + amine (an organic nitrogen compound).', example:'The colorful melamine plates were perfect for outdoor picnics — lightweight, shatterproof, and easy to clean.', isNoun:true },
+  { word:'mélange', pronunciation:'may-LAHNZH', ipa:'/meɪˈlɑːnʒ/', pos:'noun', def:'A mixture or medley of different things; a varied assortment or blend.', lang:'French, from mélange (\'a mixture\'), from mêler (\'to mix\'), from Latin miscere (\'to mix\').', example:'The market offered a colorful mélange of spices, fabrics, and handcrafted goods from dozens of different cultures.', isNoun:true },
+  { word:'melee', pronunciation:'MAY-lay', ipa:'/ˈmeɪleɪ/', pos:'noun', def:'A confused fight or struggle involving many people; a chaotic and disorderly brawl.', lang:'French, from mêlée (\'a mixing, hand-to-hand combat\'), from mêler (\'to mix\'), from Latin miscere.', example:'The peaceful protest descended into a melee when counter-demonstrators arrived and confrontations erupted on several street corners.', isNoun:true },
+  { word:'melismatic', pronunciation:'MEL-iz-MAT-ik', ipa:'/ˌmɛlɪzˈmætɪk/', pos:'adjective', def:'Of singing, characterized by several notes sung to one syllable of text; ornamental vocal embellishment.', lang:'Greek, from melisma (\'a song, melody\'), from melos (\'a song, tune\'), + -atic.', example:'The gospel singer\'s melismatic style turned a simple hymn into a soaring vocal performance, each syllable blooming with cascading notes.', isNoun:false },
+  { word:'mendacious', pronunciation:'men-DAY-shus', ipa:'/mɛnˈdeɪʃəs/', pos:'adjective', def:'Not telling the truth; lying; habitually dishonest and deceitful.', lang:'Latin, from mendax (genitive mendacis, \'lying, deceitful\'), + -ious.', example:'The mendacious witness changed her story three times during cross-examination, destroying whatever credibility she had left.', isNoun:false },
+  { word:'mendicity', pronunciation:'men-DIS-ih-tee', ipa:'/mɛnˈdɪsɪti/', pos:'noun', def:'The condition or practice of begging; the state of being a beggar; dependence on charity.', lang:'Latin, from mendicitas (\'beggary\'), from mendicus (\'a beggar\'), from mendum (\'a defect, fault\').', example:'Victorian reformers sought to eliminate mendicity through workhouses and charitable institutions that offered food and shelter.', isNoun:true },
+  { word:'meningitis', pronunciation:'MEN-in-JY-tis', ipa:'/ˌmɛnɪnˈdʒaɪtɪs/', pos:'noun', def:'Inflammation of the protective membranes covering the brain and spinal cord, usually caused by infection.', lang:'Greek, from meninx (genitive meningos, \'a membrane\') + -itis (\'inflammation\').', example:'The college required all incoming freshmen to be vaccinated against meningitis before moving into the dormitories.', isNoun:true },
+  { word:'Mennonites', pronunciation:'MEN-uh-nyts', ipa:'/ˈmɛnəˌnaɪts/', pos:'noun', def:'Members of a Christian group descended from the Anabaptist movement, known for simple living, pacifism, and community values.', lang:'Named after Menno Simons (1496-1561), a Dutch priest who became the most prominent leader of the Anabaptist movement, + -ite.', example:'The Mennonites in the farming community lived simply, maintaining their traditions of mutual aid and peaceful coexistence.', isNoun:true },
+  { word:'mephitic', pronunciation:'meh-FIT-ik', ipa:'/mɪˈfɪtɪk/', pos:'adjective', def:'Foul-smelling; noxious and poisonous, especially of gases or vapors.', lang:'Latin, from mephiticus, from mephitis (\'a noxious exhalation from the earth\'), of uncertain origin.', example:'The mephitic stench rising from the swamp was so overpowering that hikers covered their noses and hurried past.', isNoun:false },
+  { word:'merganser', pronunciation:'mur-GAN-zur', ipa:'/mɜːrˈɡænsər/', pos:'noun', def:'A large diving duck with a long, serrated bill, adapted for catching fish; also called a sawbill.', lang:'Latin, from mergus (\'a diver, waterfowl\'), from mergere (\'to dive\') + anser (\'a goose\').', example:'The common merganser dove beneath the river surface and emerged moments later with a wriggling fish clamped in its serrated bill.', isNoun:true },
+  { word:'meridian', pronunciation:'muh-RID-ee-un', ipa:'/məˈrɪdiən/', pos:'noun', def:'A circle of constant longitude passing through the poles; the highest point reached by a celestial body; a peak of achievement.', lang:'Latin, from meridianus (\'of midday\'), from meridies (\'noon\'), from medius (\'middle\') + dies (\'day\').', example:'The prime meridian at Greenwich divides the Eastern and Western Hemispheres, serving as the zero point for measuring longitude.', isNoun:true },
+  { word:'merino', pronunciation:'muh-REE-noh', ipa:'/məˈriːnoʊ/', pos:'noun', def:'A breed of sheep with fine, soft wool; a soft, lightweight fabric or yarn made from the wool of merino sheep.', lang:'Spanish, from merino (\'a type of fine-wooled sheep\'), possibly from Arabic Marinid, a Berber dynasty that may have introduced the breed.', example:'The merino wool sweater was remarkably soft against the skin and kept her warm without the itch of coarser fibers.', isNoun:true },
+  { word:'mesial', pronunciation:'MEE-zee-ul', ipa:'/ˈmiːziəl/', pos:'adjective', def:'Of, relating to, or situated in the middle; in dentistry, relating to the surface of a tooth facing the midline of the jaw.', lang:'Greek, from mesos (\'middle\'), + -ial.', example:'The dentist noted a small cavity on the mesial surface of the molar, facing toward the center of the dental arch.', isNoun:false },
+  { word:'Mesopotamian', pronunciation:'MES-uh-puh-TAY-mee-un', ipa:'/ˌmɛsəpəˈteɪmiən/', pos:'adjective', def:'Of or relating to Mesopotamia, the ancient region between the Tigris and Euphrates rivers, considered a cradle of civilization.', lang:'Greek, from Mesopotamia (\'land between the rivers\'), from mesos (\'middle\') + potamos (\'river\'), + -ian.', example:'The Mesopotamian civilization developed writing, mathematics, and urban planning thousands of years before the Common Era.', isNoun:false },
+  { word:'metaphorically', pronunciation:'MET-uh-FOR-ih-klee', ipa:'/ˌmɛtəˈfɒrɪkli/', pos:'adverb', def:'In a way that uses metaphor; figuratively rather than literally.', lang:'Greek, from metaphora (\'a transfer\'), from metapherein (\'to transfer\'), from meta (\'over\') + pherein (\'to carry\'), + -ically.', example:'She meant it metaphorically when she said her heart was on fire — she was passionate about the project, not in medical distress.', isNoun:false },
+  { word:'metaplasia', pronunciation:'MET-uh-PLAY-zhuh', ipa:'/ˌmɛtəˈpleɪʒə/', pos:'noun', def:'The abnormal change of one type of tissue into another, often in response to chronic irritation or inflammation.', lang:'Greek, from meta (\'change\') + plasis (\'a molding, formation\'), from plassein (\'to mold, form\').', example:'The biopsy revealed intestinal metaplasia in the stomach lining, a condition requiring monitoring to prevent further complications.', isNoun:true },
+  { word:'metastasize', pronunciation:'meh-TAS-tuh-size', ipa:'/mɛˈtæstəˌsaɪz/', pos:'verb', def:'Of a cancer, to spread from the original site to other parts of the body; to spread harmfully.', lang:'Greek, from metastasis (\'a removal, change\'), from methistanai (\'to change\'), from meta (\'change\') + histanai (\'to place\').', example:'The doctors caught the tumor early, before it had a chance to metastasize to the lymph nodes or other organs.', isNoun:false },
+  { word:'metatarsal', pronunciation:'MET-uh-TAR-sul', ipa:'/ˌmɛtəˈtɑːrsəl/', pos:'noun', def:'Any of the five long bones in the foot between the ankle and the toes.', lang:'Greek, from meta (\'beyond, after\') + Latin tarsus (\'the flat of the foot\'), from Greek tarsos (\'a flat surface\').', example:'The X-ray revealed a stress fracture in the third metatarsal, a common injury among marathon runners and ballet dancers.', isNoun:true },
+  { word:'Michaelmas', pronunciation:'MIK-ul-mus', ipa:'/ˈmɪkəlməs/', pos:'noun', def:'The feast of Saint Michael the Archangel, celebrated on September 29; a term used in British academia and law for the autumn period.', lang:'Old English, from Michael (the archangel) + mæsse (\'mass, feast\'), literally \'Michael\'s mass\'.', example:'The Michaelmas term at Oxford begins in October, when students return to the ancient colleges as the leaves begin to turn gold.', isNoun:true },
+  { word:'MIDI', pronunciation:'MID-ee', ipa:'/ˈmɪdi/', pos:'noun', def:'Musical Instrument Digital Interface; a technical standard for communication between electronic musical instruments and computers.', lang:'English, an acronym from Musical Instrument Digital Interface, developed in the early 1980s.', example:'The composer used MIDI to connect her keyboard to the computer, recording each note digitally for editing and playback.', isNoun:true },
+  { word:'millennial', pronunciation:'mih-LEN-ee-ul', ipa:'/mɪˈlɛniəl/', pos:'adjective', def:'Of or relating to a millennium; of or relating to the generation born roughly between 1981 and 1996.', lang:'Latin, from millennium (\'a period of a thousand years\'), from mille (\'thousand\') + annus (\'year\'), + -ial.', example:'The millennial generation came of age during the rise of the internet, shaping their relationship with technology and communication.', isNoun:false },
+  { word:'millet', pronunciation:'MIL-it', ipa:'/ˈmɪlɪt/', pos:'noun', def:'A fast-growing cereal grass cultivated in warm countries as a food grain and for animal fodder.', lang:'French, from millet, diminutive of mil (\'millet\'), from Latin milium (\'millet grain\').', example:'Millet has been a staple grain in Africa and Asia for thousands of years, thriving in dry conditions where other crops fail.', isNoun:true },
+  { word:'millisecond', pronunciation:'MIL-ih-SEK-und', ipa:'/ˈmɪlɪˌsɛkənd/', pos:'noun', def:'One thousandth of a second; an extremely brief unit of time used in computing and scientific measurement.', lang:'Latin, from mille (\'thousand\') + English second (from Latin secunda, \'the second division of the hour\').', example:'The computer processed each command in just a few milliseconds, executing billions of calculations before a human could blink.', isNoun:true },
+  { word:'milonga', pronunciation:'mih-LONG-guh', ipa:'/mɪˈlɒŋɡə/', pos:'noun', def:'A style of Argentine music and dance that predates and influenced tango; also a social dance event where tango is danced.', lang:'Spanish (River Plate), from milonga, possibly from a Bantu language of Angola or Brazil, reflecting African musical influences.', example:'The couple glided across the floor at the milonga, their movements fluid and perfectly synchronized to the melancholy music.', isNoun:true },
+  { word:'milquetoast', pronunciation:'MILK-tohst', ipa:'/ˈmɪlkˌtoʊst/', pos:'noun', def:'A timid, meek, or unassertive person; someone who is easily dominated.', lang:'Named after Caspar Milquetoast, a comic strip character created by H.T. Webster in 1924, himself named after milk toast, a bland food for invalids.', example:'The office milquetoast agreed to every demand without protest, too timid to stand up for himself even on the simplest matters.', isNoun:true },
+  { word:'minacious', pronunciation:'mih-NAY-shus', ipa:'/mɪˈneɪʃəs/', pos:'adjective', def:'Menacing; threatening; having a threatening or hostile quality.', lang:'Latin, from minax (genitive minacis, \'threatening\'), from minari (\'to threaten\'), + -ious.', example:'The minacious storm clouds gathering on the horizon sent the beachgoers scrambling to pack up their umbrellas and towels.', isNoun:false },
+  { word:'minestra', pronunciation:'mih-NES-truh', ipa:'/mɪˈnɛstrə/', pos:'noun', def:'A thick Italian soup made with vegetables, beans, and pasta or rice; the basis for minestrone.', lang:'Italian, from minestra (\'soup\'), from minestrare (\'to serve food\'), from Latin ministrare (\'to serve, attend\').', example:'The grandmother\'s hearty minestra, thick with white beans, kale, and small pasta, was the family\'s favorite winter comfort food.', isNoun:true },
+  { word:'minette', pronunciation:'mih-NET', ipa:'/mɪˈnɛt/', pos:'noun', def:'A type of iron ore found in Lorraine, France; also a fine-grained igneous rock containing biotite and orthoclase.', lang:'French, from minette (\'a small mine\'), diminutive of mine (\'a mine\'), referring to the iron ore deposits of northeastern France.', example:'The minette iron ore deposits of Lorraine fueled the French steel industry for over a century of heavy industrial production.', isNoun:true },
+  { word:'minuscule', pronunciation:'MIN-uh-skyool', ipa:'/ˈmɪnəˌskjuːl/', pos:'adjective', def:'Extremely small; tiny; of or in lowercase letters, as opposed to majuscule or uppercase.', lang:'Latin, from minuscula (littera) (\'somewhat smaller letter\'), from minus (\'less\'), + -cula (diminutive suffix).', example:'The minuscule print on the contract was so small that she needed a magnifying glass to read the terms and conditions.', isNoun:false },
+  { word:'miniscule', pronunciation:'MIN-ih-skyool', ipa:'/ˈmɪnɪˌskjuːl/', pos:'adjective', def:'A common variant spelling of minuscule, meaning extremely small; widely used but considered nonstandard by many authorities.', lang:'English, a respelling of minuscule influenced by the prefix mini- (\'small\'), though the original derives from Latin minus (\'less\').', example:'The spelling miniscule, though frequently encountered, is technically an error — the correct form is minuscule, from Latin minus.', isNoun:false },
+  { word:'Miranda', pronunciation:'muh-RAN-duh', ipa:'/mɪˈrændə/', pos:'noun', def:'Relating to the legal rights that must be read to a suspect upon arrest, established by the 1966 Supreme Court case Miranda v. Arizona.', lang:'Named after Ernesto Miranda (1941-1976), the defendant in the landmark Supreme Court case, from Latin miranda (\'worthy of admiration\').', example:'The officer recited the Miranda rights before questioning the suspect, informing him of his right to remain silent and to have an attorney.', isNoun:true },
+  { word:'misnomer', pronunciation:'mis-NOH-mur', ipa:'/mɪsˈnoʊmər/', pos:'noun', def:'A wrong or inaccurate name or designation; a wrong or unsuitable use of a name or term.', lang:'Old French, from mesnommer (\'to misname\'), from mes- (\'wrongly\') + nommer (\'to name\'), from Latin nominare.', example:'Calling a koala a \'bear\' is a common misnomer, since koalas are actually marsupials, not bears at all.', isNoun:true },
+  { word:'mitigative', pronunciation:'MIT-ih-GAY-tiv', ipa:'/ˈmɪtɪˌɡeɪtɪv/', pos:'adjective', def:'Tending to mitigate or make less severe; serving to moderate or alleviate harm, pain, or difficulty.', lang:'Latin, from mitigare (\'to soften, make mild\'), from mitis (\'soft, mild\') + agere (\'to drive, do\'), + -ative.', example:'The mitigative measures put in place after the flood included better drainage systems and elevated building foundations.', isNoun:false },
+  { word:'moano', pronunciation:'moh-AH-noh', ipa:'/moʊˈɑːnoʊ/', pos:'noun', def:'A type of fish found in Pacific Island waters, particularly in Hawaiian and Polynesian marine environments.', lang:'Hawaiian, from moano, the native name for a species of goatfish found in Hawaiian reef waters.', example:'The fisherman caught a beautiful moano along the reef, its red and yellow scales shimmering as he lifted it from the water.', isNoun:true },
+  { word:'mochi', pronunciation:'MOH-chee', ipa:'/ˈmoʊtʃi/', pos:'noun', def:'A Japanese rice cake made from pounded glutinous rice, often shaped into balls and eaten plain or filled with sweet paste.', lang:'Japanese, from mochi (\'a rice cake\'), made from mochigome (glutinous rice) pounded into a smooth, sticky dough.', example:'The soft, chewy mochi was filled with sweet red bean paste, a traditional Japanese treat enjoyed during New Year celebrations.', isNoun:true },
+  { word:'moissanite', pronunciation:'MOY-suh-nyt', ipa:'/ˈmɔɪsəˌnaɪt/', pos:'noun', def:'A rare mineral of silicon carbide, now produced synthetically as a diamond substitute in jewelry.', lang:'Named after Henri Moissan (1852-1907), the French chemist who discovered the mineral in a meteorite crater in 1893, + -ite.', example:'The moissanite engagement ring sparkled with even more fire and brilliance than a diamond at a fraction of the cost.', isNoun:true },
+  { word:'mollify', pronunciation:'MOL-ih-fy', ipa:'/ˈmɒlɪˌfaɪ/', pos:'verb', def:'To appease the anger or anxiety of someone; to soothe, calm, or soften.', lang:'Latin, from mollificare (\'to make soft\'), from mollis (\'soft\') + facere (\'to make\').', example:'The manager tried to mollify the angry customer by offering a full refund and a sincere apology for the inconvenience.', isNoun:false },
+  { word:'monitory', pronunciation:'MON-ih-TOR-ee', ipa:'/ˈmɒnɪˌtɔːri/', pos:'adjective', def:'Giving or serving as a warning; admonitory.', lang:'Latin, from monitorius (\'of or pertaining to warning\'), from monere (\'to warn, advise\').', example:'The doctor\'s monitory words about the dangers of smoking finally convinced the patient to quit after twenty years.', isNoun:false },
+  { word:'monochrome', pronunciation:'MON-oh-krohm', ipa:'/ˈmɒnəˌkroʊm/', pos:'adjective', def:'Produced in or using only one color or shades of one color; black and white.', lang:'Greek, from monochromos (\'of one color\'), from monos (\'single, alone\') + chroma (\'color\').', example:'The monochrome photograph captured the moody streets of Paris in dramatic shades of gray, black, and white.', isNoun:false },
+  { word:'monoclonal', pronunciation:'MON-oh-KLOH-nul', ipa:'/ˌmɒnəˈkloʊnəl/', pos:'adjective', def:'Of an antibody or cell line, derived from a single clone and therefore identical; relating to a single genetic lineage.', lang:'Greek, from monos (\'single\') + klon (\'a twig, slip\'), + -al, coined in the 1970s for laboratory-produced identical antibodies.', example:'Monoclonal antibodies have revolutionized cancer treatment, targeting tumor cells with precision while sparing healthy tissue.', isNoun:false },
+  { word:'monture', pronunciation:'MON-chur', ipa:'/ˈmɒntʃər/', pos:'noun', def:'A mounting or setting for a gemstone or lens; the frame of eyeglasses; a horse used for riding.', lang:'French, from monture (\'a mounting, frame\'), from monter (\'to mount, go up\'), from Latin mons (\'a mountain\').', example:'The jeweler designed an elegant platinum monture to hold the sapphire, its delicate prongs showcasing the stone beautifully.', isNoun:true },
+  { word:'moratorium', pronunciation:'MOR-uh-TOR-ee-um', ipa:'/ˌmɒrəˈtɔːriəm/', pos:'noun', def:'A temporary prohibition of an activity; an authorized period of delay or waiting.', lang:'Latin, from moratorius (\'tending to delay\'), from morari (\'to delay\'), from mora (\'a delay\').', example:'The government declared a moratorium on offshore drilling while scientists assessed the environmental impact of the recent spill.', isNoun:true },
+  { word:'mordant', pronunciation:'MOR-dunt', ipa:'/ˈmɔːrdənt/', pos:'adjective', def:'Having or showing a sharp or critical quality; biting and caustic in thought or style; a substance that fixes dye.', lang:'French, from mordant (\'biting\'), present participle of mordre (\'to bite\'), from Latin mordere.', example:'Her mordant wit spared no one, and her biting observations about office politics were repeated in whispers around the water cooler.', isNoun:false },
+  { word:'morphological', pronunciation:'MOR-fuh-LOJ-ih-kul', ipa:'/ˌmɔːrfəˈlɒdʒɪkəl/', pos:'adjective', def:'Of or relating to the form and structure of organisms or words; concerning shape, form, and external appearance.', lang:'Greek, from morphe (\'form, shape\') + logos (\'study, word\'), + -ical.', example:'The morphological differences between the two butterfly species were so subtle that only an expert could tell them apart.', isNoun:false },
+  { word:'mortician', pronunciation:'mor-TISH-un', ipa:'/mɔːrˈtɪʃən/', pos:'noun', def:'A person who manages a funeral home and prepares the dead for burial or cremation; an undertaker.', lang:'English, from Latin mors (genitive mortis, \'death\') + -ician (as in physician), coined in the 1890s as a more dignified term.', example:'The mortician prepared the viewing room with quiet professionalism, ensuring the family\'s loved one looked peaceful and dignified.', isNoun:true },
+  { word:'Motrin', pronunciation:'MOH-trin', ipa:'/ˈmoʊtrɪn/', pos:'noun', def:'A brand name for ibuprofen, an over-the-counter nonsteroidal anti-inflammatory drug used for pain and fever relief.', lang:'English, a proprietary brand name for ibuprofen, trademarked by the pharmaceutical company.', example:'The pediatrician recommended children\'s Motrin to bring down the toddler\'s fever and ease the discomfort from her ear infection.', isNoun:true },
+  { word:'movimento', pronunciation:'moh-vih-MEN-toh', ipa:'/ˌmoʊvɪˈmɛntoʊ/', pos:'noun', def:'A movement, especially in music or art; a tempo or passage within a larger composition.', lang:'Italian, from movimento (\'movement\'), from Latin movimentum, from movere (\'to move\').', example:'The second movimento of the concerto was a slow, haunting adagio that brought several audience members to tears.', isNoun:true },
+  { word:'mozzarella', pronunciation:'MOT-suh-REL-uh', ipa:'/ˌmɒtsəˈrɛlə/', pos:'noun', def:'A mild, white Italian cheese with a springy texture, traditionally made from water buffalo milk, widely used on pizza.', lang:'Italian, diminutive of mozza (\'a cut\'), from mozzare (\'to cut off\'), because the cheese is shaped by cutting and stretching the curd.', example:'The fresh mozzarella was so creamy and delicate that it practically melted on the tongue alongside the ripe tomatoes and basil.', isNoun:true },
+  { word:'muchacha', pronunciation:'moo-CHAH-chah', ipa:'/muːˈtʃɑːtʃɑː/', pos:'noun', def:'A young woman or girl; the feminine form of muchacho in Spanish.', lang:'Spanish, from muchacha (\'a girl, young woman\'), feminine of muchacho (\'a boy\'), from mocho (\'cropped, shorn\').', example:'The cheerful muchacha greeted every customer at the market stall with a bright smile and a warm welcome.', isNoun:true },
+  { word:'mulligan', pronunciation:'MUL-ih-gun', ipa:'/ˈmʌlɪɡən/', pos:'noun', def:'An extra stroke allowed after a poor shot in informal golf, not counted on the scorecard; a second chance.', lang:'English, of uncertain origin, possibly from a golfer named Mulligan in the 1920s who habitually replayed poor shots.', example:'After slicing his first drive deep into the woods, his friends generously offered him a mulligan to try again.', isNoun:true },
+  { word:'multivoltine', pronunciation:'MUL-tih-VOL-teen', ipa:'/ˌmʌltɪˈvɒltiːn/', pos:'adjective', def:'Of an insect, producing several broods or generations in a single year.', lang:'Latin, from multi- (\'many\') + Italian voltino (\'a turning, generation\'), from volta (\'a turn\'), from Latin volvere (\'to turn\').', example:'The multivoltine mosquito species produces up to ten generations per year in tropical climates, multiplying at an alarming rate.', isNoun:false },
+  { word:'Munich', pronunciation:'MYOO-nik', ipa:'/ˈmjuːnɪk/', pos:'noun', def:'The capital city of Bavaria in southern Germany, known for its baroque architecture, beer culture, and Oktoberfest.', lang:'German, from München, from Old High German munih (\'monk\'), because the city was founded near a Benedictine monastery.', example:'Every autumn, millions of visitors descend on Munich for Oktoberfest, the world\'s largest beer festival and folk celebration.', isNoun:true },
+  { word:'municipal', pronunciation:'myoo-NIS-ih-pul', ipa:'/mjuːˈnɪsɪpəl/', pos:'adjective', def:'Of or relating to a city or town or its local government.', lang:'Latin, from municipalis (\'of a free town\'), from municipium (\'a free town\'), from munus (\'duty, gift\') + capere (\'to take\').', example:'The municipal government invested millions in upgrading the city\'s aging water system and repairing crumbling roads.', isNoun:false },
+  { word:'muskeg', pronunciation:'MUS-keg', ipa:'/ˈmʌskɛɡ/', pos:'noun', def:'A boggy, mossy area of land, especially in northern North America, dominated by sphagnum moss and stunted trees.', lang:'Cree, from maskek (\'grassy bog\'), an Algonquian word for the waterlogged terrain common across the Canadian north.', example:'The pipeline builders struggled through miles of muskeg, where each step sank into the spongy, waterlogged moss.', isNoun:true },
+  { word:'musketeers', pronunciation:'MUS-kuh-TEERZ', ipa:'/ˌmʌskɪˈtɪərz/', pos:'noun', def:'Soldiers armed with muskets; members of the French royal household troops, immortalized in Alexandre Dumas\'s novel.', lang:'French, from mousquetaire (\'a musketeer\'), from mousquet (\'a musket\'), from Italian moschetto (\'a crossbow bolt\'), + -eer + -s.', example:'The three musketeers swore their famous oath — all for one and one for all — pledging loyalty to each other and to the king.', isNoun:true },
+  { word:'muumuu', pronunciation:'MOO-moo', ipa:'/ˈmuːmuː/', pos:'noun', def:'A loose, brightly colored dress that hangs from the shoulders, traditionally worn in Hawaii and the Pacific Islands.', lang:'Hawaiian, from muʻumuʻu (\'cut off\'), because the dress was originally a simplified version of a missionary-introduced gown without a yoke.', example:'She slipped into a flowing floral muumuu for the backyard luau, the bright hibiscus print perfectly matching the tropical theme.', isNoun:true },
+  { word:'Mylar', pronunciation:'MY-lar', ipa:'/ˈmaɪlɑːr/', pos:'noun', def:'A brand of strong, thin polyester film used in insulation, packaging, balloons, and recording tape.', lang:'English, a trademarked name coined by the DuPont company in the 1950s for their biaxially-oriented polyethylene terephthalate film.', example:'The Mylar emergency blanket weighed almost nothing but reflected body heat so efficiently it could prevent hypothermia in a survival situation.', isNoun:true },
+  { word:'myocarditis', pronunciation:'MY-oh-kar-DY-tis', ipa:'/ˌmaɪoʊkɑːrˈdaɪtɪs/', pos:'noun', def:'Inflammation of the heart muscle, usually caused by a viral infection, which can weaken the heart\'s pumping ability.', lang:'Greek, from mys (genitive myos, \'muscle\') + kardia (\'heart\') + -itis (\'inflammation\').', example:'The young athlete was diagnosed with myocarditis after a viral infection and was advised to rest until her heart fully recovered.', isNoun:true },
+  { word:'myoglobin', pronunciation:'MY-oh-GLOH-bin', ipa:'/ˌmaɪoʊˈɡloʊbɪn/', pos:'noun', def:'A red protein containing iron that carries and stores oxygen in muscle cells, giving meat its red color.', lang:'Greek, from mys (genitive myos, \'muscle\') + Latin globus (\'a ball, sphere\') + -in, describing the oxygen-storing muscle protein.', example:'Myoglobin gives red meat its characteristic color, and its iron content makes beef and lamb excellent dietary sources of the mineral.', isNoun:true },
+  { word:'myopic', pronunciation:'my-OP-ik', ipa:'/maɪˈɒpɪk/', pos:'adjective', def:'Nearsighted; unable to see distant objects clearly; lacking imagination or intellectual insight; shortsighted.', lang:'Greek, from myops (\'to shut the eyes\'), from myein (\'to close\') + ops (\'eye, face\'), + -ic.', example:'The company\'s myopic focus on short-term profits blinded them to the long-term trends that would ultimately reshape their industry.', isNoun:false },
+  { word:'mythopoeic', pronunciation:'MITH-oh-PEE-ik', ipa:'/ˌmɪθoʊˈpiːɪk/', pos:'adjective', def:'Of or relating to the making of myths; concerned with or given to creating mythology.', lang:'Greek, from mythopoiia (\'myth-making\'), from mythos (\'a myth, story\') + poiein (\'to make, create\'), + -ic.', example:'Tolkien\'s mythopoeic imagination created an entire world complete with languages, histories, and cosmologies rivaling any ancient mythology.', isNoun:false }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Slider
+  const totalA = a.length;
+  const pct = totalA > 1 ? s / (totalA - 1) * 100 : 0;
+  document.getElementById("sliderFill").style.width = pct + "%";
+  const sliderArea = document.getElementById("sliderArea");
+  const areaW = sliderArea.offsetWidth || 200;
+  const pad = 10;
+  const thumbLeft = pad + (pct / 100) * (areaW - pad * 2);
+  const thumb = document.getElementById("sliderThumb");
+  if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
+
+  // Ticks - show ~20 evenly spaced markers
+  const tickCount = Math.min(totalA, 20);
+  let ticksHtml = '';
+  for(let t=0; t<tickCount; t++){
+    const ti = Math.round(t / (tickCount-1) * (totalA-1));
+    const cls = ti===s ? 'active' : (t % 5 === 0 ? 'major' : '');
+    ticksHtml += `<div class="slider-tick ${cls}"></div>`;
+  }
+  document.getElementById("sliderDots").innerHTML = ticksHtml;
+  document.getElementById("sliderCounter").textContent = `${s+1} / ${totalA}`;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Slider drag
+const slArea=document.getElementById("sliderArea");
+const slThumb=document.getElementById("sliderThumb");
+let slDragging=false;
+function sliderFromX(cx){
+  const r=slArea.getBoundingClientRect();
+  const pad=10;
+  const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
+  const a=aw(),idx=Math.round(p*(a.length-1));
+  // Move thumb immediately for smooth feel
+  const thumbLeft=pad+(p)*(r.width-pad*2);
+  slThumb.style.left=thumbLeft+"px";
+  if(idx!==si()){
+    const g=WORDS.findIndex(w=>w.word===a[idx].word);
+    flipped=false; currentIndex=g; render();
+  }
+}
+slArea.addEventListener("touchstart",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(slDragging) sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    // Speak the word after releasing
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+slArea.addEventListener("mousedown",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.clientX); e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(slDragging) sliderFromX(e.clientX);
+});
+document.addEventListener("mouseup",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>

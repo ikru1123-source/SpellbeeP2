@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: Verdana, Geneva, sans-serif; font-size: 36px; font-weight: 400;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 18px; height: 18px; }
+.slider-area {
+  flex: 1; height: 32px; position: relative;
+  display: flex; align-items: center;
+  touch-action: none; cursor: pointer;
+}
+.slider-track-bg {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
+}
+.slider-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(212,175,55,0.5));
+  transition: width 0.15s ease;
+}
+.slider-dots {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; padding: 0 2px;
+}
+.slider-tick {
+  width: 2px; height: 8px; border-radius: 1px;
+  background: rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.slider-tick.major { height: 12px; background: rgba(255,255,255,0.12); }
+.slider-tick.active { background: var(--gold); height: 14px; width: 3px; border-radius: 1.5px; box-shadow: 0 0 6px rgba(212,175,55,0.4); }
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px solid #1a1528;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  cursor: grab; transition: left 0.12s ease;
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
+.slider-thumb.dragging { transition: none; transform: translate(-50%, -50%) scale(1.15); }
+.slider-counter {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.08em;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1><a href="index.html" style="color:inherit;text-decoration:none;">Spelling Bee</a></h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="slider-area" id="sliderArea">
+      <div class="slider-track-bg">
+        <div class="slider-fill" id="sliderFill"></div>
+      </div>
+      <div class="slider-dots" id="sliderDots"></div>
+      <div class="slider-thumb" id="sliderThumb"></div>
+    </div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'facetious', pronunciation:'fuh-SEE-shus', ipa:'/fəˈsiːʃəs/', pos:'adjective', def:'Treating serious issues with deliberately inappropriate humor; flippant and not meant to be taken seriously.', lang:'French, from facétieux, from facétie (\'a jest\'), from Latin facetia (\'wit, humor\'), from facetus (\'witty, elegant\').', example:'His facetious remark about the budget crisis earned a few nervous laughs but annoyed the committee chairperson.', isNoun:false },
+  { word:'facile', pronunciation:'FAS-il', ipa:'/ˈfæsɪl/', pos:'adjective', def:'Easily achieved; effortless; appearing neat and comprehensive but lacking depth or care; superficial.', lang:'Latin, from facilis (\'easy to do\'), from facere (\'to do, make\').', example:'The critic dismissed the argument as facile, noting that it ignored decades of evidence to the contrary.', isNoun:false },
+  { word:'faconne', pronunciation:'fah-koh-NAY', ipa:'/ˌfækɒˈneɪ/', pos:'noun', def:'A fabric with a pattern woven into it using a jacquard loom, creating a textured or embossed design.', lang:'French, from façonné (\'fashioned, shaped\'), past participle of façonner (\'to fashion\'), from façon (\'manner, style\').', example:'The elegant faconne silk featured a subtle floral pattern woven directly into the fabric, visible only when light caught its surface.', isNoun:true },
+  { word:'factitious', pronunciation:'fak-TISH-us', ipa:'/fækˈtɪʃəs/', pos:'adjective', def:'Artificially created or developed; not genuine or natural; contrived.', lang:'Latin, from facticius (\'made by art, artificial\'), from factus, past participle of facere (\'to make, do\').', example:'The factitious controversy was manufactured by the media to generate headlines rather than to address any real issue.', isNoun:false },
+  { word:'facundity', pronunciation:'fuh-KUN-dih-tee', ipa:'/fəˈkʌndɪti/', pos:'noun', def:'Eloquence; the quality of being fluent and persuasive in speech.', lang:'Latin, from facunditas (\'eloquence\'), from facundus (\'eloquent\'), from fari (\'to speak\').', example:'The lawyer\'s facundity in the courtroom swayed the jury with arguments so eloquent they seemed almost poetic.', isNoun:true },
+  { word:'Fahrenheit', pronunciation:'FAIR-un-hyt', ipa:'/ˈfærənˌhaɪt/', pos:'noun', def:'A temperature scale on which water freezes at 32 degrees and boils at 212 degrees at standard atmospheric pressure.', lang:'Named after Daniel Gabriel Fahrenheit (1686-1736), the Polish-German physicist who invented the mercury thermometer and developed the scale.', example:'The thermometer read 104 degrees Fahrenheit, and the doctor immediately ordered ice packs to bring down the patient\'s fever.', isNoun:true },
+  { word:'fajitas', pronunciation:'fuh-HEE-tuhz', ipa:'/fəˈhiːtəz/', pos:'noun', def:'A Tex-Mex dish of grilled strips of spiced meat and vegetables served in a warm tortilla.', lang:'Mexican Spanish, from fajita (\'little strip\'), diminutive of faja (\'strip, belt\'), from Latin fascia (\'band, bandage\').', example:'The sizzling platter of chicken fajitas arrived at the table in a cloud of fragrant steam that made everyone\'s mouth water.', isNoun:true },
+  { word:'famulus', pronunciation:'FAM-yoo-lus', ipa:'/ˈfæmjʊləs/', pos:'noun', def:'An attendant or servant, especially one working for a magician or scholar.', lang:'Latin, from famulus (\'servant, attendant\'), of uncertain origin.', example:'In the old tale, the sorcerer\'s famulus accidentally unleashed a spell he could not control while his master was away.', isNoun:true },
+  { word:'fanchonette', pronunciation:'FAN-shuh-net', ipa:'/ˌfænʃɒˈnɛt/', pos:'noun', def:'A small, triangular scarf or kerchief worn on the head, typically by women; a style of headcovering.', lang:'French, diminutive of fanchon (\'a kerchief\'), itself a diminutive of the name Françoise.', example:'The market woman tied a lace fanchonette over her hair to keep it neat while she arranged the flower stalls.', isNoun:true },
+  { word:'fanega', pronunciation:'fah-NAY-gah', ipa:'/fɑːˈneɪɡə/', pos:'noun', def:'A Spanish unit of dry measure, varying by region, roughly equivalent to 1.5 bushels; also a unit of land area.', lang:'Spanish, from fanega, from Arabic faniqa (\'a large sack\'), a traditional measure of grain capacity.', example:'The farmer sold three fanegas of wheat at the market, enough grain to fill several large sacks for the merchant\'s cart.', isNoun:true },
+  { word:'fang shih', pronunciation:'FANG SHUR', ipa:'/fæŋ ʃɪː/', pos:'noun', def:'In ancient China, a practitioner of magical arts, alchemy, and esoteric techniques; a master of occult methods.', lang:'Chinese, from fāng (\'method, recipe\') + shì (\'scholar, gentleman\'), literally \'master of methods\'.', example:'The fang shih traveled the countryside offering herbal remedies and divination services to emperors and peasants alike.', isNoun:true },
+  { word:'farcical', pronunciation:'FAR-sih-kul', ipa:'/ˈfɑːrsɪkəl/', pos:'adjective', def:'Relating to or resembling farce; absurd and ridiculous; ludicrously improbable.', lang:'French, from farce (\'a comic dramatic piece\', originally \'stuffing\'), from Latin farcire (\'to stuff\'), + -ical.', example:'The trial descended into something farcical when the key witness admitted he had been asleep during the entire incident.', isNoun:false },
+  { word:'fardel', pronunciation:'FAR-dul', ipa:'/ˈfɑːrdəl/', pos:'noun', def:'A bundle or pack; a burden; used by Shakespeare in Hamlet\'s famous soliloquy about the burdens of life.', lang:'Old French, from fardel (\'a bundle, pack\'), from Arabic fardah (\'a bale, half a camel\'s load\').', example:'Shakespeare asked who would bear the fardels of life when they could end their troubles, using the word to mean heavy burdens.', isNoun:true },
+  { word:'farkleberry', pronunciation:'FAR-kul-BAIR-ee', ipa:'/ˈfɑːrkəlˌbɛri/', pos:'noun', def:'A shrub or small tree native to the southeastern United States, bearing small, dark, inedible berries.', lang:'American English, of uncertain origin, possibly a folk name combining farkle (of unknown meaning) + berry.', example:'The farkleberry bushes grew wild along the woodland edge, their clusters of tiny dark fruit attracting songbirds in autumn.', isNoun:true },
+  { word:'Farsi', pronunciation:'FAR-see', ipa:'/ˈfɑːrsi/', pos:'noun', def:'The modern form of the Persian language spoken in Iran; also called Persian.', lang:'Persian, from Farsi, from Pars (the ancient name of Persia, modern Fars province in Iran).', example:'She enrolled in a Farsi language course to prepare for her research trip to Iran, starting with the Persian alphabet.', isNoun:true },
+  { word:'farthingale', pronunciation:'FAR-thing-gayl', ipa:'/ˈfɑːrðɪŋˌɡeɪl/', pos:'noun', def:'A hooped petticoat or circular pad worn under a skirt to extend it at the hip line, fashionable in the 16th and 17th centuries.', lang:'French, from verdugale, from Spanish verdugado (\'provided with hoops\'), from verdugo (\'a green rod\'), from verde (\'green\').', example:'The Elizabethan lady\'s enormous farthingale made her skirt billow out like a bell, requiring her to turn sideways through doorways.', isNoun:true },
+  { word:'fastuous', pronunciation:'FAS-choo-us', ipa:'/ˈfæstʃuəs/', pos:'adjective', def:'Haughty; ostentatiously proud; showing arrogant disdain.', lang:'Latin, from fastuosus (\'full of pride\'), from fastus (\'arrogance, haughtiness, disdain\').', example:'The fastuous nobleman looked down his nose at the common merchants, refusing even to acknowledge their greetings.', isNoun:false },
+  { word:'fatuously', pronunciation:'FACH-oo-us-lee', ipa:'/ˈfætʃuəsli/', pos:'adverb', def:'In a silly and pointless manner; with complacent stupidity or unconscious foolishness.', lang:'Latin, from fatuus (\'foolish, silly, stupid\'), + -ous + -ly.', example:'He grinned fatuously at the camera, completely unaware that his tie was tucked into his trousers for the entire photo shoot.', isNoun:false },
+  { word:'faun', pronunciation:'FAWN', ipa:'/fɔːn/', pos:'noun', def:'A mythological half-human, half-goat creature of the forest in Roman mythology, associated with nature and revelry.', lang:'Latin, from Faunus, a Roman god of the countryside and forests, patron of shepherds and farmers.', example:'The marble statue depicted a playful faun with pointed ears and tiny horns, dancing among grapevines in dappled sunlight.', isNoun:true },
+  { word:'fealty', pronunciation:'FEE-ul-tee', ipa:'/ˈfiːəlti/', pos:'noun', def:'A feudal tenant\'s or vassal\'s sworn loyalty to a lord; faithful allegiance and devotion.', lang:'Old French, from fealté (\'fidelity\'), from Latin fidelitas (\'faithfulness\'), from fidelis (\'faithful\'), from fides (\'faith\').', example:'The knight swore fealty to his sovereign, pledging his sword and his life to the defense of the realm.', isNoun:true },
+  { word:'feckless', pronunciation:'FEK-lis', ipa:'/ˈfɛklɪs/', pos:'adjective', def:'Lacking initiative or strength of character; irresponsible and incompetent.', lang:'Scottish, from feck (variant of effect, \'value, vigor\') + -less (\'without\'), meaning \'without effect or value\'.', example:'The feckless manager ignored every warning about the deadline until it was far too late to salvage the project.', isNoun:false },
+  { word:'fecund', pronunciation:'FEK-und', ipa:'/ˈfɛkənd/', pos:'adjective', def:'Producing or capable of producing an abundance of offspring or new growth; highly fertile; intellectually productive.', lang:'Latin, from fecundus (\'fruitful, fertile\'), from an older form of fetus (\'offspring\').', example:'The fecund soil of the river valley produced three harvests a year, making it the most productive farmland in the region.', isNoun:false },
+  { word:'feign', pronunciation:'FAYN', ipa:'/feɪn/', pos:'verb', def:'To pretend to be affected by something; to invent a false story or impression; to simulate.', lang:'Old French, from feindre (\'to pretend, shirk\'), from Latin fingere (\'to shape, invent, feign\').', example:'The child tried to feign illness to avoid going to school, but her perfectly healthy appetite at breakfast gave her away.', isNoun:false },
+  { word:'fenestrated', pronunciation:'FEN-uh-STRAY-tid', ipa:'/ˈfɛnɪˌstreɪtɪd/', pos:'adjective', def:'Having windows or window-like openings; perforated with small holes or pores.', lang:'Latin, from fenestratus (\'provided with openings\'), from fenestra (\'a window\').', example:'The fenestrated walls of the modern museum allowed natural light to flood every gallery through hundreds of tiny openings.', isNoun:false },
+  { word:'fenster', pronunciation:'FEN-stur', ipa:'/ˈfɛnstər/', pos:'noun', def:'In geology, an erosional opening in a thrust sheet that exposes the underlying rocks; literally a window in rock.', lang:'German, from Fenster (\'window\'), from Latin fenestra (\'window\').', example:'The geological fenster in the mountain revealed ancient limestone beneath the younger rock that had been thrust over it.', isNoun:true },
+  { word:'feria', pronunciation:'FAIR-ee-uh', ipa:'/ˈfɛriə/', pos:'noun', def:'A weekday on a church calendar on which no feast is celebrated; in Spanish-speaking countries, a market or fair.', lang:'Latin, from feria (\'a holiday, day of rest\'), later applied to ordinary weekdays in the church calendar.', example:'The colorful feria in the town square offered everything from handmade pottery and woven textiles to grilled corn and fresh fruit.', isNoun:true },
+  { word:'fervorous', pronunciation:'FUR-vur-us', ipa:'/ˈfɜːrvərəs/', pos:'adjective', def:'Full of fervor; intensely passionate or enthusiastic; burning with zeal.', lang:'Latin, from fervor (\'a boiling, heat, passion\'), from fervere (\'to boil, glow\'), + -ous.', example:'The fervorous crowd chanted and waved banners with such intensity that the stadium seemed to vibrate with their energy.', isNoun:false },
+  { word:'festooned', pronunciation:'fes-TOOND', ipa:'/fɛˈstuːnd/', pos:'adjective', def:'Adorned with chains or garlands of flowers, ribbons, or other decorations hung in a curve.', lang:'French, from feston (\'a garland\'), from Italian festone (\'a festive decoration\'), from festa (\'feast, festival\').', example:'The ballroom was festooned with garlands of white roses and twinkling fairy lights that created a magical atmosphere.', isNoun:false },
+  { word:'feudalism', pronunciation:'FYOO-dul-iz-um', ipa:'/ˈfjuːdəlˌɪzəm/', pos:'noun', def:'The dominant medieval social system in which nobles held lands from the crown in exchange for military service.', lang:'Latin, from feudum (\'a fief, estate held by a vassal\'), of Germanic origin, + -al + -ism.', example:'Under feudalism, peasants worked the lord\'s land in exchange for protection, creating a rigid hierarchy that lasted centuries.', isNoun:true },
+  { word:'fiat', pronunciation:'FEE-at', ipa:'/ˈfiːæt/', pos:'noun', def:'A formal authorization or decree; an arbitrary order issued by someone in authority.', lang:'Latin, from fiat (\'let it be done\'), third person singular present subjunctive of fieri (\'to become, be made\').', example:'The king ruled by fiat, issuing decrees without consulting parliament or seeking the approval of his ministers.', isNoun:true },
+  { word:'fibula', pronunciation:'FIB-yoo-luh', ipa:'/ˈfɪbjʊlə/', pos:'noun', def:'The outer and thinner of the two bones of the lower leg; an ancient brooch or clasp used to fasten garments.', lang:'Latin, from fibula (\'a clasp, pin, brooch\'), related to figere (\'to fix, fasten\'); applied to the bone because of its clasp-like shape.', example:'The X-ray revealed a hairline fracture in her fibula, the slender bone running alongside the shin from knee to ankle.', isNoun:true },
+  { word:'fictile', pronunciation:'FIK-til', ipa:'/ˈfɪktaɪl/', pos:'adjective', def:'Made of earth or clay by a potter; relating to pottery or ceramics; capable of being molded or shaped.', lang:'Latin, from fictilis (\'made by a potter\'), from fingere (\'to shape, form, mold\').', example:'The museum displayed exquisite fictile vessels from ancient Greece, each one shaped and painted by hand thousands of years ago.', isNoun:false },
+  { word:'fiduciary', pronunciation:'fih-DOO-shee-AIR-ee', ipa:'/fɪˈdjuːʃiˌɛri/', pos:'noun', def:'A person or organization that manages money or property for another and is legally bound to act in their best interest.', lang:'Latin, from fiduciarius (\'held in trust\'), from fiducia (\'trust, confidence\'), from fidere (\'to trust\').', example:'As the estate\'s fiduciary, the lawyer was legally obligated to manage the inheritance solely in the beneficiaries\' best interests.', isNoun:true },
+  { word:'finial', pronunciation:'FIN-ee-ul', ipa:'/ˈfɪniəl/', pos:'noun', def:'A distinctive ornament at the apex of a roof, pinnacle, canopy, or similar structure.', lang:'Latin, from finis (\'end, limit\'), + -ial; the decorative element that marks the end or top of a structure.', example:'The gothic cathedral\'s stone finials rose like frozen flames from the tops of its soaring spires and buttresses.', isNoun:true },
+  { word:'fipple', pronunciation:'FIP-ul', ipa:'/ˈfɪpəl/', pos:'noun', def:'A plug at the mouthpiece of a wind instrument such as a recorder, which directs the air stream against a sharp edge.', lang:'English, of uncertain origin, possibly related to Icelandic flipi (\'a lip of a horse\'), first recorded in the 17th century.', example:'The craftsman carefully carved the fipple for the wooden recorder, knowing its precise shape would determine the instrument\'s tone.', isNoun:true },
+  { word:'firkin', pronunciation:'FUR-kin', ipa:'/ˈfɜːrkɪn/', pos:'noun', def:'A small cask used for liquids, butter, or fish; a unit of measurement equal to about nine imperial gallons.', lang:'Middle Dutch, from vierdekijn (\'a quarter barrel\'), diminutive of vierde (\'a fourth\'), from vier (\'four\').', example:'The tavern keeper rolled a fresh firkin of ale up from the cellar to replace the one they had emptied the night before.', isNoun:true },
+  { word:'fjeld', pronunciation:'FYELD', ipa:'/fjɛld/', pos:'noun', def:'A high, barren plateau of Scandinavian countries, above the timberline.', lang:'Norwegian, from fjell (\'mountain, rocky hill\'), from Old Norse fjall (\'mountain\'), of Germanic origin.', example:'The hikers crossed the vast, treeless fjeld above the Norwegian timberline, where only lichen and hardy grasses survived.', isNoun:true },
+  { word:'flagon', pronunciation:'FLAG-un', ipa:'/ˈflæɡən/', pos:'noun', def:'A large container for drinks, typically with a handle and spout; a large bottle for wine or cider.', lang:'Old French, from flacon (\'a bottle\'), from Late Latin flasconem (\'a bottle\'), of Germanic origin.', example:'The innkeeper set a brimming flagon of mead on the rough-hewn table, and the weary travelers drank gratefully.', isNoun:true },
+  { word:'flambé', pronunciation:'flom-BAY', ipa:'/flɒmˈbeɪ/', pos:'adjective', def:'Of food, served covered with spirits and set alight briefly; the technique of igniting alcohol in a dish.', lang:'French, past participle of flamber (\'to flame\'), from flambe (\'a flame\'), from Latin flamma (\'a flame\').', example:'The waiter dramatically prepared the crêpes flambé tableside, tilting the pan to ignite the brandy in a spectacular burst of flame.', isNoun:false },
+  { word:'flaneur', pronunciation:'flah-NUR', ipa:'/flɑːˈnɜːr/', pos:'noun', def:'A person who strolls around observing society; an idle, leisurely walker who wanders without purpose.', lang:'French, from flâneur (\'a stroller, loafer\'), from flâner (\'to stroll, lounge\'), of Scandinavian origin.', example:'The flaneur wandered the boulevards of Paris, pausing at each café to observe the endless theater of city life.', isNoun:true },
+  { word:'flauta', pronunciation:'FLOW-tuh', ipa:'/ˈflaʊtə/', pos:'noun', def:'A Mexican dish consisting of a tortilla tightly rolled around a filling and deep-fried until crisp.', lang:'Spanish, from flauta (\'a flute\'), because the long, thin rolled tortilla resembles a flute in shape.', example:'The crispy chicken flautas arrived golden brown and perfectly crunchy, served with guacamole and sour cream for dipping.', isNoun:true },
+  { word:'flavedo', pronunciation:'fluh-VEE-doh', ipa:'/fləˈviːdoʊ/', pos:'noun', def:'The colored outer layer of the rind of a citrus fruit, containing the essential oils; the zest.', lang:'Latin, from flavedo (\'yellowness\'), from flavus (\'yellow, golden\').', example:'The pastry chef grated the flavedo of the lemon to release its aromatic oils into the delicate cream filling.', isNoun:true },
+  { word:'flèche', pronunciation:'FLESH', ipa:'/flɛʃ/', pos:'noun', def:'A slender spire, especially one rising from the intersection of the nave and transept of a church; a type of fencing attack.', lang:'French, from flèche (\'an arrow\'), from Old French fleche, of Germanic origin.', example:'The graceful flèche atop Notre-Dame Cathedral rose like a needle piercing the Parisian sky before it fell in the 2019 fire.', isNoun:true },
+  { word:'flittern', pronunciation:'FLIT-urn', ipa:'/ˈflɪtərn/', pos:'noun', def:'Strips of oak bark used in tanning; thin pieces of wood or bark; tatters or shreds.', lang:'English, from flitter (\'to flutter, fragment\'), related to German Flitter (\'tinsel, spangle\'), + -n.', example:'The tanner soaked the hides with layers of flittern from freshly stripped oak bark, following the traditional method.', isNoun:true },
+  { word:'Florentine', pronunciation:'FLOR-un-teen', ipa:'/ˈflɒrənˌtiːn/', pos:'adjective', def:'Of or relating to Florence, Italy; a dish served on a bed of spinach; a type of flat chocolate and nut biscuit.', lang:'Named after Florence (Italian Firenze), the capital of Tuscany, Italy, from Latin Florentia (\'flowering city\').', example:'The eggs Florentine arrived beautifully presented, each poached egg nestled on a bed of wilted spinach with hollandaise sauce.', isNoun:false },
+  { word:'floribunda', pronunciation:'FLOR-ih-BUN-duh', ipa:'/ˌflɒrɪˈbʌndə/', pos:'noun', def:'A plant, especially a type of rose, that bears dense clusters of flowers.', lang:'Latin, feminine of floribundus (\'flowering freely\'), from flos (genitive floris, \'flower\') + -bundus (\'abounding in\').', example:'The floribunda roses along the garden path produced such abundant blooms that their branches bowed under the weight of the flowers.', isNoun:true },
+  { word:'floruit', pronunciation:'FLOR-oo-it', ipa:'/ˈflɒruɪt/', pos:'noun', def:'The period during which a person flourished or was most active, used when exact birth and death dates are unknown.', lang:'Latin, from floruit (\'he or she flourished\'), third person singular perfect of florere (\'to bloom, flourish\').', example:'The medieval poet\'s floruit was approximately 1340 to 1380, based on references in contemporary manuscripts.', isNoun:true },
+  { word:'FLOTUS', pronunciation:'FLOH-tus', ipa:'/ˈfloʊtəs/', pos:'noun', def:'An acronym for First Lady of the United States.', lang:'English, an acronym from First Lady Of The United States, modeled after POTUS (President of the United States).', example:'The FLOTUS championed childhood nutrition programs, visiting schools across the country to promote healthy eating habits.', isNoun:true },
+  { word:'fluoride', pronunciation:'FLOOR-yd', ipa:'/ˈflʊəraɪd/', pos:'noun', def:'A compound of fluorine with another element or group; added to water supplies and toothpaste to help prevent tooth decay.', lang:'French, from fluor (from Latin fluor, \'a flowing\', referring to the mineral fluorite used as flux) + -ide.', example:'The dentist recommended a fluoride treatment to strengthen the enamel and protect against cavities forming between visits.', isNoun:true },
+  { word:'focaccia', pronunciation:'foh-KAH-chuh', ipa:'/foʊˈkɑːtʃə/', pos:'noun', def:'A type of flat Italian bread made with olive oil, typically topped with herbs, onions, or other ingredients.', lang:'Italian, from focaccia (\'a flat bread baked in the hearth\'), from Latin focus (\'hearth, fireplace\').', example:'The warm focaccia, dimpled and glistening with olive oil and sprinkled with rosemary and sea salt, vanished from the basket instantly.', isNoun:true },
+  { word:'follicle', pronunciation:'FOL-ih-kul', ipa:'/ˈfɒlɪkəl/', pos:'noun', def:'A small secretory cavity, sac, or gland, especially one from which a hair grows.', lang:'Latin, from folliculus (\'a small bag\'), diminutive of follis (\'a bellows, leather bag\').', example:'Each hair follicle on the scalp goes through cycles of growth, rest, and shedding throughout a person\'s lifetime.', isNoun:true },
+  { word:'fontina', pronunciation:'fon-TEE-nuh', ipa:'/fɒnˈtiːnə/', pos:'noun', def:'A rich, creamy Italian cheese made from cow\'s milk, with a slightly nutty flavor, originally from the Aosta Valley.', lang:'Italian, possibly named after the village of Fontinaz in the Aosta Valley, or from Latin fons (\'a spring, fountain\').', example:'The melted fontina cheese gave the risotto a luxuriously creamy texture and a subtle nutty sweetness.', isNoun:true },
+  { word:'forbivorous', pronunciation:'for-BIV-ur-us', ipa:'/fɔːrˈbɪvərəs/', pos:'adjective', def:'Feeding on herbs and broadleaved plants rather than grasses; herbivorous with a preference for forbs.', lang:'English, from forb (\'a herbaceous plant other than grass\', from Greek phorbe, \'fodder\') + -ivorous (\'eating\'), from Latin vorare (\'to devour\').', example:'The forbivorous rabbit preferred clover, dandelions, and wildflowers over the lawn grass that the gardener was trying to protect.', isNoun:false },
+  { word:'fortissimo', pronunciation:'for-TIS-ih-moh', ipa:'/fɔːrˈtɪsɪˌmoʊ/', pos:'adverb', def:'A musical direction meaning very loudly; the loudest dynamic marking in music.', lang:'Italian, superlative of forte (\'loud, strong\'), from Latin fortis (\'strong\').', example:'The orchestra crashed into the fortissimo passage with such thunderous power that the audience could feel the vibrations in their seats.', isNoun:false },
+  { word:'fractur', pronunciation:'frak-TOOR', ipa:'/frækˈtʊər/', pos:'noun', def:'A style of elaborate, ornamental lettering associated with Pennsylvania Dutch folk art and historical German printing.', lang:'German, from Fraktur (\'a style of blackletter typeface\'), from Latin fractura (\'a breaking\'), because the letterforms appear broken.', example:'The antique birth certificate was decorated with colorful fractur lettering, featuring hand-painted birds, flowers, and angels.', isNoun:true },
+  { word:'Franciscan', pronunciation:'fran-SIS-kun', ipa:'/frænˈsɪskən/', pos:'noun', def:'A member of a religious order founded by Saint Francis of Assisi in 1209, devoted to poverty and preaching.', lang:'Named after Saint Francis of Assisi (1181-1226), from Italian Francesco (\'the Frenchman\'), + -an.', example:'The Franciscan friar walked barefoot through the village, offering prayers and bread to anyone who was hungry.', isNoun:true },
+  { word:'frappé', pronunciation:'frap-PAY', ipa:'/fræˈpeɪ/', pos:'noun', def:'An iced or chilled drink, especially a milkshake or a coffee drink blended with ice.', lang:'French, past participle of frapper (\'to strike, chill\'), from Old French fraper (\'to hit\'), of uncertain origin.', example:'On the sweltering summer day, the iced coffee frappé was exactly the cold, sweet refreshment she needed.', isNoun:true },
+  { word:'frass', pronunciation:'FRAS', ipa:'/fræs/', pos:'noun', def:'The excrement of insect larvae; fine powdery refuse produced by boring insects.', lang:'German, from Frass (\'food, feed\'), from fressen (\'to eat, devour\'), of Germanic origin.', example:'The tiny piles of sawdust-like frass beneath the wooden beam were the first sign that termites had invaded the house.', isNoun:true },
+  { word:'fratority', pronunciation:'fruh-TOR-ih-tee', ipa:'/frəˈtɔːrɪti/', pos:'noun', def:'A rare or variant term related to brotherhood or fraternal association; a community of brothers or like-minded individuals.', lang:'Latin, related to fraternitas (\'brotherhood\'), from frater (\'brother\'), with variant suffix.', example:'The medieval guild operated as a fratority, with members bound by oaths of mutual support and shared craft knowledge.', isNoun:true },
+  { word:'fraudulent', pronunciation:'FRAW-joo-lunt', ipa:'/ˈfrɔːdʒʊlənt/', pos:'adjective', def:'Obtained, done by, or involving deception, especially criminal deception; dishonest and deceitful.', lang:'Latin, from fraudulentus (\'deceitful\'), from fraus (genitive fraudis, \'deceit, injury\').', example:'The company\'s fraudulent accounting practices were exposed by a whistleblower, leading to criminal charges against three executives.', isNoun:false },
+  { word:'fravashi', pronunciation:'fruh-VAH-shee', ipa:'/frəˈvɑːʃi/', pos:'noun', def:'In Zoroastrianism, a guardian spirit or divine essence that protects and guides each person through life.', lang:'Avestan, from fravashi (\'a guardian spirit\'), a concept central to ancient Zoroastrian theology.', example:'In Zoroastrian belief, each person\'s fravashi existed before birth and continues to guide the soul after death.', isNoun:true },
+  { word:'frazil', pronunciation:'FRAY-zil', ipa:'/ˈfreɪzɪl/', pos:'noun', def:'Soft, thin, needle-like ice crystals that form in turbulent, supercooled water, such as rapids or ocean surfaces.', lang:'French Canadian, from frasil (\'cinders, charcoal\'), because the ice crystals resemble frozen ash floating on the water surface.', example:'Frazil ice clogged the river intake, forcing the water treatment plant to shut down until crews could clear the slushy crystals.', isNoun:true },
+  { word:'Freudian', pronunciation:'FROY-dee-un', ipa:'/ˈfrɔɪdiən/', pos:'adjective', def:'Relating to or influenced by the psychoanalytic theories of Sigmund Freud; a Freudian slip is an unintentional error revealing unconscious thoughts.', lang:'Named after Sigmund Freud (1856-1939), the Austrian neurologist and founder of psychoanalysis, + -ian.', example:'Her Freudian slip during the presentation, calling her boss \'Mom,\' caused a ripple of laughter through the conference room.', isNoun:false },
+  { word:'frison', pronunciation:'FREE-son', ipa:'/ˈfriːsɒn/', pos:'noun', def:'A sudden, brief sensation of excitement; a shudder of thrill or emotional response; a frisson.', lang:'French, from frisson (\'a shiver, thrill\'), from Old French friçon, from Latin frictio (\'a rubbing\'), from frigere (\'to be cold\').', example:'A frison of excitement ran through the crowd as the curtain rose and the opening notes of the overture filled the theater.', isNoun:true },
+  { word:'fritillary', pronunciation:'FRIT-ih-LAIR-ee', ipa:'/ˈfrɪtɪˌlɛri/', pos:'noun', def:'A butterfly with brownish wings checkered with black; also a spring-flowering plant with bell-shaped checkered flowers.', lang:'Latin, from fritillus (\'a dice box\'), because the checkered pattern on the wings and petals resembles a dice board.', example:'The silver-washed fritillary butterfly fluttered among the wildflowers, its orange and black wings catching the warm afternoon sun.', isNoun:true },
+  { word:'frittata', pronunciation:'frih-TAH-tuh', ipa:'/frɪˈtɑːtə/', pos:'noun', def:'An Italian egg dish similar to an omelet, enriched with vegetables, cheese, or meat and cooked slowly without folding.', lang:'Italian, from frittata (\'fried\'), from fritto, past participle of friggere (\'to fry\'), from Latin frigere.', example:'The frittata, thick with spinach, roasted peppers, and crumbled feta, made a hearty brunch that fed the whole family.', isNoun:true },
+  { word:'froward', pronunciation:'FROH-wurd', ipa:'/ˈfroʊwərd/', pos:'adjective', def:'Stubbornly contrary and disobedient; habitually disposed to disobey and oppose; willfully difficult.', lang:'Old English, from fro (\'away, from\') + -ward (\'directed toward\'), meaning \'turned away\', the opposite of toward.', example:'The froward child refused every suggestion with a firm shake of her head, turning her back on each offered compromise.', isNoun:false },
+  { word:'fructiferous', pronunciation:'fruk-TIF-ur-us', ipa:'/frʌkˈtɪfərəs/', pos:'adjective', def:'Bearing or producing fruit; fruitful and productive.', lang:'Latin, from fructifer (\'fruit-bearing\'), from fructus (\'fruit, enjoyment\') + ferre (\'to bear, carry\'), + -ous.', example:'The fructiferous apple orchard produced over ten thousand bushels of fruit each autumn, supplying cider mills across the county.', isNoun:false },
+  { word:'frugivore', pronunciation:'FROO-jih-vor', ipa:'/ˈfruːdʒɪˌvɔːr/', pos:'noun', def:'An animal that feeds mainly on fruit.', lang:'Latin, from frux (genitive frugis, \'fruit\') + vorare (\'to devour\').', example:'The toucan is a colorful frugivore whose enormous bill helps it reach fruit on branches too thin to support its weight.', isNoun:true },
+  { word:'fucoid', pronunciation:'FYOO-koyd', ipa:'/ˈfjuːkɔɪd/', pos:'adjective', def:'Resembling or related to seaweed of the genus Fucus; of the nature of rockweed or brown algae.', lang:'Greek, from phykos (\'seaweed\') + -oid (\'resembling\').', example:'The fucoid algae clung to the rocky shoreline in slippery brown sheets, exposed by the retreating tide each afternoon.', isNoun:false },
+  { word:'fugue', pronunciation:'FYOOG', ipa:'/fjuːɡ/', pos:'noun', def:'A musical composition in which a theme is introduced and then developed by interweaving voices; a state of lost awareness.', lang:'Italian, from fuga (\'a flight\'), from Latin fuga (\'a fleeing\'), from fugere (\'to flee\'), because the voices seem to chase each other.', example:'Bach\'s fugues remain among the most intellectually demanding and beautiful works ever composed for keyboard instruments.', isNoun:true },
+  { word:'fulmar', pronunciation:'FUL-mur', ipa:'/ˈfʊlmər/', pos:'noun', def:'A gull-like seabird that nests on cliffs and can eject foul-smelling stomach oil as a defense mechanism.', lang:'Old Norse, from full (\'foul\') + mar (\'gull\'), literally \'foul gull\', because of its habit of spitting rancid oil at intruders.', example:'The fulmar glided effortlessly over the ocean waves on stiff wings, scanning the surface for fish and squid.', isNoun:true },
+  { word:'fulminate', pronunciation:'FUL-mih-nayt', ipa:'/ˈfʌlmɪˌneɪt/', pos:'verb', def:'To express vehement protest or criticism; to explode violently or flash like lightning.', lang:'Latin, from fulminatus, past participle of fulminare (\'to flash with lightning\'), from fulmen (\'lightning, thunderbolt\').', example:'The senator fulminated against the proposed budget cuts, pounding the podium and declaring them an assault on working families.', isNoun:false },
+  { word:'funambulist', pronunciation:'fyoo-NAM-byoo-list', ipa:'/fjuːˈnæmbjʊlɪst/', pos:'noun', def:'A tightrope walker; a person who performs acrobatics on a high wire or rope.', lang:'Latin, from funambulus (\'a rope walker\'), from funis (\'a rope\') + ambulare (\'to walk\'), + -ist.', example:'The fearless funambulist crossed the wire stretched between the two skyscrapers, a thousand feet above the gasping crowd below.', isNoun:true },
+  { word:'fungible', pronunciation:'FUN-juh-bul', ipa:'/ˈfʌndʒɪbəl/', pos:'adjective', def:'Of goods, replaceable by another identical item; mutually interchangeable; able to be substituted for something of equal value.', lang:'Latin, from fungi (vice) (\'to serve in place of\'), from fungi (\'to perform, enjoy\').', example:'Dollar bills are fungible — any ten-dollar note is worth exactly the same as any other and can be freely exchanged.', isNoun:false },
+  { word:'furcula', pronunciation:'FUR-kyoo-luh', ipa:'/ˈfɜːrkjʊlə/', pos:'noun', def:'The wishbone of a bird, formed by the fusion of the two clavicles; the forked bone in a bird\'s chest.', lang:'Latin, from furcula (\'a forked prop\'), diminutive of furca (\'a fork\').', example:'After the Thanksgiving turkey was carved, the children each grabbed one end of the furcula and pulled, competing for the longer piece.', isNoun:true },
+  { word:'fusiform', pronunciation:'FYOO-zih-form', ipa:'/ˈfjuːzɪˌfɔːrm/', pos:'adjective', def:'Shaped like a spindle; tapering at both ends; rounded in the middle and narrowing toward each end.', lang:'Latin, from fusus (\'a spindle\') + forma (\'form, shape\').', example:'The fusiform body of the tuna is perfectly shaped for cutting through water at high speeds with minimal resistance.', isNoun:false },
+  { word:'fussbudget', pronunciation:'FUS-buj-it', ipa:'/ˈfʌsˌbʌdʒɪt/', pos:'noun', def:'A person who fusses over trifles; someone who worries excessively about unimportant details.', lang:'English, from fuss (\'needless commotion\', of uncertain origin) + budget (\'a pouch, bundle\', from Old French bougette).', example:'The office fussbudget reorganized the supply closet for the third time that week, insisting every paperclip box be perfectly aligned.', isNoun:true }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Slider
+  const totalA = a.length;
+  const pct = totalA > 1 ? s / (totalA - 1) * 100 : 0;
+  document.getElementById("sliderFill").style.width = pct + "%";
+  const sliderArea = document.getElementById("sliderArea");
+  const areaW = sliderArea.offsetWidth || 200;
+  const pad = 10;
+  const thumbLeft = pad + (pct / 100) * (areaW - pad * 2);
+  const thumb = document.getElementById("sliderThumb");
+  if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
+
+  // Ticks - show ~20 evenly spaced markers
+  const tickCount = Math.min(totalA, 20);
+  let ticksHtml = '';
+  for(let t=0; t<tickCount; t++){
+    const ti = Math.round(t / (tickCount-1) * (totalA-1));
+    const cls = ti===s ? 'active' : (t % 5 === 0 ? 'major' : '');
+    ticksHtml += `<div class="slider-tick ${cls}"></div>`;
+  }
+  document.getElementById("sliderDots").innerHTML = ticksHtml;
+  document.getElementById("sliderCounter").textContent = `${s+1} / ${totalA}`;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Slider drag
+const slArea=document.getElementById("sliderArea");
+const slThumb=document.getElementById("sliderThumb");
+let slDragging=false;
+function sliderFromX(cx){
+  const r=slArea.getBoundingClientRect();
+  const pad=10;
+  const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
+  const a=aw(),idx=Math.round(p*(a.length-1));
+  // Move thumb immediately for smooth feel
+  const thumbLeft=pad+(p)*(r.width-pad*2);
+  slThumb.style.left=thumbLeft+"px";
+  if(idx!==si()){
+    const g=WORDS.findIndex(w=>w.word===a[idx].word);
+    flipped=false; currentIndex=g; render();
+  }
+}
+slArea.addEventListener("touchstart",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(slDragging) sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    // Speak the word after releasing
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+slArea.addEventListener("mousedown",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.clientX); e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(slDragging) sliderFromX(e.clientX);
+});
+document.addEventListener("mouseup",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>

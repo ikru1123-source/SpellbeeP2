@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: Verdana, Geneva, sans-serif; font-size: 36px; font-weight: 400;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 18px; height: 18px; }
+.slider-area {
+  flex: 1; height: 32px; position: relative;
+  display: flex; align-items: center;
+  touch-action: none; cursor: pointer;
+}
+.slider-track-bg {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
+}
+.slider-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(212,175,55,0.5));
+  transition: width 0.15s ease;
+}
+.slider-dots {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; padding: 0 2px;
+}
+.slider-tick {
+  width: 2px; height: 8px; border-radius: 1px;
+  background: rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.slider-tick.major { height: 12px; background: rgba(255,255,255,0.12); }
+.slider-tick.active { background: var(--gold); height: 14px; width: 3px; border-radius: 1.5px; box-shadow: 0 0 6px rgba(212,175,55,0.4); }
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px solid #1a1528;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  cursor: grab; transition: left 0.12s ease;
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
+.slider-thumb.dragging { transition: none; transform: translate(-50%, -50%) scale(1.15); }
+.slider-counter {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.08em;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1><a href="index.html" style="color:inherit;text-decoration:none;">Spelling Bee</a></h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="slider-area" id="sliderArea">
+      <div class="slider-track-bg">
+        <div class="slider-fill" id="sliderFill"></div>
+      </div>
+      <div class="slider-dots" id="sliderDots"></div>
+      <div class="slider-thumb" id="sliderThumb"></div>
+    </div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'ibex', pronunciation:'EYE-beks', ipa:'/ˈaɪbɛks/', pos:'noun', def:'A wild mountain goat with large, curved, ridged horns, native to the Alps, Pyrenees, and central Asian mountains.', lang:'Latin, from ibex (\'a kind of wild goat\'), possibly of Alpine origin.', example:'The sure-footed ibex scaled the nearly vertical cliff face with astonishing ease, leaping between narrow ledges high above the valley.', isNoun:true },
+  { word:'ibuprofen', pronunciation:'eye-BYOO-proh-fen', ipa:'/ˌaɪbjuːˈproʊfən/', pos:'noun', def:'A nonsteroidal anti-inflammatory drug used to reduce pain, fever, and inflammation.', lang:'English, from i(so)bu(tyl)pro(pionic) + fen(ol acid), describing the chemical structure of the compound, developed in the 1960s.', example:'She took two ibuprofen tablets to ease the throbbing headache that had plagued her since the start of the workday.', isNoun:true },
+  { word:'Icarian', pronunciation:'eye-KAIR-ee-un', ipa:'/aɪˈkɛəriən/', pos:'adjective', def:'Of or relating to Icarus; recklessly ambitious or daring, especially in a way likely to lead to failure.', lang:'Greek, from Ikaros (Icarus), the mythological figure who flew too close to the sun on wings of wax and feathers, + -ian.', example:'The entrepreneur\'s Icarian ambition to dominate every market at once ultimately caused his overextended company to collapse.', isNoun:false },
+  { word:'idiosyncratic', pronunciation:'ID-ee-oh-sin-KRAT-ik', ipa:'/ˌɪdioʊsɪnˈkrætɪk/', pos:'adjective', def:'Peculiar or individual to a particular person; relating to distinctive or unusual characteristics.', lang:'Greek, from idiosynkrasia (\'a peculiar temperament\'), from idios (\'one\'s own\') + syn (\'together\') + krasis (\'mixture\'), + -tic.', example:'The professor\'s idiosyncratic teaching style — which included singing equations — was unusual but remarkably effective.', isNoun:false },
+  { word:'illative', pronunciation:'IL-uh-tiv', ipa:'/ˈɪlətɪv/', pos:'adjective', def:'Of, relating to, or involving inference; proceeding by inference; in grammar, a case expressing motion into or toward.', lang:'Latin, from illativus (\'brought in\'), from illatus, past participle of inferre (\'to bring in, infer\'), from in- + ferre (\'to carry\').', example:'The illative reasoning in her argument drew a logical conclusion from the evidence, even though no one had stated it directly.', isNoun:false },
+  { word:'illicitly', pronunciation:'ih-LIS-it-lee', ipa:'/ɪˈlɪsɪtli/', pos:'adverb', def:'In a manner that is forbidden by law, rules, or custom; unlawfully or illegally.', lang:'Latin, from illicitus (\'not allowed\'), from in- (\'not\') + licitus (\'lawful\'), past participle of licere (\'to be permitted\'), + -ly.', example:'The goods were illicitly smuggled across the border under cover of darkness, hidden beneath layers of legitimate cargo.', isNoun:false },
+  { word:'illustrious', pronunciation:'ih-LUS-tree-us', ipa:'/ɪˈlʌstriəs/', pos:'adjective', def:'Widely admired, especially for achievements or qualities; famous and distinguished.', lang:'Latin, from illustris (\'bright, distinguished, famous\'), from illustrare (\'to light up\'), from in- + lustrare (\'to illuminate\').', example:'The illustrious scientist received the Nobel Prize for discoveries that revolutionized our understanding of genetics.', isNoun:false },
+  { word:'imago', pronunciation:'ih-MAH-goh', ipa:'/ɪˈmɑːɡoʊ/', pos:'noun', def:'The final adult stage of an insect after metamorphosis; in psychology, an idealized mental image of a person.', lang:'Latin, from imago (\'an image, likeness, copy\'), related to imitari (\'to imitate\').', example:'The butterfly emerged from its chrysalis as a fully formed imago, spreading its damp wings in the warm morning sunlight.', isNoun:true },
+  { word:'immolate', pronunciation:'IM-uh-layt', ipa:'/ˈɪməˌleɪt/', pos:'verb', def:'To kill or offer as a sacrifice, especially by burning; to destroy utterly, often for a cause or belief.', lang:'Latin, from immolatus, past participle of immolare (\'to sprinkle with sacrificial meal\'), from in- (\'upon\') + mola (\'meal, grain\').', example:'The ancient priests would immolate offerings on the stone altar, believing the rising smoke carried their prayers to the gods.', isNoun:false },
+  { word:'immortality', pronunciation:'IM-or-TAL-ih-tee', ipa:'/ˌɪmɔːrˈtælɪti/', pos:'noun', def:'The ability to live forever; eternal life; lasting fame or remembrance that endures beyond one\'s lifetime.', lang:'Latin, from immortalitas (\'deathlessness\'), from immortalis (\'undying\'), from in- (\'not\') + mortalis (\'subject to death\'), from mors (\'death\').', example:'The pharaohs built their pyramids in pursuit of immortality, hoping their names and deeds would endure for all eternity.', isNoun:true },
+  { word:'impasse', pronunciation:'IM-pas', ipa:'/ˈɪmpæs/', pos:'noun', def:'A situation in which no progress is possible; a deadlock; a road or passage having no exit.', lang:'French, from impasse (\'a dead end\'), from in- (\'not\') + passer (\'to pass\').', example:'The negotiations reached an impasse when neither side would compromise on the key issue of territorial boundaries.', isNoun:true },
+  { word:'impasto', pronunciation:'im-PAS-toh', ipa:'/ɪmˈpæstoʊ/', pos:'noun', def:'The process or technique of laying paint thickly on a canvas so that it stands out from the surface.', lang:'Italian, from impastare (\'to knead, to paste\'), from in- (\'into\') + pasta (\'paste\').', example:'Van Gogh\'s bold impasto technique created swirling ridges of paint so thick you could see each individual brushstroke from across the room.', isNoun:true },
+  { word:'impecunious', pronunciation:'IM-pih-KYOO-nee-us', ipa:'/ˌɪmpɪˈkjuːniəs/', pos:'adjective', def:'Having little or no money; penniless and poor.', lang:'Latin, from in- (\'not\') + pecuniosus (\'wealthy\'), from pecunia (\'money\'), from pecu (\'cattle\', the original form of wealth).', example:'The impecunious graduate survived on ramen noodles and free campus events until she landed her first real job.', isNoun:false },
+  { word:'impediment', pronunciation:'im-PED-ih-munt', ipa:'/ɪmˈpɛdɪmənt/', pos:'noun', def:'A hindrance or obstruction; something that impedes or delays progress; a defect in speech.', lang:'Latin, from impedimentum (\'a hindrance\'), from impedire (\'to shackle the feet\'), from in- (\'in\') + pes (genitive pedis, \'foot\').', example:'His speech impediment as a child made him shy, but years of therapy gave him the confidence to become a public speaker.', isNoun:true },
+  { word:'imperious', pronunciation:'im-PEER-ee-us', ipa:'/ɪmˈpɪəriəs/', pos:'adjective', def:'Assuming power or authority without justification; arrogant and domineering; urgent and pressing.', lang:'Latin, from imperiosus (\'commanding\'), from imperium (\'command, authority, empire\').', example:'The imperious general barked orders at everyone around him, expecting instant obedience from soldiers and civilians alike.', isNoun:false },
+  { word:'impetus', pronunciation:'IM-pih-tus', ipa:'/ˈɪmpɪtəs/', pos:'noun', def:'The force or energy with which a body moves; a driving force; something that makes a process happen or happen faster.', lang:'Latin, from impetus (\'an attack, rush\'), from impetere (\'to attack\'), from in- (\'toward\') + petere (\'to seek, rush at\').', example:'The shocking documentary provided the impetus for new legislation protecting endangered species across the entire region.', isNoun:true },
+  { word:'implacable', pronunciation:'im-PLAK-uh-bul', ipa:'/ɪmˈplækəbəl/', pos:'adjective', def:'Unable to be appeased or placated; relentless and unstoppable.', lang:'Latin, from implacabilis (\'not to be appeased\'), from in- (\'not\') + placabilis (\'easily appeased\'), from placare (\'to calm\').', example:'The implacable detective pursued the case for twenty years, refusing to give up until the truth was finally uncovered.', isNoun:false },
+  { word:'implicative', pronunciation:'IM-plih-KAY-tiv', ipa:'/ˈɪmplɪˌkeɪtɪv/', pos:'adjective', def:'Tending to implicate or involve; having the nature of an implication; suggestive of a connection.', lang:'Latin, from implicare (\'to entwine, involve\'), from in- (\'in\') + plicare (\'to fold\'), + -ative.', example:'The implicative evidence suggested a connection between the two suspects, though nothing had been proven conclusively.', isNoun:false },
+  { word:'imponderabilia', pronunciation:'im-PON-dur-uh-BIL-ee-uh', ipa:'/ɪmˌpɒndərəˈbɪliə/', pos:'noun', def:'Things that cannot be precisely assessed or measured; intangible factors that influence a situation.', lang:'Latin, neuter plural of imponderabilis (\'that cannot be weighed\'), from in- (\'not\') + ponderabilis (\'able to be weighed\').', example:'The imponderabilia of human emotion and cultural context made the negotiations far more complex than the economic data alone suggested.', isNoun:true },
+  { word:'impoverish', pronunciation:'im-POV-ur-ish', ipa:'/ɪmˈpɒvərɪʃ/', pos:'verb', def:'To make poor; to deplete the strength, richness, or fertility of something.', lang:'Old French, from empoverir (\'to make poor\'), from en- (\'make\') + povre (\'poor\'), from Latin pauper (\'poor\').', example:'Decades of overfarming had impoverished the once-fertile soil until it could barely support the simplest crops.', isNoun:false },
+  { word:'imprecatory', pronunciation:'IM-prih-KAY-tur-ee', ipa:'/ˈɪmprɪˌkeɪtəri/', pos:'adjective', def:'Of, involving, or expressing a curse or a fervent wish that harm befall someone.', lang:'Latin, from imprecatorius, from imprecari (\'to invoke evil upon\'), from in- (\'upon\') + precari (\'to pray\').', example:'The imprecatory psalms in the Bible contain startlingly fierce prayers calling down divine judgment upon the enemies of the faithful.', isNoun:false },
+  { word:'impresario', pronunciation:'IM-pruh-SAR-ee-oh', ipa:'/ˌɪmprɪˈsɑːrioʊ/', pos:'noun', def:'A person who organizes and often finances concerts, theatrical productions, or other entertainment events.', lang:'Italian, from impresa (\'an undertaking, enterprise\'), from imprendere (\'to undertake\'), from Latin in- + prehendere (\'to take\').', example:'The legendary impresario transformed a run-down theater into the city\'s premier venue for opera and ballet.', isNoun:true },
+  { word:'impromptu', pronunciation:'im-PROMP-too', ipa:'/ɪmˈprɒmptjuː/', pos:'adjective', def:'Done without being planned, organized, or rehearsed; spontaneous and unrehearsed.', lang:'Latin, from in promptu (\'in readiness\'), from in (\'in\') + promptus (\'readiness, visibility\'), from promere (\'to bring out\').', example:'The impromptu speech she gave at the retirement party was more touching and heartfelt than any prepared remarks could have been.', isNoun:false },
+  { word:'incessant', pronunciation:'in-SES-unt', ipa:'/ɪnˈsɛsənt/', pos:'adjective', def:'Continuing without pause or interruption; unceasing and constant.', lang:'Latin, from incessans, from in- (\'not\') + cessans, present participle of cessare (\'to cease, stop\').', example:'The incessant rain drummed against the windows for three solid days, turning every road into a river and every lawn into a lake.', isNoun:false },
+  { word:'incinerate', pronunciation:'in-SIN-uh-rayt', ipa:'/ɪnˈsɪnəˌreɪt/', pos:'verb', def:'To destroy something, especially waste material, by burning it completely to ashes.', lang:'Latin, from incineratus, past participle of incinerare (\'to reduce to ashes\'), from in- (\'into\') + cinis (genitive cineris, \'ashes\').', example:'The industrial furnace could incinerate several tons of medical waste per day, reducing it to sterile ash.', isNoun:false },
+  { word:'incisiform', pronunciation:'in-SIZ-ih-form', ipa:'/ɪnˈsɪzɪˌfɔːrm/', pos:'adjective', def:'Shaped like an incisor tooth; having a cutting edge resembling that of a front tooth.', lang:'Latin, from incisus (\'cut into\'), from incidere (\'to cut\'), + forma (\'form, shape\').', example:'The fossil\'s incisiform teeth suggested the creature was adapted for gnawing through tough plant material and bark.', isNoun:false },
+  { word:'incitive', pronunciation:'in-SY-tiv', ipa:'/ɪnˈsaɪtɪv/', pos:'adjective', def:'Tending to incite or stimulate; having the power to provoke action or feeling.', lang:'Latin, from incitare (\'to urge, stimulate\'), from in- (\'toward\') + citare (\'to set in motion, rouse\'), + -ive.', example:'The coach\'s incitive halftime speech fired up the team so completely that they came back to win from a twenty-point deficit.', isNoun:false },
+  { word:'inclement', pronunciation:'in-KLEM-unt', ipa:'/ɪnˈklɛmənt/', pos:'adjective', def:'Of weather, unpleasantly cold or wet; harsh and severe; showing no mercy or leniency.', lang:'Latin, from inclemens (\'harsh, rough\'), from in- (\'not\') + clemens (\'mild, merciful\').', example:'The inclement weather forced the cancellation of the outdoor concert, with freezing rain and gale-force winds battering the city.', isNoun:false },
+  { word:'incompetent', pronunciation:'in-KOM-pih-tunt', ipa:'/ɪnˈkɒmpɪtənt/', pos:'adjective', def:'Not having the necessary skills or ability to do something successfully; unable to function properly.', lang:'Latin, from incompetens, from in- (\'not\') + competens (\'suitable, competent\'), from competere (\'to be fit\').', example:'The incompetent contractor installed the plumbing backwards, flooding the kitchen the very first time someone turned on the faucet.', isNoun:false },
+  { word:'inconceivable', pronunciation:'IN-kun-SEE-vuh-bul', ipa:'/ˌɪnkənˈsiːvəbəl/', pos:'adjective', def:'Not capable of being imagined or grasped mentally; unbelievable; beyond comprehension.', lang:'Latin, from in- (\'not\') + concipere (\'to take in, conceive\'), from con- + capere (\'to take\'), + -able.', example:'The scale of the universe is almost inconceivable, with billions of galaxies each containing billions of stars.', isNoun:false },
+  { word:'inconnu', pronunciation:'IN-koh-noo', ipa:'/ˌɪnkɒˈnjuː/', pos:'noun', def:'A large freshwater whitefish of northwestern North America and Siberia; also means an unknown person or stranger.', lang:'French, from inconnu (\'unknown\'), from in- (\'not\') + connu (\'known\'), past participle of connaître (\'to know\').', example:'The angler was thrilled to land a massive inconnu in the remote Yukon river, the silvery fish fighting fiercely on the line.', isNoun:true },
+  { word:'incubate', pronunciation:'IN-kyoo-bayt', ipa:'/ˈɪŋkjʊˌbeɪt/', pos:'verb', def:'To sit on eggs to keep them warm and bring them to hatching; to develop slowly without outward sign; to maintain optimal conditions for growth.', lang:'Latin, from incubatus, past participle of incubare (\'to lie upon\'), from in- (\'upon\') + cubare (\'to lie down\').', example:'The hen incubated her eggs for twenty-one days, rarely leaving the nest until the first tiny cracks appeared in the shells.', isNoun:false },
+  { word:'indemnity', pronunciation:'in-DEM-nih-tee', ipa:'/ɪnˈdɛmnɪti/', pos:'noun', def:'Security or protection against a loss or other financial burden; compensation for damage or loss sustained.', lang:'Latin, from indemnitas (\'security against damage\'), from indemnis (\'unhurt\'), from in- (\'not\') + damnum (\'loss, damage\').', example:'The insurance policy provided full indemnity against fire damage, covering the cost of rebuilding the entire structure.', isNoun:true },
+  { word:'indicia', pronunciation:'in-DISH-ee-uh', ipa:'/ɪnˈdɪʃiə/', pos:'noun', def:'Signs or indications; distinguishing marks; printed markings on mail serving as a substitute for stamps.', lang:'Latin, plural of indicium (\'a sign, token\'), from index (\'an indicator\'), from indicare (\'to point out\').', example:'The postal indicia printed on the envelope showed that the bulk mailing had been prepaid by the nonprofit organization.', isNoun:true },
+  { word:'indict', pronunciation:'in-DYT', ipa:'/ɪnˈdaɪt/', pos:'verb', def:'To formally accuse of or charge with a serious crime; to bring charges against through a grand jury.', lang:'Anglo-French, from enditer (\'to write, compose, accuse\'), from Latin indictare (\'to declare, proclaim\'), from in- + dictare (\'to say\').', example:'The grand jury voted to indict the executive on twelve counts of fraud after reviewing months of financial evidence.', isNoun:false },
+  { word:'indigent', pronunciation:'IN-dih-junt', ipa:'/ˈɪndɪdʒənt/', pos:'adjective', def:'Poor; needy; lacking basic necessities or sufficient money to live comfortably.', lang:'Latin, from indigens, present participle of indigere (\'to lack, need\'), from indu (\'in, within\') + egere (\'to need, be poor\').', example:'The legal aid society provides free representation to indigent defendants who cannot afford to hire their own attorneys.', isNoun:false },
+  { word:'indistinguishable', pronunciation:'IN-dis-TING-gwish-uh-bul', ipa:'/ˌɪndɪsˈtɪŋɡwɪʃəbəl/', pos:'adjective', def:'Not able to be identified as different; impossible to tell apart; so similar as to be identical.', lang:'English, from in- (\'not\') + distinguishable (from Latin distinguere, \'to separate, distinguish\'), + -able.', example:'The counterfeit bills were nearly indistinguishable from genuine currency, fooling even experienced bank tellers.', isNoun:false },
+  { word:'indolent', pronunciation:'IN-duh-lunt', ipa:'/ˈɪndələnt/', pos:'adjective', def:'Wanting to avoid activity or exertion; lazy; in medicine, causing little or no pain and slow to develop.', lang:'Latin, from indolens (\'not suffering, insensitive to pain\'), from in- (\'not\') + dolens, present participle of dolere (\'to grieve, feel pain\').', example:'The indolent cat spent twenty hours a day sleeping in a patch of sunlight, stirring only when the food bowl was filled.', isNoun:false },
+  { word:'inducement', pronunciation:'in-DOOS-munt', ipa:'/ɪnˈdjuːsmənt/', pos:'noun', def:'A thing that persuades or influences someone to do something; an incentive or motivation.', lang:'English, from induce (from Latin inducere, \'to lead in\', from in- + ducere, \'to lead\') + -ment.', example:'The company offered a generous signing bonus as an inducement to attract top talent away from their competitors.', isNoun:true },
+  { word:'ineffable', pronunciation:'in-EF-uh-bul', ipa:'/ɪnˈɛfəbəl/', pos:'adjective', def:'Too great or extreme to be expressed or described in words; indescribable; unspeakable.', lang:'Latin, from ineffabilis (\'unutterable\'), from in- (\'not\') + effabilis (\'utterable\'), from effari (\'to speak out\'), from ex- + fari (\'to speak\').', example:'The ineffable beauty of the aurora borealis left the travelers standing in silent awe, unable to find words for what they saw.', isNoun:false },
+  { word:'ineluctable', pronunciation:'IN-ih-LUK-tuh-bul', ipa:'/ˌɪnɪˈlʌktəbəl/', pos:'adjective', def:'Unable to be resisted or avoided; inescapable; inevitable.', lang:'Latin, from ineluctabilis (\'inescapable\'), from in- (\'not\') + eluctabilis (\'able to be struggled out of\'), from eluctari (\'to struggle out\').', example:'The ineluctable march of time transforms everything it touches, turning today\'s innovations into tomorrow\'s antiques.', isNoun:false },
+  { word:'ineptitude', pronunciation:'in-EP-tih-tood', ipa:'/ɪnˈɛptɪˌtjuːd/', pos:'noun', def:'Lack of skill or ability; clumsiness; the quality of being inept or incompetent.', lang:'Latin, from ineptitudo (\'unfitness\'), from ineptus (\'unsuitable, absurd\'), from in- (\'not\') + aptus (\'fit, suitable\').', example:'The mechanic\'s stunning ineptitude was revealed when the car broke down again just one mile from the repair shop.', isNoun:true },
+  { word:'inerrancy', pronunciation:'in-AIR-un-see', ipa:'/ɪnˈɛrənsi/', pos:'noun', def:'The quality of being incapable of error; infallibility, especially attributed to the Bible by some religious traditions.', lang:'Latin, from in- (\'not\') + errans (\'wandering, erring\'), present participle of errare (\'to wander, err\'), + -ancy.', example:'The doctrine of biblical inerrancy holds that the scriptures are entirely free from error in all matters they address.', isNoun:true },
+  { word:'ingenuous', pronunciation:'in-JEN-yoo-us', ipa:'/ɪnˈdʒɛnjuəs/', pos:'adjective', def:'Innocent and unsuspecting; candid and frank; showing childlike simplicity and trust.', lang:'Latin, from ingenuus (\'native, freeborn, frank\'), from in- (\'in\') + gignere (\'to beget\'), + -ous.', example:'Her ingenuous smile and honest questions charmed the jaded executives, who were unaccustomed to such refreshing directness.', isNoun:false },
+  { word:'ingratiate', pronunciation:'in-GRAY-shee-ayt', ipa:'/ɪnˈɡreɪʃiˌeɪt/', pos:'verb', def:'To bring oneself into favor with someone by flattering or trying to please them.', lang:'Latin, from in gratiam (\'into favor\'), from in (\'into\') + gratia (\'favor, grace\'), + -ate.', example:'The new employee tried to ingratiate himself with the boss by volunteering for every task and laughing at all his jokes.', isNoun:false },
+  { word:'inimical', pronunciation:'in-IM-ih-kul', ipa:'/ɪnˈɪmɪkəl/', pos:'adjective', def:'Tending to obstruct or harm; unfriendly and hostile; adverse in tendency or effect.', lang:'Latin, from inimicalis (\'hostile\'), from inimicus (\'an enemy\'), from in- (\'not\') + amicus (\'friend\').', example:'The harsh desert climate proved inimical to agriculture, and every attempt to grow crops there ended in failure.', isNoun:false },
+  { word:'inoculate', pronunciation:'in-OK-yoo-layt', ipa:'/ɪnˈɒkjʊˌleɪt/', pos:'verb', def:'To treat with a vaccine to produce immunity against a disease; to introduce an idea or attitude into someone\'s mind.', lang:'Latin, from inoculatus, past participle of inoculare (\'to graft a bud\'), from in- (\'into\') + oculus (\'eye, bud\'), because vaccination resembled grafting.', example:'The health workers traveled to remote villages to inoculate children against measles, protecting an entire generation from the disease.', isNoun:false },
+  { word:'insignia', pronunciation:'in-SIG-nee-uh', ipa:'/ɪnˈsɪɡniə/', pos:'noun', def:'A badge or distinguishing mark of military rank, office, or membership in an organization.', lang:'Latin, plural of insigne (\'a mark, badge\'), from insignis (\'distinguished\'), from in- (\'in\') + signum (\'a sign, mark\').', example:'The colonel\'s insignia gleamed on his shoulder, the silver eagle identifying his rank to everyone who passed.', isNoun:true },
+  { word:'instigate', pronunciation:'IN-stih-gayt', ipa:'/ˈɪnstɪˌɡeɪt/', pos:'verb', def:'To bring about or initiate an action or event; to provoke or encourage someone to do something, usually undesirable.', lang:'Latin, from instigatus, past participle of instigare (\'to urge, incite\'), from in- (\'toward\') + stigare (\'to prick, goad\').', example:'The troublemaker tried to instigate a fight between the two groups, but cooler heads prevailed and the tension diffused.', isNoun:false },
+  { word:'insufflator', pronunciation:'IN-suf-LAY-tur', ipa:'/ˈɪnsəˌfleɪtər/', pos:'noun', def:'A medical device used to blow air, gas, or powder into a body cavity for examination or treatment.', lang:'Latin, from insufflare (\'to blow into\'), from in- (\'into\') + sufflare (\'to blow\'), + -ator.', example:'The surgeon used an insufflator to gently inflate the abdominal cavity with carbon dioxide before beginning the laparoscopic procedure.', isNoun:true },
+  { word:'insurgents', pronunciation:'in-SUR-junts', ipa:'/ɪnˈsɜːrdʒənts/', pos:'noun', def:'People who rise in active revolt against an established government or authority; rebels.', lang:'Latin, from insurgens, present participle of insurgere (\'to rise up\'), from in- (\'upon\') + surgere (\'to rise\'), + -ent + -s.', example:'The insurgents launched a coordinated attack on three military outposts, catching the garrison forces completely off guard.', isNoun:true },
+  { word:'intermittent', pronunciation:'IN-tur-MIT-unt', ipa:'/ˌɪntərˈmɪtənt/', pos:'adjective', def:'Occurring at irregular intervals; not continuous or steady; stopping and starting repeatedly.', lang:'Latin, from intermittens, present participle of intermittere (\'to leave off, interrupt\'), from inter- (\'between\') + mittere (\'to send\').', example:'The intermittent rain came and went all afternoon, alternating between brief downpours and patches of brilliant sunshine.', isNoun:false },
+  { word:'interred', pronunciation:'in-TURD', ipa:'/ɪnˈtɜːrd/', pos:'verb', def:'Placed a corpse in a grave or tomb; buried.', lang:'Old French, from enterrer (\'to bury\'), from en- (\'in\') + terre (\'earth\'), from Latin terra.', example:'The hero was interred with full military honors, the flag-draped coffin lowered slowly as a bugler played taps.', isNoun:false },
+  { word:'interrogative', pronunciation:'IN-tuh-ROG-uh-tiv', ipa:'/ˌɪntəˈrɒɡətɪv/', pos:'adjective', def:'Having the form or force of a question; used in asking questions; conveying or suggesting inquiry.', lang:'Latin, from interrogativus, from interrogare (\'to ask, question\'), from inter- (\'between\') + rogare (\'to ask\').', example:'The detective\'s interrogative tone made the suspect nervous, each question more pointed and probing than the last.', isNoun:false },
+  { word:'intersperse', pronunciation:'IN-tur-SPURS', ipa:'/ˌɪntərˈspɜːrs/', pos:'verb', def:'To scatter among or between other things; to place at intervals among; to diversify with things placed here and there.', lang:'Latin, from interspersus, past participle of interspergere (\'to scatter between\'), from inter- (\'between\') + spargere (\'to scatter\').', example:'The author interspersed chapters of intense action with quieter, reflective passages that gave readers time to breathe.', isNoun:false },
+  { word:'inveterate', pronunciation:'in-VET-ur-it', ipa:'/ɪnˈvɛtərɪt/', pos:'adjective', def:'Having a particular habit, activity, or interest that is long-established and unlikely to change; deep-seated and chronic.', lang:'Latin, from inveteratus (\'of long standing\'), past participle of inveterare (\'to make old\'), from in- + vetus (\'old\').', example:'The inveterate traveler had visited over a hundred countries and showed no signs of slowing down in her seventies.', isNoun:false },
+  { word:'inviolable', pronunciation:'in-VY-uh-luh-bul', ipa:'/ɪnˈvaɪələbəl/', pos:'adjective', def:'Never to be broken, infringed, or dishonored; sacred and untouchable.', lang:'Latin, from inviolabilis (\'inviolable\'), from in- (\'not\') + violabilis (\'able to be violated\'), from violare (\'to violate\').', example:'The constitution established inviolable rights for every citizen, protections that no government could lawfully override.', isNoun:false },
+  { word:'iridescent', pronunciation:'IR-ih-DES-unt', ipa:'/ˌɪrɪˈdɛsənt/', pos:'adjective', def:'Showing luminous colors that seem to change when seen from different angles; shimmering with rainbow colors.', lang:'Latin, from iris (genitive iridis, \'rainbow\'), from Greek Iris (the goddess of the rainbow), + -escent (\'becoming\').', example:'The iridescent wings of the hummingbird flashed emerald green and ruby red as it hovered beside the feeder.', isNoun:false },
+  { word:'Iroquois', pronunciation:'IR-uh-kwoy', ipa:'/ˈɪrəˌkwɔɪ/', pos:'noun', def:'A powerful confederacy of six Indigenous nations in northeastern North America, also called the Haudenosaunee or Six Nations.', lang:'French, from Iroquois, possibly from Algonquin irinakhoiw (\'real adders\'), a term used by rival groups.', example:'The Iroquois Confederacy\'s democratic system of government influenced the framers of the United States Constitution.', isNoun:true },
+  { word:'irrevocable', pronunciation:'ih-REV-uh-kuh-bul', ipa:'/ɪˈrɛvəkəbəl/', pos:'adjective', def:'Not able to be changed, reversed, or recovered; final and unalterable.', lang:'Latin, from irrevocabilis (\'unrecallable\'), from in- (\'not\') + revocabilis (\'able to be recalled\'), from revocare (\'to call back\').', example:'The judge\'s irrevocable ruling ended the decade-long legal dispute, and neither party could appeal the decision any further.', isNoun:false },
+  { word:'Isle Royale', pronunciation:'YLE ROY-al', ipa:'/ˌaɪl ˈrɔɪəl/', pos:'noun', def:'A remote island and national park in Lake Superior, Michigan, known for its wilderness and wolf-moose ecology studies.', lang:'French, from île (\'island\') + royale (\'royal\'), named by French explorers in honor of the French king.', example:'Isle Royale National Park is one of the least-visited parks in the system, its isolated wilderness accessible only by boat or seaplane.', isNoun:true }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Slider
+  const totalA = a.length;
+  const pct = totalA > 1 ? s / (totalA - 1) * 100 : 0;
+  document.getElementById("sliderFill").style.width = pct + "%";
+  const sliderArea = document.getElementById("sliderArea");
+  const areaW = sliderArea.offsetWidth || 200;
+  const pad = 10;
+  const thumbLeft = pad + (pct / 100) * (areaW - pad * 2);
+  const thumb = document.getElementById("sliderThumb");
+  if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
+
+  // Ticks - show ~20 evenly spaced markers
+  const tickCount = Math.min(totalA, 20);
+  let ticksHtml = '';
+  for(let t=0; t<tickCount; t++){
+    const ti = Math.round(t / (tickCount-1) * (totalA-1));
+    const cls = ti===s ? 'active' : (t % 5 === 0 ? 'major' : '');
+    ticksHtml += `<div class="slider-tick ${cls}"></div>`;
+  }
+  document.getElementById("sliderDots").innerHTML = ticksHtml;
+  document.getElementById("sliderCounter").textContent = `${s+1} / ${totalA}`;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Slider drag
+const slArea=document.getElementById("sliderArea");
+const slThumb=document.getElementById("sliderThumb");
+let slDragging=false;
+function sliderFromX(cx){
+  const r=slArea.getBoundingClientRect();
+  const pad=10;
+  const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
+  const a=aw(),idx=Math.round(p*(a.length-1));
+  // Move thumb immediately for smooth feel
+  const thumbLeft=pad+(p)*(r.width-pad*2);
+  slThumb.style.left=thumbLeft+"px";
+  if(idx!==si()){
+    const g=WORDS.findIndex(w=>w.word===a[idx].word);
+    flipped=false; currentIndex=g; render();
+  }
+}
+slArea.addEventListener("touchstart",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(slDragging) sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    // Speak the word after releasing
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+slArea.addEventListener("mousedown",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.clientX); e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(slDragging) sliderFromX(e.clientX);
+});
+document.addEventListener("mouseup",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>

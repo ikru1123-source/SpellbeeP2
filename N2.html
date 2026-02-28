@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: Verdana, Geneva, sans-serif; font-size: 36px; font-weight: 400;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 18px; height: 18px; }
+.slider-area {
+  flex: 1; height: 32px; position: relative;
+  display: flex; align-items: center;
+  touch-action: none; cursor: pointer;
+}
+.slider-track-bg {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
+}
+.slider-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(212,175,55,0.5));
+  transition: width 0.15s ease;
+}
+.slider-dots {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; padding: 0 2px;
+}
+.slider-tick {
+  width: 2px; height: 8px; border-radius: 1px;
+  background: rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.slider-tick.major { height: 12px; background: rgba(255,255,255,0.12); }
+.slider-tick.active { background: var(--gold); height: 14px; width: 3px; border-radius: 1.5px; box-shadow: 0 0 6px rgba(212,175,55,0.4); }
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px solid #1a1528;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  cursor: grab; transition: left 0.12s ease;
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
+.slider-thumb.dragging { transition: none; transform: translate(-50%, -50%) scale(1.15); }
+.slider-counter {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.08em;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1><a href="index.html" style="color:inherit;text-decoration:none;">Spelling Bee</a></h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="slider-area" id="sliderArea">
+      <div class="slider-track-bg">
+        <div class="slider-fill" id="sliderFill"></div>
+      </div>
+      <div class="slider-dots" id="sliderDots"></div>
+      <div class="slider-thumb" id="sliderThumb"></div>
+    </div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'nabobs', pronunciation:'NAY-bobz', ipa:'/ˈneɪbɒbz/', pos:'noun', def:'People of conspicuous wealth or high status; originally, Muslim officials acting as deputy governors in the Mughal Empire.', lang:'Urdu, from nawwab (\'a Muslim ruler or nobleman\'), from Arabic nuwwab, plural of naib (\'a deputy, viceroy\').', example:'The nabobs of the gilded age built enormous mansions along the coast, each trying to outdo the other in lavish excess.', isNoun:true },
+  { word:'Namibian', pronunciation:'nuh-MIB-ee-un', ipa:'/nəˈmɪbiən/', pos:'adjective', def:'Of or relating to Namibia, a country in southwestern Africa known for its vast deserts and rich wildlife.', lang:'Named after the Namib Desert, from Khoekhoe namib (\'an area where there is nothing\'), + -ian.', example:'The Namibian landscape ranges from the towering red dunes of the Namib Desert to the wild, windswept Skeleton Coast.', isNoun:false },
+  { word:'narcoleptic', pronunciation:'NAR-koh-LEP-tik', ipa:'/ˌnɑːrkəˈlɛptɪk/', pos:'adjective', def:'Of or relating to narcolepsy, a condition characterized by an extreme tendency to fall asleep suddenly and uncontrollably.', lang:'Greek, from narke (\'numbness, torpor\') + lepsis (\'a seizure\'), from lambanein (\'to seize\'), + -tic.', example:'The narcoleptic episodes came without warning, and she would fall asleep mid-sentence during meetings or while standing in line.', isNoun:false },
+  { word:'nauplius', pronunciation:'NAW-plee-us', ipa:'/ˈnɔːpliəs/', pos:'noun', def:'The first larval stage of many crustaceans, having an unsegmented body with three pairs of appendages and a single eye.', lang:'Latin, from Nauplius, a son of Poseidon in Greek mythology; applied to the larva because early scientists thought it was a distinct organism.', example:'Under the microscope, the tiny nauplius larvae of the barnacle jerked through the water sample with their feathery appendages.', isNoun:true },
+  { word:'nautilus', pronunciation:'NAW-tih-lus', ipa:'/ˈnɔːtɪləs/', pos:'noun', def:'A cephalopod mollusk with a spiral chambered shell, found in the deep waters of the Indian and Pacific Oceans.', lang:'Greek, from nautilos (\'a sailor\'), from naus (\'a ship\'), because the creature was thought to use its shell as a sail.', example:'The nautilus drifts through the deep ocean in its pearly spiral shell, a living fossil virtually unchanged for 500 million years.', isNoun:true },
+  { word:'Neapolitan', pronunciation:'NEE-uh-POL-ih-tun', ipa:'/ˌniːəˈpɒlɪtən/', pos:'adjective', def:'Of or relating to Naples, Italy; a type of ice cream made in layers of different flavors, typically vanilla, chocolate, and strawberry.', lang:'Named after Naples (Italian Napoli), from Latin Neapolis, from Greek Neapolis (\'new city\'), from neos (\'new\') + polis (\'city\'), + -itan.', example:'The block of Neapolitan ice cream revealed its three colorful stripes when sliced, each layer a different classic flavor.', isNoun:false },
+  { word:'nectarine', pronunciation:'NEK-tuh-reen', ipa:'/ˈnɛktəˌriːn/', pos:'noun', def:'A variety of peach with smooth, fuzzless skin and sweet, juicy flesh.', lang:'English, from nectar (from Greek nektar, \'the drink of the gods\') + -ine, named for its sweet, nectar-like flavor.', example:'She bit into the ripe nectarine and juice ran down her chin, its sweet flesh the very taste of summer.', isNoun:true },
+  { word:'neonatology', pronunciation:'NEE-oh-nay-TOL-uh-jee', ipa:'/ˌniːoʊneɪˈtɒlədʒi/', pos:'noun', def:'The branch of medicine concerned with the care and treatment of newborn infants, especially those who are premature or ill.', lang:'Greek, from neos (\'new\') + Latin natus (\'born\') + Greek -ology (\'study of\'), from logos (\'word, study\').', example:'The hospital\'s neonatology unit was equipped with the most advanced technology to care for premature babies born weeks before their due dates.', isNoun:true },
+  { word:'neoterism', pronunciation:'nee-OT-ur-iz-um', ipa:'/niˈɒtərɪzəm/', pos:'noun', def:'The introduction of new things, especially new words or doctrines; innovation and modernization.', lang:'Greek, from neoterismos (\'an innovation\'), from neoterizo (\'to innovate\'), from neoteros (\'newer, younger\'), + -ism.', example:'The poet\'s neoterism shocked the literary establishment, as she abandoned traditional forms in favor of daring new structures.', isNoun:true },
+  { word:'nepotism', pronunciation:'NEP-uh-tiz-um', ipa:'/ˈnɛpəˌtɪzəm/', pos:'noun', def:'The practice of favoring relatives or friends, especially by giving them jobs or other advantages.', lang:'Italian, from nepotismo, from nipote (\'nephew\'), from Latin nepos (\'a grandson, nephew\'); originally referring to popes granting offices to their nephews.', example:'The CEO was accused of nepotism after hiring three of his relatives for senior positions they were clearly unqualified to hold.', isNoun:true },
+  { word:'netiquette', pronunciation:'NET-ih-ket', ipa:'/ˈnɛtɪˌkɛt/', pos:'noun', def:'The correct or acceptable way of communicating on the internet; online etiquette and social conventions.', lang:'English, a blend of net (short for internet) + etiquette (from French étiquette, \'a label, ticket\').', example:'Basic netiquette includes not typing in all capitals, which is considered the digital equivalent of shouting at someone.', isNoun:true },
+  { word:'neuropathy', pronunciation:'noo-ROP-uh-thee', ipa:'/njʊˈrɒpəθi/', pos:'noun', def:'Disease or dysfunction of one or more peripheral nerves, typically causing numbness, weakness, or pain.', lang:'Greek, from neuron (\'nerve, sinew\') + pathos (\'suffering, disease\'), + -y.', example:'The diabetic neuropathy in his feet made it difficult to walk, the numbness and tingling growing worse each year.', isNoun:true },
+  { word:'neuroticism', pronunciation:'noo-ROT-ih-siz-um', ipa:'/njʊˈrɒtɪˌsɪzəm/', pos:'noun', def:'A personality trait characterized by emotional instability, anxiety, moodiness, and a tendency to experience negative emotions.', lang:'Greek, from neuron (\'nerve\') + -otic (\'relating to a condition\') + -ism, describing a tendency toward nervous temperament.', example:'High neuroticism in personality assessments is associated with greater vulnerability to stress and emotional ups and downs.', isNoun:true },
+  { word:'Newfoundland', pronunciation:'NOO-fun-lund', ipa:'/ˈnjuːfəndlənd/', pos:'noun', def:'A large island and province of eastern Canada; also a breed of very large, powerful dog known for swimming ability and gentle temperament.', lang:'English, from new + found + land, named by John Cabot in 1497 upon discovering the island during his voyage from England.', example:'The enormous Newfoundland dog plunged into the icy water without hesitation, swimming powerfully toward the struggling child to pull him to safety.', isNoun:true },
+  { word:'nicad', pronunciation:'NY-kad', ipa:'/ˈnaɪkæd/', pos:'noun', def:'A rechargeable battery using nickel and cadmium electrodes; short for nickel-cadmium.', lang:'English, a blend of nickel (from German Kupfernickel, \'false copper\') + cadmium (from Latin cadmia, \'calamine\').', example:'The old cordless phone still ran on nicad batteries that needed to be fully discharged before recharging to avoid memory effect.', isNoun:true },
+  { word:'nitrate', pronunciation:'NY-trayt', ipa:'/ˈnaɪtreɪt/', pos:'noun', def:'A salt or ester of nitric acid, containing the ion NO₃; used in fertilizers, explosives, and food preservation.', lang:'French, from nitre (\'saltpeter\'), from Latin nitrum, from Greek nitron (\'native soda\'), + -ate.', example:'Excessive nitrate runoff from farmland has polluted waterways, causing algae blooms that deplete oxygen and kill aquatic life.', isNoun:true },
+  { word:'nocive', pronunciation:'NOH-siv', ipa:'/ˈnoʊsɪv/', pos:'adjective', def:'Harmful, hurtful, or injurious; causing damage or pain.', lang:'Latin, from nocivus (\'harmful\'), from nocere (\'to harm, hurt\').', example:'The nocive fumes from the chemical spill forced the evacuation of the entire neighborhood until air quality returned to safe levels.', isNoun:false },
+  { word:'noctambulist', pronunciation:'nok-TAM-byoo-list', ipa:'/nɒkˈtæmbjʊlɪst/', pos:'noun', def:'A person who walks in their sleep; a sleepwalker; a somnambulist.', lang:'Latin, from nox (genitive noctis, \'night\') + ambulare (\'to walk\'), + -ist.', example:'The noctambulist wandered through the house each night, navigating hallways and opening doors without ever waking up.', isNoun:true },
+  { word:'no-goodnik', pronunciation:'noh-GOOD-nik', ipa:'/noʊˈɡʊdnɪk/', pos:'noun', def:'A person who is no good; a worthless or dishonest person; a troublemaker.', lang:'English, from no good + -nik (a Yiddish and Russian suffix meaning \'one associated with\'), popularized in mid-20th century American slang.', example:'The neighborhood no-goodnik was always getting into scrapes, and the shopkeepers kept a wary eye on him whenever he passed by.', isNoun:true },
+  { word:'nomancy', pronunciation:'NOH-man-see', ipa:'/ˈnoʊmænsi/', pos:'noun', def:'Divination based on names or the letters of a name; the practice of predicting fate from the numerical value of names.', lang:'Greek, from nomos (\'name, law\') + -mancy (from manteia, \'divination, prophecy\').', example:'The medieval practitioner of nomancy assigned numerical values to each letter of a person\'s name to predict their destiny.', isNoun:true },
+  { word:'nomenclature', pronunciation:'NOH-mun-KLAY-chur', ipa:'/ˈnoʊmənˌkleɪtʃər/', pos:'noun', def:'The devising or choosing of names for things, especially in a science or other discipline; a system of names or terms.', lang:'Latin, from nomenclatura (\'a calling by name\'), from nomen (\'a name\') + calare (\'to call\').', example:'The binomial nomenclature system created by Linnaeus gives every species a two-part Latin name recognizable to scientists worldwide.', isNoun:true },
+  { word:'nomophobia', pronunciation:'NOH-moh-FOH-bee-uh', ipa:'/ˌnoʊmoʊˈfoʊbiə/', pos:'noun', def:'The fear or anxiety of being without one\'s mobile phone or being unable to use it.', lang:'English, from no + mo(bile) + phobia (from Greek phobos, \'fear\'), coined in a 2008 UK study.', example:'Her nomophobia was so severe that she panicked whenever her phone battery dropped below twenty percent.', isNoun:true },
+  { word:'nonage', pronunciation:'NON-ij', ipa:'/ˈnɒnɪdʒ/', pos:'noun', def:'The state of being under the legal age of majority; immaturity; a period of youth or inexperience.', lang:'Old French, from nonage (\'minority\'), from non (\'not\') + age (\'age\'), from Latin aetas.', example:'During his nonage, the young prince\'s affairs were managed by a regent who governed the kingdom in his name.', isNoun:true },
+  { word:'nonchalance', pronunciation:'NON-shuh-lahnce', ipa:'/ˈnɒnʃələns/', pos:'noun', def:'The state of being calmly unconcerned; casual lack of concern or indifference.', lang:'French, from nonchalant (\'careless, indifferent\'), from non (\'not\') + chaloir (\'to concern, be warm\'), from Latin calere (\'to be warm\').', example:'She accepted the prestigious award with such nonchalance that the audience wondered if she had known she would win all along.', isNoun:true },
+  { word:'nonvolatile', pronunciation:'non-VOL-uh-tul', ipa:'/nɒnˈvɒlətaɪl/', pos:'adjective', def:'Not volatile; not evaporating readily at normal temperatures; of computer memory, retaining data when power is turned off.', lang:'English, from non- (\'not\') + volatile (from Latin volatilis, \'flying, fleeting\'), from volare (\'to fly\').', example:'The flash drive uses nonvolatile memory, retaining all stored data even after the device is unplugged from the computer.', isNoun:false },
+  { word:'Norovirus', pronunciation:'NOR-oh-VY-rus', ipa:'/ˈnɔːroʊˌvaɪrəs/', pos:'noun', def:'A highly contagious virus that causes vomiting and diarrhea, often spreading rapidly in closed environments like cruise ships.', lang:'Named after Norwalk, Ohio, where the virus was first identified during a 1968 outbreak at an elementary school, + virus.', example:'The norovirus swept through the cruise ship so quickly that half the passengers were confined to their cabins within forty-eight hours.', isNoun:true },
+  { word:'Nostradamus', pronunciation:'NOS-truh-DAH-mus', ipa:'/ˌnɒstrəˈdɑːməs/', pos:'noun', def:'Michel de Nostredame, a 16th-century French astrologer and physician famous for his book of prophecies predicting future events.', lang:'Latinized form of French Nostre-Dame (\'Our Lady\'), the family name of Michel de Nostredame (1503-1566).', example:'People have been debating the prophecies of Nostradamus for centuries, finding in his vague verses predictions of everything from wars to plagues.', isNoun:true },
+  { word:'notoriety', pronunciation:'NOH-tuh-RY-uh-tee', ipa:'/ˌnoʊtəˈraɪəti/', pos:'noun', def:'The state of being famous or well-known for some bad quality or deed; infamy.', lang:'Latin, from notorietas, from notorius (\'well-known\'), from notus (\'known\'), past participle of noscere (\'to know\'), + -ety.', example:'The bank robber achieved notoriety after a daring daylight heist that was broadcast live on every television news channel.', isNoun:true },
+  { word:'novemdecillion', pronunciation:'NOH-vem-deh-SIL-yun', ipa:'/ˌnoʊvɛmdɪˈsɪljən/', pos:'noun', def:'A cardinal number equal to 10 to the 60th power in the American system; an inconceivably large number.', lang:'Latin, from novem (\'nine\') + decillion (from decem, \'ten\'), representing the ninth power above a decillion.', example:'The number of possible chess games has been estimated in the novemdecillions, a figure so vast it defies human comprehension.', isNoun:true },
+  { word:'noxious', pronunciation:'NOK-shus', ipa:'/ˈnɒkʃəs/', pos:'adjective', def:'Harmful, poisonous, or very unpleasant; injurious to health or morals.', lang:'Latin, from noxius (\'harmful, injurious\'), from noxa (\'harm, injury\'), from nocere (\'to hurt\').', example:'The noxious gases leaking from the factory forced the evacuation of residents living within a two-mile radius of the plant.', isNoun:false },
+  { word:'Nubia', pronunciation:'NOO-bee-uh', ipa:'/ˈnjuːbiə/', pos:'noun', def:'An ancient region along the Nile in southern Egypt and northern Sudan, home to one of Africa\'s earliest and most powerful civilizations.', lang:'Possibly from the Noba people, or from Egyptian nub (\'gold\'), referring to the region\'s famous gold mines.', example:'The ancient kingdoms of Nubia built towering pyramids and temples along the Nile that rivaled those of their Egyptian neighbors.', isNoun:true },
+  { word:'nubuck', pronunciation:'NOO-buk', ipa:'/ˈnjuːbʌk/', pos:'noun', def:'A type of leather that has been rubbed on the outer surface to create a soft, velvety nap similar to suede.', lang:'English, a variant of new + buck(skin), describing leather made from the outer grain side that has been buffed or sanded.', example:'The nubuck boots had a luxuriously soft texture but required careful waterproofing to protect them from stains and moisture.', isNoun:true },
+  { word:'nuciform', pronunciation:'NOO-sih-form', ipa:'/ˈnjuːsɪˌfɔːrm/', pos:'adjective', def:'Shaped like a nut; having the form or appearance of a nut.', lang:'Latin, from nux (genitive nucis, \'a nut\') + forma (\'form, shape\').', example:'The geologist identified the nuciform concretions in the rock layer, their round, nut-like shapes formed by mineral deposits over millennia.', isNoun:false },
+  { word:'nucleated', pronunciation:'NOO-klee-AY-tid', ipa:'/ˈnjuːkliˌeɪtɪd/', pos:'adjective', def:'Having a nucleus; of a cell, containing a distinct, membrane-bound nucleus; having formed around a central point.', lang:'Latin, from nucleus (\'a kernel, inner part\'), diminutive of nux (\'a nut\'), + -ated.', example:'Unlike red blood cells, most human cells are nucleated, each containing a membrane-bound nucleus that houses the DNA.', isNoun:false },
+  { word:'numerology', pronunciation:'NOO-muh-ROL-uh-jee', ipa:'/ˌnjuːməˈrɒlədʒi/', pos:'noun', def:'The branch of knowledge dealing with the supposed mystical significance of numbers and their influence on human life.', lang:'Latin, from numerus (\'a number\') + Greek -ology (\'study of\'), from logos (\'word, study\').', example:'She consulted a numerology chart to find her life path number, hoping the ancient practice would reveal insights about her future.', isNoun:true },
+  { word:'nutation', pronunciation:'noo-TAY-shun', ipa:'/njuːˈteɪʃən/', pos:'noun', def:'A periodic oscillation of the Earth\'s axis of rotation; in botany, the circular swaying movement of a growing stem or tendril.', lang:'Latin, from nutatio (\'a nodding\'), from nutare (\'to nod, sway\'), frequentative of nuere (\'to nod\').', example:'The astronomer accounted for nutation in her calculations, the slight wobble of Earth\'s axis that affects the apparent positions of stars.', isNoun:true },
+  { word:'nutria', pronunciation:'NOO-tree-uh', ipa:'/ˈnjuːtriə/', pos:'noun', def:'A large, semiaquatic rodent native to South America, now an invasive species in parts of North America, Europe, and Asia.', lang:'Spanish, from nutria (\'otter\'), from Latin lutra (\'an otter\'); misapplied to the coypu, which resembles a small beaver.', example:'The invasive nutria population devastated the Louisiana marshlands, their voracious appetite destroying the vegetation that held the wetlands together.', isNoun:true },
+  { word:'nuzzer', pronunciation:'NUZ-ur', ipa:'/ˈnʌzər/', pos:'noun', def:'A ceremonial gift presented to a superior, especially in India; a tribute or offering made as a mark of respect.', lang:'Hindi and Urdu, from nazar (\'a gift, offering\'), from Arabic nadhr (\'a vow, votive offering\').', example:'The visiting dignitary presented a nuzzer of fine silk and jewels to the maharajah as a gesture of goodwill and respect.', isNoun:true }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Slider
+  const totalA = a.length;
+  const pct = totalA > 1 ? s / (totalA - 1) * 100 : 0;
+  document.getElementById("sliderFill").style.width = pct + "%";
+  const sliderArea = document.getElementById("sliderArea");
+  const areaW = sliderArea.offsetWidth || 200;
+  const pad = 10;
+  const thumbLeft = pad + (pct / 100) * (areaW - pad * 2);
+  const thumb = document.getElementById("sliderThumb");
+  if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
+
+  // Ticks - show ~20 evenly spaced markers
+  const tickCount = Math.min(totalA, 20);
+  let ticksHtml = '';
+  for(let t=0; t<tickCount; t++){
+    const ti = Math.round(t / (tickCount-1) * (totalA-1));
+    const cls = ti===s ? 'active' : (t % 5 === 0 ? 'major' : '');
+    ticksHtml += `<div class="slider-tick ${cls}"></div>`;
+  }
+  document.getElementById("sliderDots").innerHTML = ticksHtml;
+  document.getElementById("sliderCounter").textContent = `${s+1} / ${totalA}`;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Slider drag
+const slArea=document.getElementById("sliderArea");
+const slThumb=document.getElementById("sliderThumb");
+let slDragging=false;
+function sliderFromX(cx){
+  const r=slArea.getBoundingClientRect();
+  const pad=10;
+  const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
+  const a=aw(),idx=Math.round(p*(a.length-1));
+  // Move thumb immediately for smooth feel
+  const thumbLeft=pad+(p)*(r.width-pad*2);
+  slThumb.style.left=thumbLeft+"px";
+  if(idx!==si()){
+    const g=WORDS.findIndex(w=>w.word===a[idx].word);
+    flipped=false; currentIndex=g; render();
+  }
+}
+slArea.addEventListener("touchstart",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(slDragging) sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    // Speak the word after releasing
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+slArea.addEventListener("mousedown",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.clientX); e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(slDragging) sliderFromX(e.clientX);
+});
+document.addEventListener("mouseup",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>
