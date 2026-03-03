@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: Verdana, Geneva, sans-serif; font-size: 36px; font-weight: 400;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 18px; height: 18px; }
+.slider-area {
+  flex: 1; height: 32px; position: relative;
+  display: flex; align-items: center;
+  touch-action: none; cursor: pointer;
+}
+.slider-track-bg {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
+}
+.slider-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(212,175,55,0.5));
+  transition: width 0.15s ease;
+}
+.slider-dots {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; padding: 0 2px;
+}
+.slider-tick {
+  width: 2px; height: 8px; border-radius: 1px;
+  background: rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.slider-tick.major { height: 12px; background: rgba(255,255,255,0.12); }
+.slider-tick.active { background: var(--gold); height: 14px; width: 3px; border-radius: 1.5px; box-shadow: 0 0 6px rgba(212,175,55,0.4); }
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px solid #1a1528;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  cursor: grab; transition: left 0.12s ease;
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
+.slider-thumb.dragging { transition: none; transform: translate(-50%, -50%) scale(1.15); }
+.slider-counter {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.08em;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1><a href="index.html" style="color:inherit;text-decoration:none;">Spelling Bee</a></h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="slider-area" id="sliderArea">
+      <div class="slider-track-bg">
+        <div class="slider-fill" id="sliderFill"></div>
+      </div>
+      <div class="slider-dots" id="sliderDots"></div>
+      <div class="slider-thumb" id="sliderThumb"></div>
+    </div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'saccharide', pronunciation:'SAK-uh-ryd', ipa:'/ˈsækəˌraɪd/', pos:'noun', def:'A sugar or sugar derivative; a carbohydrate, especially a simple sugar or a compound containing sugar molecules.', lang:'Greek, from sakcharon (\'sugar\'), from Sanskrit sharkara (\'sugar, gravel\'), the chemical term for sugar compounds.', example:'The biochemist analyzed the complex saccharide chain, each sugar molecule linked in a precise sequence that determined the protein\'s function.', isNoun:true },
+  { word:'saeta', pronunciation:'sah-AY-tah', ipa:'/sɑːˈeɪtə/', pos:'noun', def:'A fervent, improvised flamenco song sung during Holy Week processions in Spain, addressed to the religious images being carried through the streets.', lang:'Spanish, from saeta (\'an arrow\'), from Latin sagitta, because the song pierces the heart like an arrow.', example:'A woman on a balcony sang a saeta as the Virgin\'s float passed below, her raw, soaring voice stopping the entire procession in its tracks.', isNoun:true },
+  { word:'Sagittarius', pronunciation:'SAJ-ih-TAIR-ee-us', ipa:'/ˌsædʒɪˈtɛəriəs/', pos:'noun', def:'A zodiac constellation representing a centaur archer; the ninth astrological sign covering November 22 to December 21.', lang:'Latin, from sagittarius (\'an archer\'), from sagitta (\'an arrow\'), the centaur archer of the zodiac.', example:'The Milky Way\'s center lies in the direction of Sagittarius, the archer constellation pointing his arrow toward the heart of our galaxy.', isNoun:true },
+  { word:'sakura', pronunciation:'SAH-koo-rah', ipa:'/sɑːˈkuːrə/', pos:'noun', def:'The Japanese cherry blossom, celebrated in spring festivals as a symbol of the beauty and transience of life.', lang:'Japanese, from sakura (\'cherry blossom\'), the iconic flower symbolizing the fleeting nature of beauty in Japanese culture.', example:'The sakura petals drifted down like pink snow, the brief glory of the cherry blossoms reminding everyone that beauty is most precious because it does not last.', isNoun:true },
+  { word:'salmagundi', pronunciation:'SAL-muh-GUN-dee', ipa:'/ˌsælməˈɡʌndi/', pos:'noun', def:'A dish of chopped meat, anchovies, eggs, onions, and seasoning; a miscellaneous mixture or medley.', lang:'French, from salmigondis (\'a hodgepodge\'), of uncertain origin, possibly from Italian salami conditi (\'seasoned salami\').', example:'The tavern served a generous salmagundi of diced chicken, pickled herring, eggs, and olives, the colonial-era dish a colorful jumble on the plate.', isNoun:true },
+  { word:'salmagundy', pronunciation:'SAL-muh-GUN-dee', ipa:'/ˌsælməˈɡʌndi/', pos:'noun', def:'A variant spelling of salmagundi; a mixed dish or medley.', lang:'English variant of salmagundi, from French salmigondis, an alternative spelling of the same hodgepodge dish.', example:'Washington Irving named his satirical magazine Salmagundy, the old-fashioned mixed dish a fitting metaphor for his miscellany of essays and humor.', isNoun:true },
+  { word:'samsara', pronunciation:'sahm-SAH-rah', ipa:'/sɑːmˈsɑːrə/', pos:'noun', def:'In Hinduism and Buddhism, the cycle of death and rebirth to which life in the material world is bound.', lang:'Sanskrit, from samsara (\'a wandering through, cycle\'), from sam (\'together\') + sarati (\'it flows\'), the endless cycle of reincarnation.', example:'The monk sought liberation from samsara, the endless wheel of birth, death, and rebirth that binds all beings to the material world.', isNoun:true },
+  { word:'Sangamon', pronunciation:'SANG-guh-mun', ipa:'/ˈsæŋɡəmən/', pos:'noun', def:'A warm interglacial period in North America approximately 125,000 years ago, between the Illinoian and Wisconsinan glaciations.', lang:'Named after Sangamon County, Illinois, where geological evidence of this interglacial period was first identified.', example:'During the Sangamon interglacial, temperatures were warmer than today and sea levels higher, with hippopotamuses living as far north as Britain.', isNoun:true },
+  { word:'sangfroid', pronunciation:'SAHN-FRWAH', ipa:'/ˌsɑːŋˈfrwɑː/', pos:'noun', def:'Composure and self-possession in the face of danger or difficulty; cool-headedness under pressure.', lang:'French, from sang-froid (\'cold blood\'), from sang (\'blood\') + froid (\'cold\'), describing unflappable calm.', example:'The pilot displayed remarkable sangfroid when the engine failed, calmly guiding the aircraft to an emergency landing as if it were routine.', isNoun:true },
+  { word:'sanglier', pronunciation:'SAHN-glee-ay', ipa:'/ˌsɑːŋɡliˈeɪ/', pos:'noun', def:'A wild boar, especially in heraldry or hunting contexts; the French term for wild boar.', lang:'French, from sanglier (\'a wild boar\'), from Latin singularis (porcus) (\'a solitary pig\'), because wild boars are often solitary.', example:'The medieval tapestry depicted a hunt for the sanglier, the wild boar crashing through the undergrowth pursued by hounds and mounted knights.', isNoun:true },
+  { word:'sannyasi', pronunciation:'sun-YAH-see', ipa:'/sʌnˈjɑːsi/', pos:'noun', def:'A Hindu ascetic who has renounced worldly life and possessions in pursuit of spiritual liberation.', lang:'Sanskrit, from sannyasin (\'one who has laid aside\'), from sam- + ni- + as (\'to throw\'), one who has cast off worldly attachments.', example:'The sannyasi walked barefoot from village to village, his saffron robes and begging bowl the only possessions he carried.', isNoun:true },
+  { word:'sansculotte', pronunciation:'SANZ-kyoo-LOT', ipa:'/ˌsænzkjuːˈlɒt/', pos:'noun', def:'A radical republican during the French Revolution, from the lower classes who wore trousers rather than the knee breeches of the aristocracy.', lang:'French, from sans (\'without\') + culotte (\'knee breeches\'), because working-class revolutionaries wore long trousers instead of aristocratic breeches.', example:'The sansculottes stormed through the streets of Paris, their very name a defiant rejection of the aristocratic fashion they could never afford.', isNoun:true },
+  { word:'Saoshyant', pronunciation:'sah-OSH-yahnt', ipa:'/sɑːˈɒʃjɑːnt/', pos:'noun', def:'In Zoroastrian eschatology, a future savior figure who will bring about the final renovation of the world and the defeat of evil.', lang:'Avestan, from Saoshyant (\'one who will bring benefit\'), the messianic figure of Zoroastrian prophecy.', example:'Zoroastrian texts prophesy that the Saoshyant will arise at the end of time to vanquish evil and usher in a renewed world.', isNoun:true },
+  { word:'Sapporo', pronunciation:'sah-POR-oh', ipa:'/sɑːˈpɔːroʊ/', pos:'noun', def:'The capital city of Hokkaido, Japan, famous for its annual Snow Festival, beer, and as the host of the 1972 Winter Olympics.', lang:'Ainu, from sat poro pet (\'dry, great river\'), the indigenous Ainu name describing the river flowing through the city.', example:'Sapporo\'s Snow Festival draws millions of visitors each February to marvel at enormous ice sculptures illuminated against the Hokkaido winter sky.', isNoun:true },
+  { word:'savoir faire', pronunciation:'SAV-wahr FAIR', ipa:'/ˌsævwɑːr ˈfɛər/', pos:'noun', def:'The ability to act appropriately in any social situation; polished worldliness and social skill.', lang:'French, from savoir (\'to know\') + faire (\'to do\'), literally \'knowing how to do\', the art of social grace.', example:'The ambassador\'s savoir faire was legendary, her ability to navigate any diplomatic minefield with charm and grace earning universal respect.', isNoun:true },
+  { word:'Sawan', pronunciation:'SAH-wun', ipa:'/ˈsɑːwən/', pos:'noun', def:'The fifth month of the Hindu calendar, falling in July-August, associated with the monsoon season and worship of Lord Shiva.', lang:'Hindi, from Sawan (Shravan in Sanskrit), the monsoon month sacred to Shiva in the Hindu calendar.', example:'The temples filled with devotees during Sawan, the holy monsoon month when pilgrims carry sacred water to offer to Lord Shiva.', isNoun:true },
+  { word:'Sbrinz', pronunciation:'SBRINTZ', ipa:'/sbrɪnts/', pos:'noun', def:'A very hard Swiss cheese aged for two to three years, similar to Parmesan, used for grating and as a table cheese.', lang:'Swiss German, from Sbrinz, possibly from Brienz, a town in the Bernese Oberland where this hard alpine cheese has been produced for centuries.', example:'The chef shaved curls of Sbrinz over the risotto, the hard Swiss cheese adding a nutty, crystalline depth rivaling the finest Parmigiano.', isNoun:true },
+  { word:'scaberulous', pronunciation:'skuh-BER-yoo-lus', ipa:'/skəˈbɛrjʊləs/', pos:'adjective', def:'Slightly rough or scabrous to the touch; having a minutely rough surface texture.', lang:'Latin, from scaber (\'rough, scurfy\') + -ulous (diminutive suffix), describing a subtly rough texture.', example:'The botanist noted the leaf\'s scaberulous surface, the tiny roughened bumps barely detectable without a magnifying lens.', isNoun:false },
+  { word:'scagliola', pronunciation:'skal-YOH-luh', ipa:'/skælˈjoʊlə/', pos:'noun', def:'An imitation marble made from plaster, glue, and stone chips, polished to a high gloss, used for columns and decorative surfaces.', lang:'Italian, from scagliola (\'a small chip\'), diminutive of scaglia (\'a chip, flake\'), the technique of simulating marble with polished plaster.', example:'The palace columns appeared to be rare marble, but were actually scagliola — polished plaster so perfectly crafted that only an expert could tell the difference.', isNoun:true },
+  { word:'Schedar', pronunciation:'SHED-ar', ipa:'/ˈʃɛdɑːr/', pos:'noun', def:'The brightest star in the constellation Cassiopeia, an orange giant approximately 230 light-years from Earth.', lang:'Arabic, from sadr (\'breast, chest\'), describing the star\'s position on the figure of the mythological queen Cassiopeia.', example:'Schedar blazed orange at the bottom of the W-shaped Cassiopeia, the brightest star in the constellation marking the queen\'s heart.', isNoun:true },
+  { word:'schehera', pronunciation:'shuh-HAIR-uh', ipa:'/ʃəˈhɛərə/', pos:'noun', def:'A type of ornamental embroidered muslin fabric, associated with fine Indian textile traditions.', lang:'Possibly from Urdu/Persian, related to fine embroidered muslin textiles of South Asian origin.', example:'The delicate schehera fabric was so finely woven that the entire length could be drawn through a ring, its embroidery exquisite beyond measure.', isNoun:true },
+  { word:'schnecken', pronunciation:'SHNEK-un', ipa:'/ˈʃnɛkən/', pos:'noun', def:'Sweet, spiral-shaped pastry rolls made from yeast dough with cinnamon, nuts, and raisins; a German-Jewish baked treat.', lang:'German/Yiddish, from Schnecken (\'snails\'), because the rolled pastries resemble snail shells.', example:'The bakery\'s schnecken were legendary, each cinnamon-sugar spiral sticky with caramelized pecans and fragrant with the warmth of the oven.', isNoun:true },
+  { word:'schwegel', pronunciation:'SHVAY-gul', ipa:'/ˈʃveɪɡəl/', pos:'noun', def:'A simple transverse flute of Alpine folk music tradition, used in Austrian and Bavarian folk ensembles.', lang:'German, from Schwegel (\'a fife, small flute\'), from Middle High German swegel, the traditional fife of Alpine folk music.', example:'The folk musician played a lively waltz on his schwegel, the simple wooden flute\'s bright tone echoing off the Alpine valley walls.', isNoun:true },
+  { word:'sciatica', pronunciation:'sy-AT-ih-kuh', ipa:'/saɪˈætɪkə/', pos:'noun', def:'Pain radiating along the sciatic nerve from the lower back through the hip and down the leg, often caused by a herniated disc.', lang:'Latin, from sciatica (passio) (\'hip disease\'), from Greek ischiadikos (\'of the hip joint\'), from ischion (\'the hip\').', example:'The sciatica sent shooting pain down her leg with every step, the compressed nerve making even sitting unbearable.', isNoun:true },
+  { word:'sciolistic', pronunciation:'SY-oh-LIS-tik', ipa:'/ˌsaɪoʊˈlɪstɪk/', pos:'adjective', def:'Of or characterized by superficial knowledge; pretending to have deep understanding while knowing very little.', lang:'Latin, from sciolus (\'a smatterer\'), diminutive of scius (\'knowing\'), + -istic, describing shallow pretension to knowledge.', example:'The sciolistic critic name-dropped philosophers he had clearly never read, his shallow references fooling no one with actual expertise.', isNoun:false },
+  { word:'sclaff', pronunciation:'SKLAF', ipa:'/sklæf/', pos:'verb', def:'In golf, to strike the ground behind the ball before hitting it, resulting in a poor shot; to scrape or shuffle along.', lang:'Scottish, from sclaff (\'to strike flat, slap\'), of imitative origin, describing the sound of hitting the ground.', example:'He sclaffed his approach shot badly, the club digging into the turf behind the ball and sending it barely halfway to the green.', isNoun:false },
+  { word:'scobiform', pronunciation:'SKOH-bih-form', ipa:'/ˈskoʊbɪˌfɔːrm/', pos:'adjective', def:'Resembling sawdust or fine shavings in form or texture.', lang:'Latin, from scobis (\'sawdust, filings\') + -form (from forma, \'shape\').', example:'The fungal growth had a scobiform texture, its fine, powdery surface resembling a layer of sawdust spread across the rotting log.', isNoun:false },
+  { word:'scrofula', pronunciation:'SKROF-yoo-luh', ipa:'/ˈskrɒfjʊlə/', pos:'noun', def:'A form of tuberculosis affecting the lymph nodes of the neck, historically called "the king\'s evil" because it was believed the royal touch could cure it.', lang:'Latin, from scrofula (\'a breeding sow\'), diminutive of scrofa (\'a sow\'), possibly because the swollen glands resembled a sow\'s body.', example:'Medieval kings of England and France touched thousands of scrofula sufferers in ceremonies, the royal touch believed to heal the dreaded swelling.', isNoun:true },
+  { word:'seine', pronunciation:'SAYN', ipa:'/seɪn/', pos:'noun', def:'A large fishing net that hangs vertically in the water, with floats along the top edge and weights along the bottom.', lang:'Old English, from segne (\'a dragnet\'), from Latin sagena, from Greek sagene (\'a large net\').', example:'The fishermen cast the seine in a wide arc and slowly drew it closed, the net\'s floats bobbing on the surface as it trapped the school of fish.', isNoun:true },
+  { word:'selah', pronunciation:'SEE-luh', ipa:'/ˈsiːlə/', pos:'noun', def:'A term found frequently in the Psalms, believed to be a musical or liturgical direction, possibly meaning "pause" or "forever."', lang:'Hebrew, from selah, of uncertain meaning, possibly a direction for a musical pause, a change of instruments, or an exclamation of praise.', example:'The psalm ended with selah, the ancient Hebrew word hanging in the air like an instruction to pause and reflect on what had just been sung.', isNoun:true },
+  { word:'semaphore', pronunciation:'SEM-uh-for', ipa:'/ˈsɛməˌfɔːr/', pos:'noun', def:'A system of signaling using flags, lights, or mechanical arms to convey messages over distance; visual telegraphy.', lang:'Greek, from sema (\'a sign, signal\') + phoros (\'bearing, carrying\'), a visual communication system.', example:'The sailor signaled the approaching ship by semaphore, his outstretched arms holding flags in precise positions that spelled out a message letter by letter.', isNoun:true },
+  { word:'seraya', pronunciation:'seh-RY-uh', ipa:'/sɛˈraɪə/', pos:'noun', def:'A tall tropical hardwood tree of Southeast Asia, valued for its timber used in construction and furniture making.', lang:'Malay, from seraya, the local name for several species of Shorea timber trees in the dipterocarp forests of Borneo and Malaysia.', example:'The old colonial building was framed in seraya, the durable Southeast Asian hardwood standing strong after more than a century in the tropical climate.', isNoun:true },
+  { word:'serin', pronunciation:'SAIR-in', ipa:'/ˈsɛrɪn/', pos:'noun', def:'A small European finch with yellow-green plumage, related to canaries and known for its bright, tinkling song.', lang:'French, from serin (\'a canary, serin\'), possibly from the Provencal sirena (\'a siren\'), because of the bird\'s sweet singing.', example:'The serin sang from the top of the cypress tree, its rapid, jingling notes a cheerful soundtrack to the Mediterranean afternoon.', isNoun:true },
+  { word:'serval', pronunciation:'SUR-vul', ipa:'/ˈsɜːrvəl/', pos:'noun', def:'A slender, spotted wild cat of Africa with very long legs and large ears, adapted for hunting in tall grass.', lang:'Portuguese, from cerval (\'deer-like\'), from Latin cervus (\'a deer\'), possibly from the cat\'s deer-like long legs.', example:'The serval leaped three feet into the air and pounced on a hidden rodent, its enormous ears having pinpointed the prey\'s location with uncanny precision.', isNoun:true },
+  { word:'sesquipedalian', pronunciation:'SES-kwih-puh-DAY-lee-un', ipa:'/ˌsɛskwɪpɪˈdeɪliən/', pos:'adjective', def:'Of or characterized by the use of long words; given to using excessively long words.', lang:'Latin, from sesquipedalis (\'a foot and a half long\'), from sesqui- (\'one and a half\') + pes (\'a foot\'), humorously applied to long words.', example:'The professor\'s sesquipedalian lecture style sent students scrambling for dictionaries, every sentence bristling with words of five syllables or more.', isNoun:false },
+  { word:'sessile', pronunciation:'SES-il', ipa:'/ˈsɛsɪl/', pos:'adjective', def:'Attached directly by the base without a stalk; of an organism, permanently fixed in one place and unable to move.', lang:'Latin, from sessilis (\'of or for sitting\'), from sessus, past participle of sedere (\'to sit\').', example:'The sessile barnacles cemented themselves to the hull of the ship, the creatures spending their entire adult lives fixed in one spot.', isNoun:false },
+  { word:'seton', pronunciation:'SEE-tun', ipa:'/ˈsiːtən/', pos:'noun', def:'A thread or strip of material drawn through subcutaneous tissue to create a drainage channel, used in traditional and veterinary medicine.', lang:'Latin, from seta (\'a bristle\'), because the original setons were made from silk thread or horsehair.', example:'The veterinarian inserted a seton beneath the horse\'s skin to drain the abscess, the thread providing a channel for infection to escape.', isNoun:true },
+  { word:'Sfax', pronunciation:'SFAKS', ipa:'/sfæks/', pos:'noun', def:'The second largest city in Tunisia, a major port and industrial center on the Mediterranean coast.', lang:'Arabic, from Safaqis, the Arabic name for this ancient Tunisian port city with Phoenician and Roman roots.', example:'Sfax is Tunisia\'s economic powerhouse, its busy port exporting olive oil and phosphates while its medina preserves centuries of Arab and Mediterranean heritage.', isNoun:true },
+  { word:'sforzando', pronunciation:'sfor-TSAHN-doh', ipa:'/sfɔːrˈtsɑːndoʊ/', pos:'noun', def:'A sudden, strong accent on a single note or chord in music; an abrupt emphasis.', lang:'Italian, from sforzando (\'forcing\'), from sforzare (\'to force, exert\'), from Latin ex- + fortia (\'force\').', example:'The sforzando hit like a thunderclap in the middle of the quiet passage, the sudden accent jolting the audience to full attention.', isNoun:true },
+  { word:'Shawwal', pronunciation:'shaw-WAHL', ipa:'/ʃɔːˈwɑːl/', pos:'noun', def:'The tenth month of the Islamic calendar, following Ramadan, beginning with the festival of Eid al-Fitr.', lang:'Arabic, from Shawwal, possibly from shala (\'to carry\'), referring to female camels carrying young in this month.', example:'The first day of Shawwal marks Eid al-Fitr, the joyous celebration that breaks the fast of Ramadan with feasting, prayer, and charity.', isNoun:true },
+  { word:'Shiba Inu', pronunciation:'SHEE-buh EE-noo', ipa:'/ˌʃiːbə ˈiːnuː/', pos:'noun', def:'A small, agile Japanese dog breed with a fox-like face, curled tail, and thick double coat, one of Japan\'s oldest native breeds.', lang:'Japanese, from shiba (possibly \'brushwood\' or \'small\') + inu (\'dog\'), the compact hunting dog of mountainous Japan.', example:'The Shiba Inu tilted its fox-like face and regarded the stranger with the breed\'s characteristic aloofness before breaking into a full-body wiggle of greeting.', isNoun:true },
+  { word:'silique', pronunciation:'sih-LEEK', ipa:'/sɪˈliːk/', pos:'noun', def:'A long, narrow seed pod characteristic of plants in the mustard family, splitting open from the bottom when ripe.', lang:'Latin, from siliqua (\'a pod, husk\'), the characteristic elongated seedpod of cruciferous plants.', example:'The mustard plant\'s siliques hung in clusters, the slender pods splitting open to scatter tiny seeds across the autumn garden.', isNoun:true },
+  { word:'Sir Roger de Coverley', pronunciation:'SUR ROJ-ur duh KUV-ur-lee', ipa:'/ˌsɜːr ˈrɒdʒər də ˈkʌvərli/', pos:'noun', def:'A traditional English country dance performed in two facing lines, also known as the Virginia Reel in America.', lang:'Named after a fictional English country gentleman created by Joseph Addison and Richard Steele in The Spectator (1711).', example:'The wedding guests formed two long lines for Sir Roger de Coverley, the lively country dance sending couples weaving and spinning down the set.', isNoun:true },
+  { word:'siscowet', pronunciation:'SIS-koh-wet', ipa:'/ˈsɪskoʊˌwɛt/', pos:'noun', def:'A deep-water variety of lake trout found in Lake Superior, distinguished by its extremely high fat content.', lang:'Ojibwe, from pemitewiskawet (\'that which has oily flesh\'), the exceptionally fat lake trout of Lake Superior\'s deep waters.', example:'The fisherman hauled in a siscowet from the depths of Lake Superior, the deep-water trout so rich in fat it could practically be used as a candle.', isNoun:true },
+  { word:'skaamoogs', pronunciation:'SKAH-moogz', ipa:'/ˈskɑːmuːɡz/', pos:'noun', def:'A slang or dialectal term for moccasins or soft shoes.', lang:'English dialectal, possibly of Native American origin, a regional term for soft leather shoes or moccasins.', example:'He padded silently through the forest in his skaamoogs, the soft leather shoes making not a sound on the carpet of pine needles.', isNoun:true },
+  { word:'Skeltonic', pronunciation:'skel-TON-ik', ipa:'/skɛlˈtɒnɪk/', pos:'adjective', def:'Of or relating to the verse style of John Skelton, featuring short, rhyming lines with irregular meter and rapid-fire repetition.', lang:'Named after John Skelton (c.1460-1529), the English poet laureate whose distinctive tumbling, rhyming verse style bears his name.', example:'The poet adopted a Skeltonic style, his short rhyming lines tumbling one after another in a breathless torrent of wit and wordplay.', isNoun:false },
+  { word:'skerrick', pronunciation:'SKER-ik', ipa:'/ˈskɛrɪk/', pos:'noun', def:'A very small amount; a scrap or morsel, used especially in Australian and New Zealand English.', lang:'English dialectal, possibly from Northern English or Scandinavian, meaning a small fragment or trace.', example:'There wasn\'t a skerrick of food left in the pantry after the teenagers had finished raiding the kitchen.', isNoun:true },
+  { word:'smriti', pronunciation:'SMRIH-tee', ipa:'/ˈsmrɪti/', pos:'noun', def:'In Hinduism, the body of sacred texts based on human memory and tradition, as distinct from shruti (divinely revealed scripture).', lang:'Sanskrit, from smriti (\'that which is remembered\'), from smar (\'to remember\'), the traditional Hindu texts including the Mahabharata and Ramayana.', example:'The smriti texts, including the great epics and law codes, form the practical foundation of Hindu religious and social life.', isNoun:true },
+  { word:'sobornost', pronunciation:'soh-BOR-nost', ipa:'/soʊˈbɔːrnɒst/', pos:'noun', def:'In Russian Orthodox theology, spiritual community or conciliar unity; the ideal of free, organic fellowship among believers.', lang:'Russian, from sobornost (\'togetherness, conciliarity\'), from sobor (\'a cathedral, council\'), the concept of spiritual communion.', example:'The theologian described sobornost as the highest form of Christian community, a voluntary unity of souls bound not by rules but by shared love.', isNoun:true },
+  { word:'soiree', pronunciation:'swah-RAY', ipa:'/swɑːˈreɪ/', pos:'noun', def:'An evening party or gathering, typically in a private house, for conversation, music, or entertainment.', lang:'French, from soiree (\'an evening\'), from soir (\'evening\'), from Latin serus (\'late\').', example:'The literary soiree brought together poets, novelists, and critics in the candlelit salon, the evening devoted to readings and spirited discussion.', isNoun:true },
+  { word:'sororal', pronunciation:'suh-ROR-ul', ipa:'/sɔːˈrɔːrəl/', pos:'adjective', def:'Of or relating to a sister or sisters; sisterly.', lang:'Latin, from soror (\'a sister\') + -al, the feminine counterpart of fraternal.', example:'The sororal bond between the twins was unbreakable, each knowing instinctively when the other was troubled even across great distances.', isNoun:false },
+  { word:'sorrel', pronunciation:'SOR-ul', ipa:'/ˈsɒrəl/', pos:'noun', def:'A plant with arrow-shaped leaves having a sour, lemony taste, used in soups and salads; also a reddish-brown horse color.', lang:'Old French, from surele (\'sour\'), from sur (\'sour\'), from Germanic origin, describing the plant\'s tart flavor.', example:'The chef stirred fresh sorrel into the spring soup, the bright green leaves melting into a tangy, silken puree.', isNoun:true },
+  { word:'sostenuto', pronunciation:'SOS-teh-NOO-toh', ipa:'/ˌsɒstɪˈnuːtoʊ/', pos:'adjective', def:'In music, sustained or prolonged; a direction to hold notes for their full value or slightly beyond.', lang:'Italian, from sostenuto (\'sustained\'), past participle of sostenere (\'to sustain\'), from Latin sustinere.', example:'The pianist depressed the sostenuto pedal, allowing the bass notes to ring out while her right hand played a delicate melody above.', isNoun:false },
+  { word:'sous vide', pronunciation:'soo VEED', ipa:'/ˌsuː ˈviːd/', pos:'adjective', def:'A method of cooking food sealed in an airtight bag at precisely controlled low temperatures in a water bath for extended periods.', lang:'French, from sous (\'under\') + vide (\'vacuum\'), describing food cooked in vacuum-sealed bags.', example:'The steak was cooked sous vide for three hours at exactly 130 degrees, emerging uniformly pink from edge to edge with unparalleled tenderness.', isNoun:false },
+  { word:'spiedini', pronunciation:'spee-eh-DEE-nee', ipa:'/ˌspiːɛˈdiːni/', pos:'noun', def:'Italian skewered appetizers or small kebabs of meat, fish, or vegetables, grilled or fried; also fried bread and cheese rolls on skewers.', lang:'Italian, from spiedini (\'small skewers\'), diminutive plural of spiedo (\'a spit, skewer\'), from Germanic origin.', example:'The spiedini of grilled shrimp and lemon arrived sizzling from the kitchen, the Italian skewers a perfect start to the Mediterranean meal.', isNoun:true },
+  { word:'spindle', pronunciation:'SPIN-dul', ipa:'/ˈspɪndəl/', pos:'noun', def:'A slender rod used in hand spinning to twist and wind fibers into thread; also a pin or axis around which something revolves.', lang:'Old English, from spindel (\'a spindle\'), from spinnan (\'to spin\'), the fundamental tool of thread-making.', example:'She twirled the drop spindle with practiced ease, the ancient tool drawing raw wool into a fine, even thread with each rotation.', isNoun:true },
+  { word:'spodumene', pronunciation:'SPOJ-oo-meen', ipa:'/ˈspɒdʒʊˌmiːn/', pos:'noun', def:'A lithium-bearing mineral occurring in pegmatite rocks, the primary commercial source of lithium; gem varieties include kunzite and hiddenite.', lang:'Greek, from spodoumenos (\'burnt to ashes\'), from spodos (\'ashes\'), because early specimens turned ash-gray when heated.', example:'The geologist found a massive crystal of spodumene in the pegmatite vein, the lithium-rich mineral increasingly valuable for battery production.', isNoun:true },
+  { word:'sprechstimme', pronunciation:'SHPREKH-shtim-uh', ipa:'/ˈʃprɛxˌʃtɪmə/', pos:'noun', def:'A vocal technique between singing and speaking used in 20th-century music, in which the voice follows approximate pitches while maintaining speech-like rhythm.', lang:'German, from Sprechstimme (\'speaking voice\'), from sprechen (\'to speak\') + Stimme (\'voice\'), the technique pioneered by Schoenberg.', example:'The soprano performed Schoenberg\'s Pierrot Lunaire in sprechstimme, her voice hovering eerily between speech and song in a way that unsettled and fascinated the audience.', isNoun:true },
+  { word:'sravaka', pronunciation:'SHRAH-vuh-kuh', ipa:'/ˈʃrɑːvəkə/', pos:'noun', def:'In Buddhism, a disciple or hearer who attains enlightenment through listening to the teachings of a Buddha.', lang:'Sanskrit, from shravaka (\'a hearer, listener\'), from shru (\'to hear\'), one who achieves awakening through the Buddha\'s teachings.', example:'The sravaka path represents the ideal of personal liberation through devotion to the Buddha\'s teachings, the disciple attaining nirvana through diligent practice.', isNoun:true },
+  { word:'stevedore', pronunciation:'STEE-vuh-dor', ipa:'/ˈstiːvəˌdɔːr/', pos:'noun', def:'A person employed at a dock to load and unload cargo from ships; a longshoreman.', lang:'Spanish, from estivador (\'one who stows cargo\'), from estivar (\'to stow\'), from Latin stipare (\'to press, pack\').', example:'The stevedores worked through the night unloading crates from the cargo ship, their powerful arms swinging containers onto the waiting trucks.', isNoun:true },
+  { word:'Strelitzia', pronunciation:'streh-LIT-see-uh', ipa:'/strɛˈlɪtsiə/', pos:'noun', def:'A genus of tropical plants known as bird-of-paradise flowers, native to South Africa, with spectacular orange and blue blooms.', lang:'Named after Charlotte of Mecklenburg-Strelitz (1744-1818), queen consort of King George III, who was a patron of botany at Kew Gardens.', example:'The Strelitzia\'s extraordinary bloom looked exactly like an exotic bird in flight, its orange and blue petals a natural masterpiece of tropical design.', isNoun:true },
+  { word:'stretto', pronunciation:'STRET-oh', ipa:'/ˈstrɛtoʊ/', pos:'noun', def:'In music, a passage in a fugue where subject entries overlap more closely than before; also a faster concluding section.', lang:'Italian, from stretto (\'narrow, tight\'), from Latin strictus (\'drawn tight\'), describing the overlapping compression of voices in a fugue.', example:'The fugue built to a thrilling stretto, the four voices entering in rapid succession, each overlapping the last in an electrifying climax.', isNoun:true },
+  { word:'Strigolniki', pronunciation:'STRIG-ol-nih-kee', ipa:'/strɪˈɡɒlnɪki/', pos:'noun', def:'A medieval Russian religious dissent movement of the 14th century that rejected the established church hierarchy and certain sacraments.', lang:'Russian, from strigolniki (\'the shorn ones\'), possibly from strich (\'to shear\'), referring to the tonsure or to their profession as cloth-shearers.', example:'The Strigolniki challenged the authority of the Russian Orthodox clergy, their radical rejection of priestly corruption foreshadowing the Protestant Reformation by centuries.', isNoun:true },
+  { word:'strogano', pronunciation:'STROH-gah-noh', ipa:'/ˈstroʊɡɑːnoʊ/', pos:'noun', def:'A variant or shortened form related to Stroganoff; a creamy meat dish of Russian origin.', lang:'Russian, from Stroganov, the aristocratic Russian family after whom the famous beef dish was named.', example:'The chef prepared a rich strogano of seared beef in a silky mushroom and sour cream sauce, served over a bed of buttered egg noodles.', isNoun:true },
+  { word:'struthious', pronunciation:'STROO-thee-us', ipa:'/ˈstruːθiəs/', pos:'adjective', def:'Of or relating to ostriches; resembling or characteristic of an ostrich.', lang:'Latin, from struthio (\'an ostrich\'), from Greek strouthion (\'a sparrow, ostrich\'), + -ous.', example:'The paleontologist described the fossilized footprints as struthious, their size and spacing consistent with a large, ostrich-like dinosaur.', isNoun:false },
+  { word:'stupa', pronunciation:'STOO-puh', ipa:'/ˈstuːpə/', pos:'noun', def:'A dome-shaped Buddhist shrine or monument, originally built to house sacred relics of the Buddha.', lang:'Sanskrit, from stupa (\'a heap, mound\'), the architectural form that became the central monument of Buddhist worship.', example:'The ancient stupa rose like a white dome against the Himalayan sky, pilgrims circling its base in clockwise devotion as they had for two thousand years.', isNoun:true },
+  { word:'sturnine', pronunciation:'STUR-nyn', ipa:'/ˈstɜːrnaɪn/', pos:'adjective', def:'Of or resembling a starling; relating to birds of the starling family.', lang:'Latin, from sturnus (\'a starling\') + -ine, describing characteristics of the starling family.', example:'The sturnine flock wheeled across the evening sky in a shimmering murmuration, thousands of starlings moving as one living cloud.', isNoun:false },
+  { word:'stygian', pronunciation:'STIJ-ee-un', ipa:'/ˈstɪdʒiən/', pos:'adjective', def:'Extremely dark, gloomy, or forbidding; of or relating to the river Styx in the underworld of Greek mythology.', lang:'Latin, from Stygius (\'of the Styx\'), from Greek Stygios, from Styx, the river of the underworld across which the dead were ferried.', example:'The cave plunged into stygian darkness beyond the reach of their flashlights, the absolute blackness swallowing every trace of light.', isNoun:false },
+  { word:'styptic', pronunciation:'STIP-tik', ipa:'/ˈstɪptɪk/', pos:'adjective', def:'Capable of stopping bleeding by contracting body tissue; astringent.', lang:'Greek, from styptikos (\'astringent, contracting\'), from styphein (\'to contract, pucker\').', example:'The barber applied a styptic pencil to the nick, the astringent compound instantly contracting the tiny cut and stopping the bleeding.', isNoun:false },
+  { word:'succes fou', pronunciation:'sook-SAY FOO', ipa:'/ˌsʌkˈseɪ ˈfuː/', pos:'noun', def:'A wild or mad success; a sensationally popular hit, especially in the arts or entertainment.', lang:'French, from succes (\'success\') + fou (\'mad, crazy\'), describing a runaway, overwhelming triumph.', example:'The debut novel was a succes fou, selling out its first printing in a day and launching the unknown writer into instant literary stardom.', isNoun:true },
+  { word:'succorance', pronunciation:'SUK-ur-unce', ipa:'/ˈsʌkərəns/', pos:'noun', def:'The tendency or need to seek help, support, or nurturing from others; dependency.', lang:'English, from succor (from Latin succurrere, \'to run to help\') + -ance, the psychological need for aid and comfort.', example:'The psychologist noted the child\'s high level of succorance, the constant need for reassurance suggesting underlying anxiety rather than mere attention-seeking.', isNoun:true },
+  { word:'succourance', pronunciation:'SUK-ur-unce', ipa:'/ˈsʌkərəns/', pos:'noun', def:'A variant spelling of succorance; the need or tendency to seek help and support.', lang:'English, variant spelling of succorance, from succour (British spelling) + -ance.', example:'The researcher measured succourance as part of the personality assessment, noting how frequently the subject sought comfort from others.', isNoun:true },
+  { word:'Sufi', pronunciation:'SOO-fee', ipa:'/ˈsuːfi/', pos:'noun', def:'A Muslim mystic and ascetic who seeks direct personal experience of the divine through devotion, meditation, and often ecstatic practices.', lang:'Arabic, from sufi (\'one who wears wool\'), from suf (\'wool\'), because early mystics wore simple woolen garments.', example:'The Sufi poet Rumi wrote of divine love with an intensity that has spoken to seekers of every faith for over seven centuries.', isNoun:true },
+  { word:'supercilious', pronunciation:'SOO-pur-SIL-ee-us', ipa:'/ˌsuːpərˈsɪliəs/', pos:'adjective', def:'Behaving as though one is superior to others; disdainful and condescending; haughty.', lang:'Latin, from superciliosus (\'haughty\'), from supercilium (\'an eyebrow\'), because a raised eyebrow signals arrogance.', example:'The supercilious waiter looked down his nose at the diners who mispronounced the French menu items, his disdain barely concealed.', isNoun:false },
+  { word:'surreptitious', pronunciation:'SUR-up-TISH-us', ipa:'/ˌsʌrəpˈtɪʃəs/', pos:'adjective', def:'Kept secret because it would not be approved of; done stealthily or by stealth.', lang:'Latin, from surrepticius (\'stolen, secret\'), from surripere (\'to steal secretly\'), from sub- (\'from under\') + rapere (\'to seize\').', example:'She cast a surreptitious glance at the answer sheet, the furtive peek so quick she was certain no one had noticed.', isNoun:false },
+  { word:'svarabhakti', pronunciation:'SVAH-ruh-BAHK-tee', ipa:'/ˌsvɑːrəˈbɑːkti/', pos:'noun', def:'In linguistics, the insertion of a vowel sound to break up a consonant cluster, making pronunciation easier.', lang:'Sanskrit, from svara (\'sound, vowel\') + bhakti (\'division, portion\'), the phonetic phenomenon of vowel insertion.', example:'The Irish English pronunciation of "film" as "filum" is an example of svarabhakti, a vowel inserted to ease the consonant cluster.', isNoun:true },
+  { word:'Svengali', pronunciation:'sven-GAH-lee', ipa:'/svɛnˈɡɑːli/', pos:'noun', def:'A person who exercises a controlling or mesmerizing influence on another, especially for sinister purposes.', lang:'Named after Svengali, the villainous hypnotist in George du Maurier\'s novel Trilby (1894), who controls a young singer through hypnosis.', example:'The cult leader was a modern Svengali, his charismatic manipulation bending followers to his will until they could no longer think independently.', isNoun:true },
+  { word:'swainsona', pronunciation:'SWAYN-soh-nuh', ipa:'/ˈsweɪnsoʊnə/', pos:'noun', def:'A genus of Australian and New Zealand flowering plants in the pea family, some species of which are toxic to livestock.', lang:'Named after Isaac Swainson (1746-1812), an English botanist and plant collector, + -a.', example:'The swainsona bloomed across the Australian outback in brilliant purple, the desert pea\'s beauty belying its toxicity to grazing cattle.', isNoun:true },
+  { word:'sybaritic', pronunciation:'SIB-uh-RIT-ik', ipa:'/ˌsɪbəˈrɪtɪk/', pos:'adjective', def:'Devoted to luxury and pleasure; excessively self-indulgent.', lang:'From Sybaris, an ancient Greek colony in southern Italy famous for its inhabitants\' love of luxury, + -itic.', example:'The sybaritic resort catered to every imaginable desire, from heated marble floors to personal chefs preparing meals at any hour of the day or night.', isNoun:false },
+  { word:'synanthrope', pronunciation:'SIN-an-throhp', ipa:'/ˈsɪnænˌθroʊp/', pos:'noun', def:'An organism that lives near and benefits from humans and their habitations, such as rats, pigeons, and cockroaches.', lang:'Greek, from syn (\'together with\') + anthropos (\'a human being\'), an animal adapted to living alongside people.', example:'The house sparrow is a classic synanthrope, so thoroughly adapted to human environments that it is rarely found far from towns and cities.', isNoun:true },
+  { word:'syncope', pronunciation:'SIN-kuh-pee', ipa:'/ˈsɪŋkəpi/', pos:'noun', def:'Temporary loss of consciousness caused by a drop in blood pressure; fainting; in linguistics, the loss of sounds from the interior of a word.', lang:'Greek, from synkope (\'a cutting short, swoon\'), from syn- (\'together\') + koptein (\'to cut\').', example:'The patient experienced syncope while standing in the hot sun, the sudden drop in blood pressure causing her to faint.', isNoun:true }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Slider
+  const totalA = a.length;
+  const pct = totalA > 1 ? s / (totalA - 1) * 100 : 0;
+  document.getElementById("sliderFill").style.width = pct + "%";
+  const sliderArea = document.getElementById("sliderArea");
+  const areaW = sliderArea.offsetWidth || 200;
+  const pad = 10;
+  const thumbLeft = pad + (pct / 100) * (areaW - pad * 2);
+  const thumb = document.getElementById("sliderThumb");
+  if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
+
+  // Ticks - show ~20 evenly spaced markers
+  const tickCount = Math.min(totalA, 20);
+  let ticksHtml = '';
+  for(let t=0; t<tickCount; t++){
+    const ti = Math.round(t / (tickCount-1) * (totalA-1));
+    const cls = ti===s ? 'active' : (t % 5 === 0 ? 'major' : '');
+    ticksHtml += `<div class="slider-tick ${cls}"></div>`;
+  }
+  document.getElementById("sliderDots").innerHTML = ticksHtml;
+  document.getElementById("sliderCounter").textContent = `${s+1} / ${totalA}`;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Slider drag
+const slArea=document.getElementById("sliderArea");
+const slThumb=document.getElementById("sliderThumb");
+let slDragging=false;
+function sliderFromX(cx){
+  const r=slArea.getBoundingClientRect();
+  const pad=10;
+  const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
+  const a=aw(),idx=Math.round(p*(a.length-1));
+  // Move thumb immediately for smooth feel
+  const thumbLeft=pad+(p)*(r.width-pad*2);
+  slThumb.style.left=thumbLeft+"px";
+  if(idx!==si()){
+    const g=WORDS.findIndex(w=>w.word===a[idx].word);
+    flipped=false; currentIndex=g; render();
+  }
+}
+slArea.addEventListener("touchstart",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(slDragging) sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    // Speak the word after releasing
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+slArea.addEventListener("mousedown",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.clientX); e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(slDragging) sliderFromX(e.clientX);
+});
+document.addEventListener("mouseup",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>

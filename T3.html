@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: Verdana, Geneva, sans-serif; font-size: 36px; font-weight: 400;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 18px; height: 18px; }
+.slider-area {
+  flex: 1; height: 32px; position: relative;
+  display: flex; align-items: center;
+  touch-action: none; cursor: pointer;
+}
+.slider-track-bg {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
+}
+.slider-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(212,175,55,0.5));
+  transition: width 0.15s ease;
+}
+.slider-dots {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; padding: 0 2px;
+}
+.slider-tick {
+  width: 2px; height: 8px; border-radius: 1px;
+  background: rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.slider-tick.major { height: 12px; background: rgba(255,255,255,0.12); }
+.slider-tick.active { background: var(--gold); height: 14px; width: 3px; border-radius: 1.5px; box-shadow: 0 0 6px rgba(212,175,55,0.4); }
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px solid #1a1528;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  cursor: grab; transition: left 0.12s ease;
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
+.slider-thumb.dragging { transition: none; transform: translate(-50%, -50%) scale(1.15); }
+.slider-counter {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.08em;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1><a href="index.html" style="color:inherit;text-decoration:none;">Spelling Bee</a></h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="slider-area" id="sliderArea">
+      <div class="slider-track-bg">
+        <div class="slider-fill" id="sliderFill"></div>
+      </div>
+      <div class="slider-dots" id="sliderDots"></div>
+      <div class="slider-thumb" id="sliderThumb"></div>
+    </div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'taal', pronunciation:'TAHL', ipa:'/tɑːl/', pos:'noun', def:'A rhythmic pattern or cycle in Indian classical music that provides the temporal framework for a composition.', lang:'Hindi, from tala (Sanskrit, \'a clapping, rhythmic pattern\'), from tal (\'to clap\'), the metrical cycle underlying Indian music.', example:'The tabla player maintained a complex taal of sixteen beats, the intricate rhythmic cycle providing the pulse around which the sitar melody wove.', isNoun:true },
+  { word:'tachycardia', pronunciation:'TAK-ih-KAR-dee-uh', ipa:'/ˌtækɪˈkɑːrdiə/', pos:'noun', def:'An abnormally rapid heart rate, typically over 100 beats per minute at rest.', lang:'Greek, from tachys (\'swift\') + kardia (\'the heart\'), describing an excessively fast heartbeat.', example:'The patient presented with tachycardia after the allergic reaction, her heart racing at 140 beats per minute as the doctors administered medication.', isNoun:true },
+  { word:'tachyon', pronunciation:'TAK-ee-on', ipa:'/ˈtækiˌɒn/', pos:'noun', def:'A hypothetical subatomic particle that travels faster than light, predicted by some theoretical physics models but never observed.', lang:'Greek, from tachys (\'swift\') + -on (particle suffix), the theoretical faster-than-light particle.', example:'If tachyons existed, they would paradoxically arrive before they were emitted, making them a staple of science fiction time travel stories.', isNoun:true },
+  { word:'taedium vitae', pronunciation:'TY-dee-um VY-tee', ipa:'/ˌtaɪdiəm ˈvaɪtiː/', pos:'noun', def:'Weariness of life; an overwhelming sense of boredom and disgust with existence.', lang:'Latin, from taedium (\'weariness, disgust\') + vitae (genitive of vita, \'life\'), the existential ennui of being tired of living.', example:'The Romantic poets wrote eloquently of taedium vitae, that bone-deep weariness with existence that afflicts sensitive souls.', isNoun:true },
+  { word:'tamari', pronunciation:'tuh-MAH-ree', ipa:'/təˈmɑːri/', pos:'noun', def:'A variety of soy sauce made primarily from soybeans with little or no wheat, producing a richer, less salty flavor than regular soy sauce.', lang:'Japanese, from tamari (\'to accumulate\'), because it was originally the liquid that pooled during miso production.', example:'The chef drizzled tamari over the seared tofu, the wheat-free soy sauce adding a deep, mellow umami without overwhelming the delicate flavors.', isNoun:true },
+  { word:'tambour', pronunciation:'TAM-boor', ipa:'/ˈtæmbʊər/', pos:'noun', def:'A small drum; a circular frame for holding fabric taut during embroidery; the cylindrical stone wall supporting a dome.', lang:'French, from tambour (\'a drum\'), from Arabic tunbur (\'a stringed instrument\'), the word applied to various drum-shaped objects.', example:'She stretched the linen over the tambour frame and began to embroider, the taut fabric accepting each precise stitch of the floral design.', isNoun:true },
+  { word:"tam-o'-shanter", pronunciation:'TAM-oh-SHAN-tur', ipa:'/ˌtæmoʊˈʃæntər/', pos:'noun', def:'A round, flat woolen cap of Scottish origin with a pompom on top, traditionally worn by men.', lang:'Named after Tam o\' Shanter, the hero of Robert Burns\'s 1790 poem, who wore such a cap on his wild midnight ride.', example:"The Scotsman wore his tam-o'-shanter at a rakish angle, the traditional woolen cap a badge of Highland pride at the Burns Night supper.", isNoun:true },
+  { word:'tanager', pronunciation:'TAN-uh-jur', ipa:'/ˈtænədʒər/', pos:'noun', def:'A brightly colored songbird of the Americas, typically having vivid red, yellow, or blue plumage.', lang:'Portuguese, from tangara, from Tupi tangara (\'a dancer\'), the indigenous Brazilian name for these brilliantly colored birds.', example:'The scarlet tanager blazed like a living flame among the green leaves, its brilliant red body and black wings unmistakable.', isNoun:true },
+  { word:'tandoori', pronunciation:'tan-DOOR-ee', ipa:'/tænˈdʊəri/', pos:'adjective', def:'Cooked in a tandoor, a cylindrical clay oven used in Indian cooking, producing distinctive charred and smoky flavors.', lang:'Hindi-Urdu, from tandur (\'a clay oven\'), from Turkish tandir, from Persian tannur, the cylindrical oven central to Indian cuisine.', example:'The tandoori chicken emerged from the clay oven glowing red-orange, its yogurt-marinated flesh smoky and tender from the intense heat.', isNoun:false },
+  { word:'tannined', pronunciation:'TAN-ind', ipa:'/ˈtænɪnd/', pos:'adjective', def:'Containing or treated with tannin; having the astringent quality of tannin, as in wine or leather.', lang:'English, from tannin (from French tan, \'oak bark\', used in tanning leather) + -ed.', example:'The heavily tannined red wine puckered the mouth with its astringency, the young Cabernet needing years of aging to soften.', isNoun:false },
+  { word:'taoiseach', pronunciation:'TEE-shakh', ipa:'/ˈtiːʃəx/', pos:'noun', def:'The prime minister of the Republic of Ireland; the head of the Irish government.', lang:'Irish, from taoiseach (\'a chief, leader\'), from Old Irish toísech (\'a leader\'), the title of Ireland\'s head of government.', example:'The Taoiseach addressed the Dail with a passionate speech on the economy, the Irish prime minister outlining a bold plan for recovery.', isNoun:true },
+  { word:'tapetum', pronunciation:'tuh-PEE-tum', ipa:'/təˈpiːtəm/', pos:'noun', def:'A reflective layer behind the retina in the eyes of many animals that improves night vision by reflecting light back through the retina.', lang:'Latin, from tapetum (\'a carpet, tapestry\'), because the layer lines the back of the eye like a tapestry.', example:'The cat\'s eyes glowed green in the headlights, the tapetum behind its retinas reflecting the light and giving the animal superb night vision.', isNoun:true },
+  { word:'tarpaulin', pronunciation:'tar-PAW-lin', ipa:'/tɑːrˈpɔːlɪn/', pos:'noun', def:'A heavy-duty waterproof cloth, originally of tarred canvas, used as a protective covering.', lang:'English, from tar + palling (\'a covering\'), from pall (\'a cloth covering\'), the waterproofed canvas used to protect cargo.', example:'The workers threw a tarpaulin over the lumber pile as the storm clouds gathered, the heavy waterproof sheet snapping in the rising wind.', isNoun:true },
+  { word:'taurine', pronunciation:'TOR-een', ipa:'/ˈtɔːriːn/', pos:'noun', def:'An amino acid found in bile and body tissues, used as a dietary supplement and ingredient in energy drinks; also, of or relating to a bull.', lang:'Latin, from taurus (\'a bull\') + -ine, because it was first isolated from ox bile in 1827.', example:'The energy drink contained taurine among its ingredients, the amino acid originally discovered in bull bile now synthetically produced by the ton.', isNoun:true },
+  { word:'Tchefuncte', pronunciation:'chuh-FUNK-tee', ipa:'/tʃəˈfʌŋkti/', pos:'noun', def:'A pre-Columbian Native American culture that flourished in the lower Mississippi Valley around 600 BC to 200 AD, known for early pottery traditions.', lang:'Named after Tchefuncte, a site near Lake Pontchartrain, Louisiana, from a Choctaw or related language.', example:'The Tchefuncte pottery shards revealed an early ceramic tradition in the Gulf Coast region, the coarse clay vessels among the oldest found in Louisiana.', isNoun:true },
+  { word:'Tegucigalpa', pronunciation:'teh-GOO-see-GAL-pah', ipa:'/tɛˌɡuːsiˈɡælpə/', pos:'noun', def:'The capital and largest city of Honduras, situated in a mountainous valley in Central America.', lang:'Nahuatl, from Tegucigalpa, possibly meaning \'silver hill\' or \'place of the silver lords\', from the region\'s mining history.', example:'Tegucigalpa sprawls across a rugged valley surrounded by pine-covered mountains, the Honduran capital\'s colonial churches and modern buildings climbing steep hillsides.', isNoun:true },
+  { word:'telamon', pronunciation:'TEL-uh-mon', ipa:'/ˈtɛləˌmɒn/', pos:'noun', def:'A male figure used as a supporting column in architecture, the male counterpart of a caryatid.', lang:'Greek, from Telamon, a mythological king and father of Ajax, used to describe male atlantes supporting entablatures.', example:'The telamones flanking the doorway strained under the weight of the stone lintel, their muscular carved forms adding drama to the baroque facade.', isNoun:true },
+  { word:'teledu', pronunciation:'TEL-uh-doo', ipa:'/ˈtɛlɪˌduː/', pos:'noun', def:'The Malay stink badger, a small carnivore of Southeast Asia that sprays a foul-smelling secretion when threatened.', lang:'Malay, from teledu (\'the stink badger\'), the local name for this small, skunk-like mammal of Borneo and Sumatra.', example:'The teledu waddled through the Borneo undergrowth, the small stink badger relying on its powerful chemical defense to deter any predator.', isNoun:true },
+  { word:'telegnosis', pronunciation:'TEL-eg-NOH-sis', ipa:'/ˌtɛlɛɡˈnoʊsɪs/', pos:'noun', def:'Supposed knowledge of distant events obtained through paranormal means; clairvoyant awareness of faraway happenings.', lang:'Greek, from tele (\'far off\') + gnosis (\'knowledge\'), paranormal awareness of distant events.', example:'The spiritualist claimed telegnosis, asserting she could perceive events occurring thousands of miles away through psychic perception alone.', isNoun:true },
+  { word:'temalacatl', pronunciation:'teh-MAH-lah-KAH-tul', ipa:'/tɛˌmɑːləˈkɑːtəl/', pos:'noun', def:'A large circular stone used in Aztec gladiatorial combat rituals, to which a captive warrior was tethered for ritual fighting.', lang:'Nahuatl, from temalacatl (\'stone spindle-whorl\'), from tetl (\'stone\') + malacatl (\'spindle\'), the circular sacrificial combat stone.', example:'The captive was tied to the temalacatl and given a wooden club to fight against fully armed Aztec warriors in a ritual combat he was never meant to win.', isNoun:true },
+  { word:'tempeh', pronunciation:'TEM-pay', ipa:'/ˈtɛmpeɪ/', pos:'noun', def:'A traditional Indonesian food made from soybeans bound together by fermentation into a firm, nutty-flavored cake.', lang:'Javanese, from tempe, the traditional fermented soybean cake that has been a staple protein source in Indonesia for centuries.', example:'The tempeh was sliced and pan-fried until golden, the fermented soybean cake developing a crispy exterior and rich, nutty flavor.', isNoun:true },
+  { word:'teneramente', pronunciation:'TEN-eh-rah-MEN-tay', ipa:'/ˌtɛnɛrɑːˈmɛnteɪ/', pos:'adverb', def:'A musical direction meaning tenderly, gently, with delicate expression.', lang:'Italian, from teneramente (\'tenderly\'), from tenero (\'tender\'), from Latin tener.', example:'The violinist played the lullaby teneramente, each note so gentle and tender it seemed to float rather than sound.', isNoun:false },
+  { word:'teocalli', pronunciation:'TAY-oh-KAL-ee', ipa:'/ˌteɪoʊˈkɑːli/', pos:'noun', def:'An Aztec or other Mesoamerican temple built on a truncated pyramid, with a shrine at the summit.', lang:'Nahuatl, from teocalli (\'god-house\'), from teotl (\'god\') + calli (\'house\'), the pyramid-temples of Mesoamerica.', example:'The teocalli rose in steep steps above the plaza, its summit shrine dedicated to Huitzilopochtli visible against the sky for miles around.', isNoun:true },
+  { word:'terai', pronunciation:'teh-RY', ipa:'/tɛˈraɪ/', pos:'noun', def:'A marshy, forested belt of land at the foot of the Himalayas in northern India and Nepal, known for its rich biodiversity.', lang:'Hindi, from terai (\'moist land\'), the low-lying swampy plains stretching along the southern edge of the Himalayas.', example:'The terai grasslands shelter some of the last wild tigers and one-horned rhinoceroses, the marshy Himalayan foothills a critical wildlife refuge.', isNoun:true },
+  { word:'teraphim', pronunciation:'TER-uh-fim', ipa:'/ˈtɛrəfɪm/', pos:'noun', def:'Small household idols or images used for divination in the ancient Near East, mentioned in the Hebrew Bible.', lang:'Hebrew, from teraphim (\'household gods, idols\'), of uncertain origin, the small figurines used for domestic worship and fortune-telling.', example:'Rachel stole her father\'s teraphim when fleeing with Jacob, hiding the small household idols that represented both property rights and divine protection.', isNoun:true },
+  { word:'teratism', pronunciation:'TER-uh-tiz-um', ipa:'/ˈtɛrəˌtɪzəm/', pos:'noun', def:'A congenital malformation or abnormality; a monstrosity; love of the monstrous or grotesque.', lang:'Greek, from teras (genitive teratos, \'a monster, marvel\') + -ism, the study or occurrence of monstrous forms.', example:'The medieval bestiary delighted in teratism, its pages filled with fantastical monsters and grotesque hybrids that blurred the line between science and fantasy.', isNoun:true },
+  { word:'terra nullius', pronunciation:'TAIR-uh NUL-ee-us', ipa:'/ˌtɛrə ˈnʌliəs/', pos:'noun', def:'Land belonging to no one; a legal concept used to justify colonization of territories deemed unoccupied or unclaimed by recognized states.', lang:'Latin, from terra (\'land\') + nullius (genitive of nullus, \'no one\'), the doctrine used to deny indigenous land rights.', example:'The colonial power declared the continent terra nullius, ignoring tens of thousands of years of indigenous habitation to justify seizure of the land.', isNoun:true },
+  { word:'Terre Haute', pronunciation:'TAIR-uh HOHT', ipa:'/ˌtɛrə ˈhoʊt/', pos:'noun', def:'A city in western Indiana on the Wabash River, known for Indiana State University and its role as a Midwest transportation hub.', lang:'French, from terre haute (\'high land\'), named by French explorers for the elevated terrain above the Wabash River floodplain.', example:'Terre Haute sits on a bluff above the Wabash River, the Indiana city\'s French name a reminder of the fur traders who first settled there.', isNoun:true },
+  { word:'tessitura', pronunciation:'TES-ih-TOOR-uh', ipa:'/ˌtɛsɪˈtʊərə/', pos:'noun', def:'The range within which most notes of a vocal or instrumental part fall; the most comfortable and characteristic range of a voice.', lang:'Italian, from tessitura (\'texture, weaving\'), from tessere (\'to weave\'), describing the predominant range of a musical part.', example:'The soprano struggled with the role\'s high tessitura, the part demanding that she sing at the very top of her range for nearly the entire opera.', isNoun:true },
+  { word:'Teutonic', pronunciation:'too-TON-ik', ipa:'/tuːˈtɒnɪk/', pos:'adjective', def:'Of or relating to the ancient Germanic peoples; characteristic of Germans or Germanic culture, language, and traditions.', lang:'Latin, from Teutonicus (\'of the Teutones\'), from Teutones, a Germanic tribe that clashed with Rome, used broadly for Germanic peoples.', example:'The castle exemplified Teutonic grandeur, its massive stone walls and soaring towers embodying the power of the medieval Germanic knights.', isNoun:false },
+  { word:'thalassic', pronunciation:'thuh-LAS-ik', ipa:'/θəˈlæsɪk/', pos:'adjective', def:'Of or relating to the sea, especially smaller or inland seas; marine.', lang:'Greek, from thalassa (\'the sea\') + -ic, describing things pertaining to seas.', example:'The ancient Greek civilization was fundamentally thalassic, its power, wealth, and culture all shaped by the Mediterranean Sea that connected its island and coastal cities.', isNoun:false },
+  { word:'theca', pronunciation:'THEE-kuh', ipa:'/ˈθiːkə/', pos:'noun', def:'A sheath or capsule enclosing an organ or structure, such as the covering of a spore case or the outer layer of an ovarian follicle.', lang:'Latin, from theca (\'a case, sheath\'), from Greek theke (\'a repository, case\'), from tithenai (\'to place\').', example:'The microscope revealed the spore\'s protective theca, the tiny capsule shielding the reproductive cell until conditions were right for germination.', isNoun:true },
+  { word:'Theravada', pronunciation:'TAIR-uh-VAH-duh', ipa:'/ˌtɛrəˈvɑːdə/', pos:'noun', def:'The oldest surviving branch of Buddhism, practiced mainly in Southeast Asia, emphasizing individual enlightenment through personal discipline.', lang:'Pali, from Theravada (\'doctrine of the elders\'), from thera (\'an elder\') + vada (\'doctrine\'), the conservative Buddhist tradition.', example:'Theravada Buddhism prevails in Sri Lanka, Myanmar, and Thailand, its monks following the original Pali scriptures in their pursuit of nirvana.', isNoun:true },
+  { word:'thesmothete', pronunciation:'THEZ-moh-theet', ipa:'/ˈθɛzmoʊˌθiːt/', pos:'noun', def:'In ancient Athens, one of the six junior archons responsible for administering justice and codifying the laws.', lang:'Greek, from thesmothetes (\'a lawgiver\'), from thesmos (\'a law, ordinance\') + -thetes (\'one who sets\').', example:'The thesmothetes of Athens presided over the law courts, their role in codifying and administering justice central to Athenian democracy.', isNoun:true },
+  { word:'thimerosal', pronunciation:'thy-MER-oh-sal', ipa:'/θaɪˈmɛroʊˌsæl/', pos:'noun', def:'An organomercury compound used as a preservative in some vaccines and other medical products.', lang:'English, from thio- (\'sulfur\') + mer(cury) + sal(icylate), the mercury-based antiseptic preservative.', example:'Thimerosal was used for decades as a preservative in multi-dose vaccine vials, preventing bacterial contamination.', isNoun:true },
+  { word:'Thomism', pronunciation:'TOH-miz-um', ipa:'/ˈtoʊmɪzəm/', pos:'noun', def:'The philosophical and theological system of Thomas Aquinas, synthesizing Christian doctrine with Aristotelian philosophy.', lang:'Named after Saint Thomas Aquinas (1225-1274), the Dominican friar whose integration of faith and reason became official Catholic philosophy, + -ism.', example:'Thomism remains the dominant philosophical framework of Catholic theology, its synthesis of Aristotelian reason and Christian faith still taught in seminaries worldwide.', isNoun:true },
+  { word:'thuluth', pronunciation:'thoo-LOOTH', ipa:'/θuːˈluːθ/', pos:'noun', def:'An elegant style of Arabic calligraphy with large, flowing letters, traditionally used for mosque inscriptions and Quran headings.', lang:'Arabic, from thuluth (\'one third\'), possibly referring to the proportion of straight to curved strokes in this majestic script.', example:'The mosque\'s interior was adorned with thuluth calligraphy, the flowing Arabic script spelling out verses of the Quran in letters of gold.', isNoun:true },
+  { word:'tic douloureux', pronunciation:'TIK DOO-loo-ROO', ipa:'/ˌtɪk duːlʊˈruː/', pos:'noun', def:'Trigeminal neuralgia; a condition causing sudden, severe, stabbing facial pain along the trigeminal nerve.', lang:'French, from tic (\'a sudden movement\') + douloureux (\'painful\'), the agonizing facial nerve condition.', example:'The patient suffered from tic douloureux, the lightning bolts of pain in her face triggered by even the gentlest touch to her cheek.', isNoun:true },
+  { word:'tichodrome', pronunciation:'TIK-oh-drohm', ipa:'/ˈtɪkoʊˌdroʊm/', pos:'noun', def:'The wallcreeper, a spectacular bird of Eurasian mountain cliffs that flashes crimson wing patches as it creeps along rock faces.', lang:'Greek, from teichos (\'a wall\') + dromos (\'a running\'), the bird that runs along walls and cliffs.', example:'The tichodrome fluttered along the sheer cliff face, its crimson wing patches flashing like tiny flames as it probed the rock for insects.', isNoun:true },
+  { word:'tikka', pronunciation:'TIK-uh', ipa:'/ˈtɪkə/', pos:'noun', def:'Small pieces of meat or vegetables marinated in spices and cooked in a tandoor or grilled; as in chicken tikka.', lang:'Hindi-Urdu, from tikka (\'a piece, chunk\'), from Punjabi, describing bite-sized pieces of marinated, grilled food.', example:'The chicken tikka arrived sizzling on a hot plate, the spice-rubbed chunks charred at the edges and juicy within from the tandoor.', isNoun:true },
+  { word:'tikkun', pronunciation:'tih-KOON', ipa:'/tɪˈkuːn/', pos:'noun', def:'In Jewish mysticism, the concept of repairing or healing the world; a spiritual correction or restoration of the divine order.', lang:'Hebrew, from tikkun (\'repair, correction\'), from tiken (\'to mend\'), the Kabbalistic concept of cosmic restoration.', example:'The rabbi spoke of tikkun olam, the sacred duty to repair the world through acts of justice and kindness.', isNoun:true },
+  { word:'Tillamook', pronunciation:'TIL-uh-mook', ipa:'/ˈtɪləˌmuːk/', pos:'noun', def:'A city and county in Oregon known for its dairy industry and cheddar cheese; also a Native American people of the Oregon coast.', lang:'From Tillamook, the Salish-speaking Native American people of the northern Oregon coast, possibly meaning \'land of many waters\'.', example:'Tillamook cheese has been produced on the Oregon coast since 1909, the cooperative\'s sharp cheddar a beloved staple in kitchens across the Pacific Northwest.', isNoun:true },
+  { word:'tilleul', pronunciation:'tee-YUL', ipa:'/tiːˈjʌl/', pos:'noun', def:'A pale yellowish-green color; also a herbal tea made from linden tree blossoms, popular in France.', lang:'French, from tilleul (\'a linden tree\'), from Latin tilia, the tree whose blossoms make a calming infusion.', example:'She ordered a tilleul after dinner, the delicate linden blossom tea a soothing French tradition to end the evening.', isNoun:true },
+  { word:'tinamou', pronunciation:'TIN-uh-moo', ipa:'/ˈtɪnəˌmuː/', pos:'noun', def:'A ground-dwelling bird of Central and South America related to ostriches, with a plump body and short wings, capable only of weak flight.', lang:'French, from tinamou, from Galibi (Carib) tinamu, the indigenous South American name for these shy ground birds.', example:'The tinamou scurried through the forest understory, the plump ground-dweller preferring to run from danger rather than take to its feeble wings.', isNoun:true },
+  { word:'tinnient', pronunciation:'TIN-ee-unt', ipa:'/ˈtɪniənt/', pos:'adjective', def:'Producing a clear, ringing, tinkling sound.', lang:'Latin, from tinniens, present participle of tinnire (\'to ring, jingle, clink\'), describing a clear metallic sound.', example:'The tinnient chime of the crystal glasses rang through the dining room as the guests raised their flutes in a toast.', isNoun:false },
+  { word:'tintinnabulary', pronunciation:'TIN-tin-NAB-yoo-LAIR-ee', ipa:'/ˌtɪntɪˈnæbjʊˌlɛri/', pos:'adjective', def:'Of or relating to bells or bell-ringing; characterized by a tinkling, bell-like quality.', lang:'Latin, from tintinnabulum (\'a bell\'), from tintinnare (\'to jingle\'), the adjective form describing bell-related sounds.', example:'The tintinnabulary chorus of church bells filled the valley at noon, each tower adding its own bell-tone to the shimmering cascade of sound.', isNoun:false },
+  { word:'tiramisu', pronunciation:'TEER-uh-mih-SOO', ipa:'/ˌtɪərəmɪˈsuː/', pos:'noun', def:'An Italian dessert of layered espresso-soaked ladyfingers and mascarpone cream, dusted with cocoa powder.', lang:'Italian, from tiramisu (\'pick me up, lift me up\'), from tira (\'pull\') + mi (\'me\') + su (\'up\'), because of its energizing coffee content.', example:'The tiramisu was a masterpiece of contrasts — bitter espresso, sweet mascarpone, and a dusting of dark cocoa atop clouds of cream.', isNoun:true },
+  { word:'tmesis', pronunciation:'tuh-MEE-sis', ipa:'/təˈmiːsɪs/', pos:'noun', def:'The separation of parts of a compound word by an intervening word or words, as in "abso-blooming-lutely."', lang:'Greek, from tmesis (\'a cutting\'), from temnein (\'to cut\'), the rhetorical insertion of a word into the middle of another.', example:'The expression "abso-blooming-lutely" is a classic example of tmesis, the emphatic word splitting the original in two for dramatic effect.', isNoun:true },
+  { word:'toccata', pronunciation:'toh-KAH-tuh', ipa:'/tɒˈkɑːtə/', pos:'noun', def:'A virtuosic musical composition for keyboard, designed to display the performer\'s touch and technique, often featuring rapid passages and dramatic contrasts.', lang:'Italian, from toccata (\'a touching, touch piece\'), from toccare (\'to touch\'), a piece showcasing keyboard skill.', example:'Bach\'s Toccata in D minor thundered through the cathedral, the organist\'s fingers flying across the keys in cascading torrents of sound.', isNoun:true },
+  { word:'toey', pronunciation:'TOH-ee', ipa:'/ˈtoʊi/', pos:'adjective', def:'Australian slang for nervous, anxious, or on edge; jittery.', lang:'Australian English, possibly from the nervousness of a racehorse standing on its toes before a race.', example:'He was getting toey about the job interview, pacing the waiting room and checking his phone every thirty seconds.', isNoun:false },
+  { word:'toggenburg', pronunciation:'TOG-un-burg', ipa:'/ˈtɒɡənˌbɜːrɡ/', pos:'noun', def:'A breed of dairy goat originating in the Toggenburg Valley of Switzerland, among the oldest known dairy goat breeds.', lang:'Named after the Toggenburg Valley in the canton of St. Gallen, Switzerland, where this hardy dairy breed was developed.', example:'The Toggenburg goat produced rich milk despite the harsh mountain climate, its brown-and-white face a familiar sight in Swiss alpine pastures.', isNoun:true },
+  { word:'toile', pronunciation:'TWAHL', ipa:'/twɑːl/', pos:'noun', def:'A type of fabric with a decorative pattern depicting pastoral scenes, originally printed on cotton or linen; also an early version of a garment.', lang:'French, from toile (\'cloth, canvas\'), from Latin tela (\'a web, fabric\'), the printed fabric of pastoral scenes.', example:'The bedroom was decorated in blue-and-white toile, the pastoral scenes of shepherdesses and country gardens covering walls, curtains, and bedding alike.', isNoun:true },
+  { word:'Tok Pisin', pronunciation:'TOK PIZ-in', ipa:'/ˌtɒk ˈpɪzɪn/', pos:'noun', def:'An English-based creole language and one of the official languages of Papua New Guinea, spoken by several million people.', lang:'From Tok Pisin tok (\'talk, word\', from English talk) + pisin (\'pidgin\', from English business), literally \'pidgin talk\'.', example:'Tok Pisin serves as a lingua franca across Papua New Guinea, its English-derived vocabulary uniting speakers of over 800 different indigenous languages.', isNoun:true },
+  { word:'tomahawk', pronunciation:'TOM-uh-hawk', ipa:'/ˈtɒməˌhɔːk/', pos:'noun', def:'A light axe used as a tool or weapon by Native Americans; also a thick-cut ribeye steak with an extended bone.', lang:'Algonquian, from tamahaac or similar forms (\'a cutting tool\'), from the Powhatan and related languages.', example:'The museum displayed a beautifully carved tomahawk with a stone head and decorated handle, the weapon-tool central to both warfare and ceremony.', isNoun:true },
+  { word:'tomalley', pronunciation:'TOM-ah-lee', ipa:'/ˈtɒməli/', pos:'noun', def:'The soft, green substance found in the body cavity of a cooked lobster, functioning as the liver and pancreas; considered a delicacy.', lang:'Carib, from tamali (\'sauce of lobster liver\'), the prized green paste inside a lobster.', example:'The lobster lover savored the tomalley, spreading the rich green paste on crusty bread as fellow diners looked on with mixed reactions.', isNoun:true },
+  { word:'tonsillitis', pronunciation:'TON-sih-LY-tis', ipa:'/ˌtɒnsɪˈlaɪtɪs/', pos:'noun', def:'Inflammation of the tonsils, usually caused by viral or bacterial infection, resulting in sore throat, fever, and swollen glands.', lang:'Latin, from tonsilla (\'a tonsil\') + -itis (from Greek, \'inflammation\'), infection of the throat glands.', example:'The doctor diagnosed tonsillitis and prescribed a course of antibiotics, the swollen, reddened tonsils clearly visible at the back of the child\'s throat.', isNoun:true },
+  { word:'topazolite', pronunciation:'toh-PAZ-oh-lyt', ipa:'/toʊˈpæzəˌlaɪt/', pos:'noun', def:'A yellowish-green variety of the mineral andradite garnet, named for its topaz-like color.', lang:'From topaz (from Greek topazos) + -lite (from Greek lithos, \'stone\'), the topaz-colored garnet.', example:'The topazolite gleamed with a golden-green fire, the rare garnet variety prized by collectors for its vivid color and exceptional brilliance.', isNoun:true },
+  { word:'toque', pronunciation:'TOHK', ipa:'/toʊk/', pos:'noun', def:'A tall, white, cylindrical chef\'s hat; also a close-fitting brimless hat for women.', lang:'French, from toque (\'a cap\'), from Spanish toca (\'a headdress\'), of uncertain origin, the traditional chef\'s tall hat.', example:'The head chef adjusted his starched white toque before entering the dining room, the tall hat a symbol of his authority in the kitchen.', isNoun:true },
+  { word:'toreutics', pronunciation:'toh-ROO-tiks', ipa:'/tɔːˈruːtɪks/', pos:'noun', def:'The art of making detailed ornamental metalwork, especially by embossing, chasing, or engraving on metal.', lang:'Greek, from toreutikos (\'of or for chasing metal\'), from toreuein (\'to work in relief, chase\'), the art of ornamental metalworking.', example:'The ancient Greek toreutics on display included exquisitely chased gold cups and embossed bronze shields of extraordinary craftsmanship.', isNoun:true },
+  { word:'torii', pronunciation:'TOR-ee-ee', ipa:'/ˈtɔːriˌiː/', pos:'noun', def:'A traditional Japanese gate, typically painted vermilion, marking the entrance to a Shinto shrine and the transition from profane to sacred space.', lang:'Japanese, from torii (\'bird perch\'), from tori (\'a bird\') + i (\'to sit\'), the iconic gateway to Shinto shrines.', example:'The vermilion torii rose from the waters of the bay at Miyajima, the floating gate one of the most iconic images of Japan.', isNoun:true },
+  { word:'toril', pronunciation:'toh-REEL', ipa:'/tɔːˈriːl/', pos:'noun', def:'The gate or pen in a bullring from which the bull enters the arena; the entrance to the ring.', lang:'Spanish, from toril (\'a bull pen\'), from toro (\'a bull\'), from Latin taurus, the gate through which bulls charge into the arena.', example:'The crowd fell silent as the toril gate swung open, the bull bursting into the sunlit arena with a fury that shook the sand.', isNoun:true },
+  { word:'tourelle', pronunciation:'too-REL', ipa:'/tʊˈrɛl/', pos:'noun', def:'A small tower or turret, especially one projecting from the wall of a building, often used for defense or as an architectural ornament.', lang:'French, from tourelle (\'a small tower\'), diminutive of tour (\'a tower\'), from Latin turris.', example:'The chateau\'s corner tourelles gave it a fairy-tale silhouette, the slender pepper-pot towers catching the last light of the setting sun.', isNoun:true },
+  { word:'tournedos', pronunciation:'TOOR-nuh-doh', ipa:'/ˈtʊərnəˌdoʊ/', pos:'noun', def:'A small, round, thick cut of beef fillet, typically wrapped in bacon and pan-fried or grilled.', lang:'French, from tournedos (\'turn the back\'), supposedly because the dish was prepared behind the diners\' backs due to its pungent aroma.', example:'The tournedos Rossini was a tower of indulgence — seared beef fillet crowned with foie gras and drizzled with truffle sauce.', isNoun:true },
+  { word:'towhee', pronunciation:'TOW-hee', ipa:'/ˈtaʊhiː/', pos:'noun', def:'A North American bird of the sparrow family, typically with dark upper plumage and reddish sides, known for scratching in leaf litter.', lang:'English, of imitative origin, from the bird\'s distinctive "tow-hee" call.', example:'The eastern towhee scratched vigorously in the dry leaves beneath the hedge, its "drink your tea" song announcing its presence before it was seen.', isNoun:true },
+  { word:'trichinosis', pronunciation:'TRIK-ih-NOH-sis', ipa:'/ˌtrɪkɪˈnoʊsɪs/', pos:'noun', def:'A disease caused by parasitic roundworms acquired by eating undercooked meat, especially pork, causing muscle pain and fever.', lang:'Greek, from trichinos (\'of hair\'), from thrix (genitive trichos, \'hair\') + -osis, because the worm is hair-thin.', example:'Trichinosis was once a major public health threat from undercooked pork, the parasitic worms burrowing into muscle tissue and causing severe illness.', isNoun:true },
+  { word:'triduum', pronunciation:'TRID-yoo-um', ipa:'/ˈtrɪdjuːəm/', pos:'noun', def:'A period of three days of prayer, especially the Easter Triduum from Holy Thursday evening through Easter Sunday.', lang:'Latin, from triduum (\'a period of three days\'), from tri- (\'three\') + dies (\'a day\').', example:'The Easter Triduum began with the evening Mass on Holy Thursday, the three sacred days commemorating Christ\'s Last Supper, crucifixion, and resurrection.', isNoun:true },
+  { word:'trillado', pronunciation:'tree-YAH-doh', ipa:'/triːˈjɑːdoʊ/', pos:'noun', def:'A threshing sledge used in Mediterranean agriculture, a wooden board with embedded flint or metal blades dragged over grain.', lang:'Spanish, from trillado, past participle of trillar (\'to thresh\'), from Latin tribulare (\'to press, thresh\'), the traditional grain-threshing tool.', example:'The farmer dragged the trillado across the threshing floor, the flint-studded wooden board separating the grain from the chaff in the ancient Mediterranean way.', isNoun:true },
+  { word:'triskelion', pronunciation:'try-SKEL-ee-on', ipa:'/traɪˈskɛliən/', pos:'noun', def:'A motif consisting of three interlocked spirals or three bent legs radiating from a center, as on the flag of the Isle of Man and Sicily.', lang:'Greek, from triskelion (\'three-legged\'), from tri- (\'three\') + skelos (\'a leg\'), the ancient symbol of three rotating legs.', example:'The triskelion on the Manx flag depicts three armored legs in perpetual motion, the ancient Celtic symbol adopted as the emblem of the Isle of Man.', isNoun:true },
+  { word:'tristeza', pronunciation:'tris-TAY-zuh', ipa:'/trɪsˈteɪzə/', pos:'noun', def:'A devastating viral disease of citrus trees transmitted by aphids, causing decline and death of infected trees.', lang:'Portuguese/Spanish, from tristeza (\'sadness\'), because infected trees appear to wilt and droop as though in mourning.', example:'The tristeza virus swept through the Brazilian orange groves, the aptly named \'sadness\' disease killing millions of citrus trees in a single decade.', isNoun:true },
+  { word:'trochee', pronunciation:'TROH-kee', ipa:'/ˈtroʊkiː/', pos:'noun', def:'A metrical foot consisting of a stressed syllable followed by an unstressed syllable, as in "GAR-den" or "TI-ger."', lang:'Greek, from trochaios (pous) (\'running foot\'), from trechein (\'to run\'), describing the rhythm\'s forward momentum.', example:'Longfellow\'s "Hiawatha" is written entirely in trochees, the insistent DA-dum rhythm giving the poem its distinctive drumbeat quality.', isNoun:true },
+  { word:"trompe l'oeil", pronunciation:'TROMP LOY', ipa:'/ˌtrɒmp ˈlɔɪ/', pos:'noun', def:'A visual illusion in art that makes painted objects appear three-dimensional and real; deceptive realism in painting.', lang:"French, from trompe l'oeil (\'deceives the eye\'), from tromper (\'to deceive\') + l'oeil (\'the eye\').", example:"The trompe l'oeil mural on the building's blank wall created the illusion of windows, balconies, and flower boxes so convincing that passersby tried to wave to the painted figures.", isNoun:true },
+  { word:'trotteur', pronunciation:'troh-TUR', ipa:'/trɒˈtɜːr/', pos:'noun', def:'A woman\'s low-heeled, comfortable walking shoe; also a style of practical, elegant daywear designed for walking.', lang:'French, from trotteur (\'a trotter, walker\'), from trotter (\'to trot\'), describing comfortable shoes for active women.', example:'She chose sensible trotteurs for the walking tour of Paris, the elegant low-heeled shoes carrying her comfortably over miles of cobblestone.', isNoun:true },
+  { word:'trous-de-loup', pronunciation:'TROO-duh-LOO', ipa:'/ˌtruːdəˈluː/', pos:'noun', def:'A type of military obstacle consisting of conical pits with pointed stakes at the bottom, concealed with branches, used to impede enemy advance.', lang:'French, from trous de loup (\'wolf holes\'), from trou (\'a hole\') + de (\'of\') + loup (\'a wolf\'), pits originally used for trapping wolves.', example:'The field before the fort was riddled with hidden trous-de-loup, the concealed stake-filled pits waiting to impale any charging cavalry.', isNoun:true },
+  { word:'trouvaille', pronunciation:'troo-VY', ipa:'/truːˈvaɪ/', pos:'noun', def:'A lucky find; a fortunate discovery; something valuable found by chance.', lang:'French, from trouvaille (\'a find, discovery\'), from trouver (\'to find\').', example:'The vintage Chanel jacket at the flea market was a trouvaille, a stunning lucky find hidden among racks of ordinary secondhand clothes.', isNoun:true },
+  { word:'tryptophan', pronunciation:'TRIP-toh-fan', ipa:'/ˈtrɪptəˌfæn/', pos:'noun', def:'An essential amino acid found in proteins, needed for growth and the production of serotonin and melatonin in the body.', lang:'English, from trypt(ic) (from Greek trypsis, \'a rubbing\', relating to trypsin) + -phan (from Greek phainein, \'to appear\').', example:'Turkey contains tryptophan, the amino acid that the body converts to serotonin and melatonin, contributing to the sleepiness many feel after Thanksgiving dinner.', isNoun:true },
+  { word:'tsukupin', pronunciation:'tsoo-KOO-pin', ipa:'/tsuːˈkuːpɪn/', pos:'noun', def:'A Philippine tree whose bark is traditionally used as a fish poison; a plant-derived piscicide.', lang:'Filipino/Tagalog, from tsukupin, the local name for a tree whose toxic bark was used by indigenous fishermen to stun fish.', example:'The traditional fishermen crushed tsukupin bark and cast it into the stream, the plant toxin stunning the fish and bringing them floating to the surface.', isNoun:true },
+  { word:'tullibee', pronunciation:'TUL-ih-bee', ipa:'/ˈtʌlɪˌbiː/', pos:'noun', def:'A freshwater whitefish of the cisco group found in the cold, deep lakes of northern North America.', lang:'Ojibwe, from a local indigenous name for this cold-water whitefish found in Canadian and northern American lakes.', example:'The angler pulled a silvery tullibee from the icy depths of the Canadian lake, the whitefish a prized catch in the frozen north.', isNoun:true },
+  { word:'tusche', pronunciation:'TOOSH', ipa:'/tʊʃ/', pos:'noun', def:'A greasy black liquid used in lithography and silk-screen printing to create images on the printing surface.', lang:'German, from Tusche (\'ink, India ink\'), from tuschen (\'to apply ink\'), the drawing medium used in printmaking.', example:'The printmaker applied tusche to the lithographic stone with a brush, the greasy ink creating the image that would hold printing ink.', isNoun:true },
+  { word:'Typhoean', pronunciation:'ty-FOH-ee-un', ipa:'/taɪˈfoʊiən/', pos:'adjective', def:'Of or resembling Typhon, the monstrous serpentine giant of Greek mythology; terrifyingly powerful and destructive.', lang:'Greek, from Typhon (Typhoeus), the fearsome hundred-headed monster who challenged Zeus, + -ean.', example:'The volcano erupted with Typhoean fury, its blast recalling the mythological monster whose rage once shook the foundations of Olympus.', isNoun:false }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Slider
+  const totalA = a.length;
+  const pct = totalA > 1 ? s / (totalA - 1) * 100 : 0;
+  document.getElementById("sliderFill").style.width = pct + "%";
+  const sliderArea = document.getElementById("sliderArea");
+  const areaW = sliderArea.offsetWidth || 200;
+  const pad = 10;
+  const thumbLeft = pad + (pct / 100) * (areaW - pad * 2);
+  const thumb = document.getElementById("sliderThumb");
+  if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
+
+  // Ticks - show ~20 evenly spaced markers
+  const tickCount = Math.min(totalA, 20);
+  let ticksHtml = '';
+  for(let t=0; t<tickCount; t++){
+    const ti = Math.round(t / (tickCount-1) * (totalA-1));
+    const cls = ti===s ? 'active' : (t % 5 === 0 ? 'major' : '');
+    ticksHtml += `<div class="slider-tick ${cls}"></div>`;
+  }
+  document.getElementById("sliderDots").innerHTML = ticksHtml;
+  document.getElementById("sliderCounter").textContent = `${s+1} / ${totalA}`;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Slider drag
+const slArea=document.getElementById("sliderArea");
+const slThumb=document.getElementById("sliderThumb");
+let slDragging=false;
+function sliderFromX(cx){
+  const r=slArea.getBoundingClientRect();
+  const pad=10;
+  const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
+  const a=aw(),idx=Math.round(p*(a.length-1));
+  // Move thumb immediately for smooth feel
+  const thumbLeft=pad+(p)*(r.width-pad*2);
+  slThumb.style.left=thumbLeft+"px";
+  if(idx!==si()){
+    const g=WORDS.findIndex(w=>w.word===a[idx].word);
+    flipped=false; currentIndex=g; render();
+  }
+}
+slArea.addEventListener("touchstart",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(slDragging) sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    // Speak the word after releasing
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+slArea.addEventListener("mousedown",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.clientX); e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(slDragging) sliderFromX(e.clientX);
+});
+document.addEventListener("mouseup",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>
