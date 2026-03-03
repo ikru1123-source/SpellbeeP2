@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: Verdana, Geneva, sans-serif; font-size: 36px; font-weight: 400;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 18px; height: 18px; }
+.slider-area {
+  flex: 1; height: 32px; position: relative;
+  display: flex; align-items: center;
+  touch-action: none; cursor: pointer;
+}
+.slider-track-bg {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
+}
+.slider-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(212,175,55,0.5));
+  transition: width 0.15s ease;
+}
+.slider-dots {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; padding: 0 2px;
+}
+.slider-tick {
+  width: 2px; height: 8px; border-radius: 1px;
+  background: rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.slider-tick.major { height: 12px; background: rgba(255,255,255,0.12); }
+.slider-tick.active { background: var(--gold); height: 14px; width: 3px; border-radius: 1.5px; box-shadow: 0 0 6px rgba(212,175,55,0.4); }
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px solid #1a1528;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  cursor: grab; transition: left 0.12s ease;
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
+.slider-thumb.dragging { transition: none; transform: translate(-50%, -50%) scale(1.15); }
+.slider-counter {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.08em;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1><a href="index.html" style="color:inherit;text-decoration:none;">Spelling Bee</a></h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="slider-area" id="sliderArea">
+      <div class="slider-track-bg">
+        <div class="slider-fill" id="sliderFill"></div>
+      </div>
+      <div class="slider-dots" id="sliderDots"></div>
+      <div class="slider-thumb" id="sliderThumb"></div>
+    </div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'à fond', pronunciation:'ah FOHN', ipa:'/ɑː ˈfɒ̃/', pos:'adverb', def:'Thoroughly; to the bottom; completely and with full commitment.', lang:'French, from à (\'to\') + fond (\'bottom, depth\'), literally \'to the bottom\'.', example:'She studied the subject à fond, leaving no detail unexplored before presenting her findings to the committee.', isNoun:false },
+  { word:'à la grecque', pronunciation:'ah lah GREK', ipa:'/ɑː lɑː ˈɡrɛk/', pos:'adverb', def:'In the Greek style; of vegetables, cooked in olive oil with herbs and served cold as an appetizer.', lang:'French, from à la (\'in the manner of\') + grecque (\'Greek\').', example:'The mushrooms à la grecque were marinated in olive oil, lemon, and coriander, then served chilled as an elegant first course.', isNoun:false },
+  { word:'ab aeterno', pronunciation:'ab eh-TUR-noh', ipa:'/æb ɪˈtɜːrnoʊ/', pos:'adverb', def:'From eternity; from the very beginning of time; since before time began.', lang:'Latin, from ab (\'from\') + aeterno, ablative of aeternus (\'eternal\'), from aevum (\'an age\').', example:'The philosopher argued that the universe existed ab aeterno, without beginning or end, in an infinite cycle of creation.', isNoun:false },
+  { word:'abaculus', pronunciation:'uh-BAK-yoo-lus', ipa:'/əˈbækjʊləs/', pos:'noun', def:'A small tile or tessera used in mosaic work; a tiny square piece of glass, stone, or marble.', lang:'Latin, diminutive of abacus (\'a flat slab, counting board\'), from Greek abax (\'a board\').', example:'Each abaculus in the Roman floor mosaic was placed by hand, thousands of tiny colored tiles forming an intricate portrait of Neptune.', isNoun:true },
+  { word:'abomasum', pronunciation:'AB-oh-MAY-sum', ipa:'/ˌæboʊˈmeɪsəm/', pos:'noun', def:'The fourth stomach of a ruminant animal such as a cow, where true digestion occurs with gastric juices.', lang:'Latin, from ab (\'from, away\') + omasum (\'tripe, the paunch of an ox\').', example:'The veterinary student learned that the abomasum functions most like a human stomach, using acid and enzymes to digest food.', isNoun:true },
+  { word:'abraun', pronunciation:'uh-BRAWN', ipa:'/əˈbrɔːn/', pos:'noun', def:'Southernwood, an aromatic herb of the artemisia family with feathery gray-green foliage, used in traditional medicine.', lang:'Old English, from abrōtanum, from Latin abrotanum, from Greek abrotonon (\'southernwood\'), an aromatic medicinal plant.', example:'The cottage garden included a hedge of abraun, its pungent, camphor-like scent said to repel moths and other insects.', isNoun:true },
+  { word:'acacia', pronunciation:'uh-KAY-shuh', ipa:'/əˈkeɪʃə/', pos:'noun', def:'A genus of thorny trees and shrubs found in warm regions worldwide, many producing gum arabic and having feathery leaves.', lang:'Greek, from akakia (\'a thorny Egyptian tree\'), possibly from ake (\'a point, thorn\').', example:'The golden acacia trees dotted the African savanna, their flat-topped canopies providing shade for herds of resting elephants.', isNoun:true },
+  { word:'accordatura', pronunciation:'ah-KOR-duh-TOOR-uh', ipa:'/əˌkɔːrdəˈtʊərə/', pos:'noun', def:'The tuning of a stringed instrument, especially when different from the standard tuning; an alternative tuning system.', lang:'Italian, from accordare (\'to tune, bring into harmony\'), from Latin ad (\'to\') + cor (genitive cordis, \'heart\').', example:'The violinist used a special accordatura for the Baroque piece, retuning her strings to produce the unusual intervals the composer intended.', isNoun:true },
+  { word:'aceituna', pronunciation:'ah-say-TOO-nah', ipa:'/ˌɑːseɪˈtuːnə/', pos:'noun', def:'The Spanish word for olive; an olive, especially as used in Spanish and Latin American cuisine.', lang:'Spanish, from aceituna (\'an olive\'), from Arabic az-zaytuna (\'the olive\'), from zayt (\'oil\').', example:'The tapas plate was crowned with plump aceitunas stuffed with pimento, their briny flavor the perfect companion to manchego cheese.', isNoun:true },
+  { word:'acerola', pronunciation:'AS-uh-ROH-luh', ipa:'/ˌæsəˈroʊlə/', pos:'noun', def:'A small, cherry-like fruit native to the Caribbean and Central America, prized for its extraordinarily high vitamin C content.', lang:'Spanish, from acerola, possibly from Arabic az-zuʿrūra (\'a type of hawthorn fruit\').', example:'A single acerola cherry contains more vitamin C than an entire orange, making it one of the most nutrient-dense fruits on earth.', isNoun:true },
+  { word:'acetaminophen', pronunciation:'uh-SEE-tuh-MIN-oh-fen', ipa:'/əˌsiːtəˈmɪnəfɛn/', pos:'noun', def:'A common pain-relieving and fever-reducing medication, also known as paracetamol, widely used as an over-the-counter remedy.', lang:'English, a contraction of its chemical name para-acetylaminophenol, from acet(yl) + amino + phen(ol).', example:'The doctor recommended acetaminophen for the mild headache, advising the patient to follow the dosage instructions carefully.', isNoun:true },
+  { word:'acetone', pronunciation:'AS-uh-tohn', ipa:'/ˈæsɪˌtoʊn/', pos:'noun', def:'A colorless, volatile, flammable liquid used as a solvent, especially for nail polish remover and paint thinner.', lang:'German, from Aceton, from Latin acetum (\'vinegar\'), from acere (\'to be sour\'), + -one (a chemical suffix).', example:'The sharp smell of acetone filled the art studio as students cleaned their brushes after the oil painting class.', isNoun:true },
+  { word:'acharya', pronunciation:'uh-CHAR-yuh', ipa:'/əˈtʃɑːrjə/', pos:'noun', def:'A spiritual teacher or guide in Hinduism, Buddhism, and Jainism; a title of respect for a learned instructor.', lang:'Sanskrit, from acharya (\'a teacher, preceptor\'), from achara (\'conduct, practice\'), from a + car (\'to move, practice\').', example:'The acharya guided his students through years of study, teaching not only sacred texts but the discipline needed to understand them.', isNoun:true },
+  { word:'Achernar', pronunciation:'AY-kur-nar', ipa:'/ˈeɪkərˌnɑːr/', pos:'noun', def:'The brightest star in the constellation Eridanus and one of the brightest stars in the night sky, visible mainly from the Southern Hemisphere.', lang:'Arabic, from ākhir an-nahr (\'the end of the river\'), because it marks the southernmost point of the constellation Eridanus.', example:'Achernar blazed low on the southern horizon, marking the end of the celestial river that ancient astronomers traced across the sky.', isNoun:true },
+  { word:'acicula', pronunciation:'uh-SIK-yoo-luh', ipa:'/əˈsɪkjʊlə/', pos:'noun', def:'A needle-shaped spine, crystal, or bristle found on certain plants, insects, or minerals.', lang:'Latin, from acicula (\'a small needle, pin\'), diminutive of acus (\'a needle\').', example:'Under the microscope, the mineral displayed clusters of aciculae — tiny, needle-like crystals radiating outward like frozen starbursts.', isNoun:true },
+  { word:'acidophilus', pronunciation:'AS-ih-DOF-ih-lus', ipa:'/ˌæsɪˈdɒfɪləs/', pos:'noun', def:'A type of beneficial bacterium used in probiotic supplements and fermented foods to promote digestive health.', lang:'Latin, from acidus (\'sour, acid\') + Greek philos (\'loving\'), literally \'acid-loving\', describing bacteria that thrive in acidic environments.', example:'She ate yogurt containing acidophilus cultures daily, believing the beneficial bacteria helped maintain her digestive health.', isNoun:true },
+  { word:'acoel', pronunciation:'AY-seel', ipa:'/eɪˈsiːl/', pos:'noun', def:'A tiny, simple marine flatworm lacking a gut cavity, among the most primitive bilateral animals known.', lang:'Greek, from a- (\'without\') + koilos (\'hollow\'), because these organisms lack an internal body cavity.', example:'The marine biologist studied acoels as living clues to the earliest evolution of bilateral symmetry in the animal kingdom.', isNoun:true },
+  { word:'acrogeria', pronunciation:'AK-roh-JEER-ee-uh', ipa:'/ˌækroʊˈdʒɪəriə/', pos:'noun', def:'A rare condition in which the skin of the hands and feet ages prematurely, becoming thin and wrinkled while the rest of the body is unaffected.', lang:'Greek, from akron (\'extremity, tip\') + geras (\'old age\').', example:'The dermatologist diagnosed acrogeria after noting the patient\'s unusually aged-looking hands despite her otherwise youthful appearance.', isNoun:true },
+  { word:'acropachy', pronunciation:'ak-ROP-uh-kee', ipa:'/ækˈrɒpəki/', pos:'noun', def:'Clubbing and swelling of the fingers and toes, often associated with thyroid disease or chronic lung conditions.', lang:'Greek, from akron (\'extremity\') + pachys (\'thick\'), describing the thickening of the digits.', example:'The physician noticed acropachy in the patient\'s fingertips, the characteristic clubbing prompting further investigation of thyroid function.', isNoun:true },
+  { word:'ad nauseam', pronunciation:'ad NAW-zee-um', ipa:'/æd ˈnɔːziəm/', pos:'adverb', def:'To a sickening or excessive degree; repeated so often as to become annoying or tiresome.', lang:'Latin, from ad (\'to\') + nauseam, accusative of nausea (\'seasickness\'), literally \'to the point of nausea\'.', example:'He repeated the same anecdote ad nauseam at every dinner party until even his closest friends could recite it from memory.', isNoun:false },
+  { word:'adieu', pronunciation:'uh-DYOO', ipa:'/əˈdjuː/', pos:'interjection', def:'A farewell; goodbye, especially a final or permanent parting.', lang:'French, from à Dieu (\'to God\'), short for je vous recommande à Dieu (\'I commend you to God\').', example:'She whispered a tearful adieu at the train station, watching his face grow smaller through the window until the train disappeared.', isNoun:false },
+  { word:'adscititious', pronunciation:'AD-sih-TISH-us', ipa:'/ˌædsɪˈtɪʃəs/', pos:'adjective', def:'Added from an external source; supplemental and not inherent; additional rather than essential.', lang:'Latin, from adscitus, past participle of adsciscere (\'to take to oneself, adopt\'), from ad- + sciscere (\'to learn, approve\').', example:'The historian argued that the adscititious elements in the manuscript were later additions by medieval scribes, not part of the original text.', isNoun:false },
+  { word:'Aegilops', pronunciation:'EE-jih-lops', ipa:'/ˈiːdʒɪˌlɒps/', pos:'noun', def:'A genus of wild grasses related to wheat, native to the Mediterranean and Central Asia, important in the evolutionary history of cultivated wheat.', lang:'Greek, from aegilops (\'a type of grass\' or \'a goat-faced plant\'), from aix (\'a goat\') + ops (\'face, eye\').', example:'Geneticists study Aegilops grasses because ancient hybridization between these wild species and early wheat gave rise to modern bread wheat.', isNoun:true },
+  { word:'aegrotat', pronunciation:'EE-groh-tat', ipa:'/ˈiːɡroʊˌtæt/', pos:'noun', def:'A certificate stating that a university student is too ill to attend an examination; a degree granted despite incomplete exams due to illness.', lang:'Latin, from aegrotat (\'he or she is ill\'), third person singular present indicative of aegrotare (\'to be sick\').', example:'The dean granted an aegrotat after the student was hospitalized during finals week, allowing her to receive credit for the term.', isNoun:true },
+  { word:'aerocele', pronunciation:'AIR-oh-seel', ipa:'/ˈɛəroʊˌsiːl/', pos:'noun', def:'A swelling or tumor filled with air or gas, especially one occurring beneath the skin or in body tissues.', lang:'Greek, from aer (\'air\') + kele (\'a tumor, swelling\').', example:'The surgeon identified the aerocele as a pocket of trapped air beneath the skin, likely caused by the traumatic chest injury.', isNoun:true },
+  { word:'aerophilatelic', pronunciation:'AIR-oh-FIL-uh-TEL-ik', ipa:'/ˌɛəroʊˌfɪləˈtɛlɪk/', pos:'adjective', def:'Of or relating to the collection of airmail stamps, covers, and postal history associated with air transportation.', lang:'Greek, from aero- (from aer, \'air\') + philatelic (from philos, \'loving\' + ateleia, \'exemption from tax\', referring to prepaid postage).', example:'The aerophilatelic society displayed rare covers flown on the first transatlantic airmail flights, each envelope a piece of aviation history.', isNoun:false },
+  { word:'aes rude', pronunciation:'AYZ ROO-day', ipa:'/ˌaɪz ˈruːdeɪ/', pos:'noun', def:'Rough, unworked lumps of bronze used as currency in early Rome before the introduction of coins.', lang:'Latin, from aes (\'bronze, copper, money\') + rude (\'rough, unworked\'), describing the earliest form of Roman metallic currency.', example:'Before coins were minted, Romans traded with aes rude — irregular lumps of bronze weighed out on scales for each transaction.', isNoun:true },
+  { word:'Aesculapius', pronunciation:'ES-kyoo-LAY-pee-us', ipa:'/ˌɛskjʊˈleɪpiəs/', pos:'noun', def:'The Roman god of medicine and healing, equivalent to the Greek Asclepius; his staff with a serpent coiled around it remains a symbol of medicine.', lang:'Latin, from Aesculapius, the Roman form of Greek Asklepios, the mythological son of Apollo and god of healing.', example:'The ancient temple of Aesculapius was a place of healing where the sick came to sleep, hoping the god would visit them in dreams with a cure.', isNoun:true },
+  { word:'Aesir', pronunciation:'AY-seer', ipa:'/ˈaɪsɪər/', pos:'noun', def:'The principal group of gods in Norse mythology, including Odin, Thor, and Frigg, who dwell in Asgard.', lang:'Old Norse, from Aesir (plural of áss, \'a god\'), the pantheon of warrior gods in Norse religion.', example:'The Aesir ruled from Asgard and included Odin the Allfather, Thor the Thunderer, and Frigg the Queen of the Gods.', isNoun:true },
+  { word:'aethalium', pronunciation:'ee-THAY-lee-um', ipa:'/iːˈθeɪliəm/', pos:'noun', def:'A large, cushion-shaped fruiting body formed by certain slime molds when individual cells aggregate into a mass for spore production.', lang:'Greek, from aithalos (\'soot\'), because some species resemble sooty masses when mature.', example:'The aethalium on the rotting log looked like a blob of yellow foam, but it was actually a slime mold preparing to release millions of spores.', isNoun:true },
+  { word:'affiche', pronunciation:'ah-FEESH', ipa:'/ɑːˈfiːʃ/', pos:'noun', def:'A poster or public notice, especially an artistic one; a placard or advertisement displayed in a public place.', lang:'French, from affiche (\'a poster\'), from afficher (\'to post up, display\'), from Latin affigere (\'to fasten to\').', example:'The art collector prized vintage French affiches from the Belle Époque, their bold colors and flowing designs epitomizing the era.', isNoun:true },
+  { word:'agitprop', pronunciation:'AJ-it-prop', ipa:'/ˈædʒɪtˌprɒp/', pos:'noun', def:'Political propaganda, especially in art or literature, intended to agitate and mobilize the public; aggressive promotion of political ideas.', lang:'Russian, from agitatsiya (\'agitation\') + propaganda, a portmanteau coined in Soviet Russia for the Department of Agitation and Propaganda.', example:'The mural was pure agitprop, its bold imagery and slogans designed to rally workers and stir revolutionary sentiment.', isNoun:true },
+  { word:'Aglaia', pronunciation:'uh-GLAY-uh', ipa:'/əˈɡleɪə/', pos:'noun', def:'One of the three Graces in Greek mythology, representing beauty, splendor, and adornment.', lang:'Greek, from Aglaia (\'brightness, splendor, beauty\'), from aglaos (\'bright, splendid\').', example:'Aglaia, the youngest of the three Graces, embodied radiant beauty and was often depicted alongside her sisters Euphrosyne and Thalia.', isNoun:true },
+  { word:'agrypnia', pronunciation:'uh-GRIP-nee-uh', ipa:'/əˈɡrɪpniə/', pos:'noun', def:'Sleeplessness; chronic insomnia; an inability to sleep, especially as a medical condition.', lang:'Greek, from agrypnia (\'sleeplessness\'), from agrypnos (\'wakeful\'), from a- (\'not\') + hypnos (\'sleep\').', example:'The patient suffered from persistent agrypnia, lying awake for hours each night despite exhaustion and every remedy the doctor suggested.', isNoun:true },
+  { word:'ahimsa', pronunciation:'uh-HIM-sah', ipa:'/əˈhɪmsɑː/', pos:'noun', def:'The principle of nonviolence toward all living things, central to Hinduism, Buddhism, and especially Jainism.', lang:'Sanskrit, from ahimsa (\'non-injury\'), from a- (\'non-\') + himsa (\'injury, harm\'), from the root han (\'to strike, kill\').', example:'Gandhi\'s philosophy of ahimsa inspired a worldwide movement of nonviolent resistance that changed the course of history.', isNoun:true },
+  { word:'ahuatle', pronunciation:'ah-WAHT-lay', ipa:'/ɑːˈwɑːtleɪ/', pos:'noun', def:'The eggs of water bugs harvested from Mexican lakes, considered a delicacy since Aztec times, sometimes called Mexican caviar.', lang:'Nahuatl, from ahuauhtli (\'water amaranth seed\'), describing the tiny insect eggs gathered from the surface of lakes.', example:'The ahuatle harvested from Lake Texcoco was prized by the Aztecs as a protein-rich food, prepared in cakes or tamales.', isNoun:true },
+  { word:'Ahuehuete', pronunciation:'ah-WAY-WAY-tay', ipa:'/ɑːˈweɪweɪteɪ/', pos:'noun', def:'The Montezuma cypress, the national tree of Mexico, known for immense size and longevity; some specimens are over a thousand years old.', lang:'Nahuatl, from ahuehuetl (\'old man of the water\'), from atl (\'water\') + huehuetl (\'old man, drum\'), because the trees grow near water.', example:'The famous Ahuehuete in Oaxaca, known as the Tule Tree, has the stoutest trunk of any tree in the world at over 36 feet in diameter.', isNoun:true },
+  { word:'Ahura Mazda', pronunciation:'uh-HOOR-uh MAZ-duh', ipa:'/əˌhʊərə ˈmæzdə/', pos:'noun', def:'The supreme deity of Zoroastrianism, the god of light, wisdom, and truth who battles the forces of darkness.', lang:'Avestan, from Ahura (\'lord\') + Mazda (\'wisdom\'), literally \'Lord of Wisdom\', the creator god in Zoroastrian theology.', example:'Zoroastrians worship Ahura Mazda as the one true god, whose eternal struggle against the evil spirit Angra Mainyu defines the moral universe.', isNoun:true },
+  { word:'ailanthus', pronunciation:'ay-LAN-thus', ipa:'/eɪˈlænθəs/', pos:'noun', def:'A fast-growing deciduous tree native to China, widely planted but now considered invasive in many regions; the tree of heaven.', lang:'Amboinese (Malay), from ailanto (\'tree of heaven\'), from ai (\'tree\') + lanto (\'sky, heaven\'), adopted into Latin botanical nomenclature.', example:'The ailanthus grew from every crack in the pavement, its determination to thrive in the harshest urban conditions earning it the name tree of heaven.', isNoun:true },
+  { word:'aileron', pronunciation:'AY-luh-ron', ipa:'/ˈeɪlərɒn/', pos:'noun', def:'A hinged surface on the trailing edge of an aircraft wing, used to control the plane\'s roll and banking.', lang:'French, from aileron (\'a small wing\'), diminutive of aile (\'a wing\'), from Latin ala (\'a wing\').', example:'The pilot deflected the ailerons to bank sharply to the left, the aircraft rolling smoothly into a graceful turn.', isNoun:true },
+  { word:'ailette', pronunciation:'ay-LET', ipa:'/eɪˈlɛt/', pos:'noun', def:'A small, flat piece of armor worn on the shoulders by medieval knights, used to display heraldic devices for identification in battle.', lang:'French, from ailette (\'a little wing\'), diminutive of aile (\'a wing\'), from Latin ala, because they projected like small wings from the shoulders.', example:'The knight\'s ailettes bore his family coat of arms, the small shoulder plates helping allies identify him amid the chaos of the melee.', isNoun:true },
+  { word:'aistopod', pronunciation:'AY-stoh-pod', ipa:'/ˈaɪstoʊˌpɒd/', pos:'noun', def:'A member of an extinct order of limbless, snake-like amphibians that lived during the Carboniferous period.', lang:'Greek, from aistos (\'unseen, unknown\') + pous (genitive podos, \'foot\'), meaning \'without visible feet\'.', example:'The fossil aistopod resembled a tiny snake, but it was actually an ancient amphibian that had lost its limbs over millions of years of evolution.', isNoun:true },
+  { word:'Aitutakian', pronunciation:'AY-too-TAH-kee-un', ipa:'/ˌaɪtuːˈtɑːkiən/', pos:'adjective', def:'Of or relating to Aitutaki, a coral atoll in the Cook Islands of the South Pacific, known for its stunning turquoise lagoon.', lang:'From Aitutaki (a Cook Islands Māori name) + -ian.', example:'The Aitutakian lagoon shimmered in impossible shades of turquoise and blue, its coral reefs teeming with tropical fish.', isNoun:false },
+  { word:'ajimez', pronunciation:'ah-hee-METH', ipa:'/ɑːhiːˈmɛθ/', pos:'noun', def:'A window divided by a central column or mullion into two arched openings, characteristic of Moorish and Spanish architecture.', lang:'Spanish, from Arabic ash-shamis (\'the sun\'), because the divided window controlled sunlight entering the room.', example:'The palace featured elegant ajimez windows, their twin arches framing views of the courtyard garden through delicately carved stone columns.', isNoun:true },
+  { word:'akkum', pronunciation:'AH-kum', ipa:'/ˈɑːkʌm/', pos:'noun', def:'A non-Jewish person who practices idolatry, in Jewish law and rabbinical literature; an acronym from Hebrew.', lang:'Hebrew, an acronym from ovdei kokhavim u-mazalot (\'worshippers of stars and constellations\'), used in Talmudic literature.', example:'The rabbinical text discussed the legal distinctions between dealings with an akkum and those with a righteous gentile.', isNoun:true },
+  { word:'alate', pronunciation:'AY-layt', ipa:'/ˈeɪleɪt/', pos:'adjective', def:'Having wings or winglike extensions; winged.', lang:'Latin, from alatus (\'winged\'), from ala (\'a wing\').', example:'The alate seeds of the maple tree spiraled gracefully to the ground, their papery wings carrying them far from the parent tree.', isNoun:false },
+  { word:'alcarraza', pronunciation:'AL-kah-RAH-zah', ipa:'/ˌælkɑːˈrɑːzə/', pos:'noun', def:'An unglazed, porous clay jug used to cool water through evaporation, traditional in Spain and Latin America.', lang:'Spanish, from Arabic al-karrāza (\'the jug\'), a water-cooling vessel whose porous walls allow slow evaporation.', example:'The alcarraza kept the drinking water remarkably cool even on the hottest summer days, moisture seeping through the clay and evaporating.', isNoun:true },
+  { word:'Alfvén', pronunciation:'alf-VAYN', ipa:'/ælfˈveɪn/', pos:'noun', def:'Hannes Alfvén, a Swedish physicist who won the Nobel Prize for his work on magnetohydrodynamics and plasma physics; also refers to Alfvén waves in plasma.', lang:'Swedish surname, from Hannes Olof Gösta Alfvén (1908-1995), the Nobel Prize-winning physicist.', example:'Alfvén waves propagate through plasma along magnetic field lines, a phenomenon crucial to understanding the behavior of the sun and solar wind.', isNoun:true },
+  { word:'alisier', pronunciation:'AL-ih-zee-ay', ipa:'/ˈælɪziˌeɪ/', pos:'noun', def:'A type of whitebeam or service tree of the genus Sorbus, native to Europe, valued for its hard wood and ornamental berries.', lang:'French, from alisier (\'a whitebeam tree\'), of Celtic origin, describing a tree of the rose family.', example:'The cabinetmaker prized alisier wood for its fine grain and warm reddish tone, perfect for crafting decorative inlays and small boxes.', isNoun:true },
+  { word:'alleluiatic', pronunciation:'AL-uh-LOO-ee-AT-ik', ipa:'/ˌæləˌluːiˈætɪk/', pos:'adjective', def:'Of, relating to, or containing an alleluia; characterized by praise and jubilation.', lang:'Latin, from alleluia (from Hebrew halleluyah, \'praise the Lord\'), from hallel (\'to praise\') + yah (\'God\'), + -atic.', example:'The alleluiatic hymn filled the cathedral with waves of joyful sound, the choir\'s voices soaring in exuberant praise.', isNoun:false },
+  { word:'allochroous', pronunciation:'uh-LOK-roh-us', ipa:'/əˈlɒkroʊəs/', pos:'adjective', def:'Changing color; having the ability to change appearance or hue; of a mineral, having a color caused by impurities rather than its own composition.', lang:'Greek, from allo- (\'other, different\') + chroa (\'color, complexion\'), + -ous.', example:'The allochroous mineral appeared blue due to trace copper impurities, though its pure form would be completely colorless.', isNoun:false },
+  { word:'almuerzo', pronunciation:'al-MWAIR-soh', ipa:'/ælˈmwɛərsoʊ/', pos:'noun', def:'Lunch or a midday meal in Spanish-speaking countries; sometimes refers to a late breakfast or brunch.', lang:'Spanish, from almuerzo (\'lunch\'), from Latin admordium (\'a bite, snack\'), from admordere (\'to bite into\').', example:'The family gathered for a long, leisurely almuerzo, enjoying course after course of home-cooked food and lively conversation.', isNoun:true },
+  { word:'alouatte', pronunciation:'AL-oo-AT', ipa:'/ˌæluˈæt/', pos:'noun', def:'A howler monkey; any primate of the genus Alouatta, known for their extraordinarily loud vocalizations that carry for miles through the forest.', lang:'French, from alouate, from a Carib (indigenous South American) word for these loud-voiced monkeys.', example:'The alouatte\'s booming call echoed through the dawn jungle, one of the loudest sounds produced by any land animal.', isNoun:true },
+  { word:'alpargata', pronunciation:'AL-par-GAH-tah', ipa:'/ˌælpɑːrˈɡɑːtə/', pos:'noun', def:'A type of lightweight canvas shoe with a rope sole, traditional in Spain and Latin America; an espadrille.', lang:'Spanish, from alpargata, from Arabic al-barga (\'a sandal\'), the traditional rope-soled shoe of the Mediterranean and South America.', example:'The farmers wore sturdy alpargatas as they worked the fields, the rope soles providing grip on the dusty hillside paths.', isNoun:true },
+  { word:'altazimuth', pronunciation:'al-TAZ-ih-muth', ipa:'/ælˈtæzɪməθ/', pos:'noun', def:'A telescope mounting that allows movement on two axes — altitude (up and down) and azimuth (left and right).', lang:'English, a blend of alt(itude) + azimuth (from Arabic as-samt, \'the direction\').', example:'The amateur astronomer used an altazimuth mount to track the comet, adjusting both height and direction as it moved across the sky.', isNoun:true },
+  { word:'amaryllis', pronunciation:'AM-uh-RIL-is', ipa:'/ˌæməˈrɪlɪs/', pos:'noun', def:'A bulbous plant with large, showy trumpet-shaped flowers, popular as a winter houseplant; associated with Christmas decorations.', lang:'Greek, from Amaryllis, the name of a shepherdess in pastoral poetry by Virgil and Theocritus, meaning \'sparkling\'.', example:'The crimson amaryllis bloomed spectacularly on the windowsill, its enormous trumpet-shaped flowers brightening the entire room during the dark winter months.', isNoun:true },
+  { word:'amertoy', pronunciation:'AM-ur-toy', ipa:'/ˈæmərˌtɔɪ/', pos:'noun', def:'A small trinket or decorative trifle; a novelty or toy of little value, popular in medieval and Renaissance fairs.', lang:'Old French, from amertoy or amertoi, a small toy or knickknack sold at fairs and markets.', example:'The peddler\'s cart was filled with amertoys — tiny painted figurines, spinning tops, and glass baubles that delighted children at the fair.', isNoun:true },
+  { word:'amour propre', pronunciation:'ah-MOOR PROH-pruh', ipa:'/ɑːˌmʊər ˈprɒprə/', pos:'noun', def:'Self-esteem; self-respect; a sense of one\'s own worth and dignity, sometimes implying vanity or excessive pride.', lang:'French, from amour (\'love\') + propre (\'own, self\'), literally \'self-love\'.', example:'His amour propre was wounded by the public criticism, though he tried to maintain a dignified composure in front of his colleagues.', isNoun:true },
+  { word:'anosognosia', pronunciation:'AN-oh-sog-NOH-zhuh', ipa:'/ˌænoʊsɒɡˈnoʊʒə/', pos:'noun', def:'A neurological condition in which a person is unaware of their own disability or illness, often following brain injury.', lang:'Greek, from a- (\'without\') + nosos (\'disease\') + gnosis (\'knowledge\'), literally \'without knowledge of disease\'.', example:'The stroke patient exhibited anosognosia, insisting she could walk perfectly well despite clear paralysis on her left side.', isNoun:true },
+  { word:'antenatus', pronunciation:'AN-teh-NAY-tus', ipa:'/ˌæntɪˈneɪtəs/', pos:'noun', def:'A person born before a particular event, especially before a country\'s independence or a change in sovereignty.', lang:'Latin, from ante (\'before\') + natus (\'born\'), past participle of nasci (\'to be born\').', example:'In legal terms, an antenatus is someone born before a nation\'s founding, a distinction once important in determining citizenship rights.', isNoun:true },
+  { word:'Antigua', pronunciation:'an-TEE-guh', ipa:'/ænˈtiːɡə/', pos:'noun', def:'A Caribbean island nation (with Barbuda) known for its coral reefs, beaches, and British colonial history; also a historic city in Guatemala.', lang:'Spanish, from antigua (\'ancient\'), short for Santa María la Antigua (\'Saint Mary the Ancient\'), the name given by Columbus in 1493.', example:'The turquoise waters surrounding Antigua are dotted with 365 beaches, one for every day of the year according to local tradition.', isNoun:true },
+  { word:'Apabhramsa', pronunciation:'AH-puh-BRUM-shuh', ipa:'/ˌɑːpəˈbrʌmʃə/', pos:'noun', def:'A group of transitional languages and literary dialects in medieval India, bridging classical Prakrit and the modern Indo-Aryan languages.', lang:'Sanskrit, from apabhramsha (\'falling away, corruption\'), from apa (\'away\') + bhramsha (\'a fall\'), describing the \'corrupt\' evolution from earlier classical forms.', example:'Apabhramsa literature flourished between the 6th and 13th centuries, preserving religious and secular poetry in dialects that would evolve into Hindi and Gujarati.', isNoun:true },
+  { word:'ape-ape', pronunciation:'AH-pay AH-pay', ipa:'/ˈɑːpeɪ ˈɑːpeɪ/', pos:'noun', def:'A tropical tree of Southeast Asia whose bark produces a fiber used in making cloth and rope.', lang:'Malay, from ape-ape, the local name for this fiber-producing tree found in the Philippines and Indonesia.', example:'The indigenous weavers stripped bark from the ape-ape tree and pounded it into soft, pliable fibers for weaving into traditional cloth.', isNoun:true },
+  { word:'aperçu', pronunciation:'AP-air-SOO', ipa:'/ˌæpɛrˈsuː/', pos:'noun', def:'A brief, penetrating insight or observation; a concise summary or outline; a witty remark that captures an essential truth.', lang:'French, from aperçu (\'a glimpse, outline\'), past participle of apercevoir (\'to perceive\'), from Latin ad + percipere.', example:'The critic\'s aperçu about the novel\'s hidden theme was so sharp and precise that it changed how every subsequent reader understood the work.', isNoun:true },
+  { word:'aphasia', pronunciation:'uh-FAY-zhuh', ipa:'/əˈfeɪʒə/', pos:'noun', def:'Loss of ability to understand or express speech, caused by brain damage, typically from a stroke.', lang:'Greek, from aphasia (\'speechlessness\'), from a- (\'without\') + phasis (\'speech\'), from phanai (\'to speak\').', example:'After the stroke, the patient developed aphasia, struggling to find even simple words despite understanding everything said to her.', isNoun:true },
+  { word:'Apistogramma', pronunciation:'AP-is-toh-GRAM-uh', ipa:'/ˌæpɪstoʊˈɡræmə/', pos:'noun', def:'A genus of small, colorful South American dwarf cichlid fish popular in freshwater aquariums.', lang:'Greek, from apistos (\'unreliable, uncertain\') + gramma (\'a line, marking\'), referring to the variable lateral line markings on these fish.', example:'The male Apistogramma displayed brilliant blue and orange colors as he guarded his cave, the tiny cichlid fiercely territorial despite his small size.', isNoun:true },
+  { word:'apocryphal', pronunciation:'uh-POK-rih-ful', ipa:'/əˈpɒkrɪfəl/', pos:'adjective', def:'Of doubtful authenticity; widely circulated but unlikely to be true; of a story, well-known but probably invented.', lang:'Greek, from apokryphos (\'hidden, obscure\'), from apokryptein (\'to hide away\'), from apo- (\'away\') + kryptein (\'to hide\'), + -al.', example:'The apocryphal story of Newton being hit by an apple is charming but almost certainly never happened the way people tell it.', isNoun:false },
+  { word:'apophyge', pronunciation:'uh-POF-ih-jee', ipa:'/əˈpɒfɪdʒi/', pos:'noun', def:'The slight concave curve at the top or bottom of a classical column where the shaft meets the fillet or base.', lang:'Greek, from apophyge (\'an escape, flight\'), from apophygein (\'to flee from\'), describing the curve that \'escapes\' from the straight shaft.', example:'The architect drew attention to the elegant apophyge at the base of each Doric column, the subtle curve softening the transition from shaft to plinth.', isNoun:true },
+  { word:'Apostolici', pronunciation:'AP-os-TOL-ih-see', ipa:'/ˌæpɒsˈtɒlɪˌsiː/', pos:'noun', def:'Members of various Christian sects throughout history who sought to live according to the practices of the original apostles, often embracing poverty.', lang:'Latin, from apostolicus (\'apostolic\'), from Greek apostolikos, from apostolos (\'one sent forth, apostle\').', example:'The Apostolici renounced all worldly possessions and wandered barefoot, claiming to follow the original lifestyle of Christ\'s twelve apostles.', isNoun:true },
+  { word:'Appaloosa', pronunciation:'AP-uh-LOO-suh', ipa:'/ˌæpəˈluːsə/', pos:'noun', def:'A breed of horse with a distinctive spotted coat pattern, developed by the Nez Perce people of the American Northwest.', lang:'Named after the Palouse River region of Idaho and Washington, homeland of the Nez Perce who bred these distinctive spotted horses.', example:'The Appaloosa trotted across the paddock, its white coat covered in striking dark spots that made it look like a living work of art.', isNoun:true },
+  { word:'appetitost', pronunciation:'AP-uh-TEE-tohst', ipa:'/ˈæpɪˌtiːtoʊst/', pos:'noun', def:'A sour, tangy Danish cheese made from buttermilk curds, with a sharp, acidic flavor, often spread on dark bread.', lang:'Danish, from appetit (\'appetite\') + ost (\'cheese\'), literally \'appetite cheese\', because its tangy flavor stimulates the appetite.', example:'The Danes spread appetitost thickly on dark rye bread for a simple lunch, the tangy buttermilk cheese pairing perfectly with pickled herring.', isNoun:true },
+  { word:'après', pronunciation:'AH-pray', ipa:'/ˈɑːpreɪ/', pos:'preposition', def:'After; following; used especially in the context of après-ski, referring to social activities after a day of skiing.', lang:'French, from après (\'after\'), from Latin ad pressum (\'close to, near\'), or from Latin post (\'after\').', example:'The chalet buzzed with après-ski revelry, skiers warming themselves with mulled wine and fondue after a long day on the slopes.', isNoun:false },
+  { word:'Aramaic', pronunciation:'AIR-uh-MAY-ik', ipa:'/ˌærəˈmeɪɪk/', pos:'noun', def:'An ancient Semitic language that was the lingua franca of the Middle East for centuries and is believed to be the language spoken by Jesus.', lang:'From Aram, the biblical name for ancient Syria and Mesopotamia, where this Semitic language originated, + -aic.', example:'Aramaic was once spoken across a vast empire stretching from Egypt to India, and portions of the Bible were originally written in it.', isNoun:true },
+  { word:'Ardhamagadhi', pronunciation:'ARD-hah-mah-GAH-dee', ipa:'/ˌɑːrdhɑːmɑːˈɡɑːdi/', pos:'noun', def:'An ancient Prakrit language used in early Jain scriptures, considered a form of half-Magadhi, spoken in eastern India.', lang:'Sanskrit, from ardha (\'half\') + Magadhi (\'of Magadha\'), the language of the Magadha kingdom in ancient Bihar.', example:'The earliest Jain texts were composed in Ardhamagadhi, a language that preserves teachings of Mahavira from over 2,500 years ago.', isNoun:true },
+  { word:'Ardipithecus', pronunciation:'AR-dih-PITH-uh-kus', ipa:'/ˌɑːrdɪˈpɪθɪkəs/', pos:'noun', def:'A genus of early hominid that lived about 4.4 million years ago in Ethiopia, among the oldest known human ancestors.', lang:'Afar (Ethiopian), from ardi (\'ground, floor\') + Greek pithekos (\'ape\'), meaning \'ground ape\'.', example:'The discovery of Ardipithecus ramidus pushed the timeline of human evolution back over a million years before the famous Lucy fossil.', isNoun:true },
+  { word:'ardoise', pronunciation:'ar-DWAHZ', ipa:'/ɑːrˈdwɑːz/', pos:'noun', def:'Slate, especially as used for roofing or writing surfaces; a bluish-gray color resembling slate.', lang:'French, from ardoise (\'slate\'), of uncertain origin, possibly from Celtic or pre-Roman Gaulish.', example:'The mansard roofs of Paris were covered in ardoise tiles, their blue-gray surfaces glistening softly after the rain.', isNoun:true },
+  { word:'arenaceous', pronunciation:'AIR-uh-NAY-shus', ipa:'/ˌærɪˈneɪʃəs/', pos:'adjective', def:'Resembling, containing, or consisting of sand; growing in sandy soil; having a gritty or sandy texture.', lang:'Latin, from arenaceus (\'sandy\'), from arena (\'sand\'), + -ous.', example:'The arenaceous soil of the coastal dunes supported only hardy grasses and succulents adapted to the dry, sandy conditions.', isNoun:false },
+  { word:'aretalogy', pronunciation:'AIR-uh-TAL-uh-jee', ipa:'/ˌærɪˈtælədʒi/', pos:'noun', def:'A recitation of the deeds and virtues of a god or hero; the study or listing of virtues and miraculous acts.', lang:'Greek, from aretalogos (\'one who speaks of virtues\'), from arete (\'virtue, excellence\') + logos (\'speech, study\').', example:'The ancient aretalogy inscribed on the temple wall cataloged the miraculous healings attributed to the goddess Isis.', isNoun:true },
+  { word:'as nas', pronunciation:'AHS NAHS', ipa:'/ɑːs ˈnɑːs/', pos:'noun', def:'A traditional Persian card game considered by some scholars to be an ancestor of modern poker, played with a deck of 25 cards.', lang:'Persian, from as nas (\'my beloved ace\'), a card game played in Iran since at least the 17th century.', example:'The merchants played as nas in the tea house, bluffing and betting with the painted cards that some historians believe inspired modern poker.', isNoun:true },
+  { word:'ascites', pronunciation:'uh-SY-teez', ipa:'/əˈsaɪtiːz/', pos:'noun', def:'The accumulation of excess fluid in the abdominal cavity, often a symptom of liver disease or cancer.', lang:'Greek, from askites (\'a type of dropsy\'), from askos (\'a wineskin, bag\'), because the swollen abdomen resembles a filled wineskin.', example:'The doctor diagnosed ascites after the patient\'s abdomen became noticeably distended, and further tests revealed advanced liver cirrhosis.', isNoun:true },
+  { word:'aspidistra', pronunciation:'AS-pih-DIS-truh', ipa:'/ˌæspɪˈdɪstrə/', pos:'noun', def:'A hardy evergreen houseplant with large, glossy dark green leaves, native to East Asia, famous for tolerating neglect.', lang:'Greek, from aspis (genitive aspidos, \'a shield\'), because of the shape of the flower\'s stigma, + -istra.', example:'The aspidistra thrived in the dim hallway where no other plant survived, its tough, glossy leaves unfazed by low light and sporadic watering.', isNoun:true },
+  { word:'astaxanthin', pronunciation:'AS-tuh-ZAN-thin', ipa:'/ˌæstəˈzænθɪn/', pos:'noun', def:'A reddish-pink carotenoid pigment found in salmon, shrimp, and flamingos, valued as an antioxidant supplement.', lang:'Greek, from astakos (\'a lobster\') + xanthos (\'yellow\'), + -in, describing the pigment responsible for the red color of crustaceans.', example:'The brilliant pink color of wild salmon comes from astaxanthin, a powerful antioxidant pigment absorbed from the krill they eat.', isNoun:true },
+  { word:'astilbe', pronunciation:'uh-STIL-bee', ipa:'/əˈstɪlbi/', pos:'noun', def:'A garden plant with feathery plumes of tiny flowers in shades of pink, white, red, and purple, thriving in shade and moist soil.', lang:'Greek, from a- (\'without\') + stilbe (\'brightness\'), because the individual flowers are so tiny as to lack obvious luster.', example:'The astilbe\'s feathery pink plumes brightened the shady corner of the garden where few other flowering plants would grow.', isNoun:true },
+  { word:'Asura', pronunciation:'AH-soo-rah', ipa:'/ˈɑːsʊrə/', pos:'noun', def:'In Hindu mythology, a class of powerful beings sometimes depicted as demons who battle the gods; in Buddhism, a realm of jealous demigods.', lang:'Sanskrit, from asura (\'a powerful being, spirit\'), possibly from asu (\'breath, life force\'); cognate with Avestan ahura (\'lord\').', example:'In the ancient texts, the Asuras waged cosmic wars against the Devas, their battles shaking the heavens and shaping the fate of the universe.', isNoun:true },
+  { word:'asylee', pronunciation:'uh-SY-lee', ipa:'/əˈsaɪliː/', pos:'noun', def:'A person who has been granted asylum in a foreign country, typically after fleeing persecution in their homeland.', lang:'English, from asylum (from Latin asylum, from Greek asylon, \'a sanctuary\', from a- + sylon, \'right of seizure\') + -ee.', example:'The asylee spent two years navigating the legal system before finally receiving permission to remain permanently in her new country.', isNoun:true },
+  { word:'attacca', pronunciation:'ah-TAH-kah', ipa:'/ɑːˈtɑːkə/', pos:'adverb', def:'A musical direction meaning to proceed immediately to the next section or movement without a pause.', lang:'Italian, from attaccare (\'to attack, begin\'), the imperative form directing musicians to continue without stopping.', example:'The score marked attacca at the end of the second movement, so the orchestra launched straight into the explosive third without pause.', isNoun:false },
+  { word:'au bleu', pronunciation:'oh BLUH', ipa:'/oʊ ˈblɜː/', pos:'adverb', def:'A method of cooking freshly caught trout by plunging it immediately into a vinegar court-bouillon, which turns the skin a distinctive blue color.', lang:'French, from au (\'in the\') + bleu (\'blue\'), because the vinegar reacts with the fresh slime coating on the fish, turning it blue.', example:'The chef prepared the trout au bleu, the fish so fresh from the stream that its skin turned a beautiful steely blue when it hit the simmering broth.', isNoun:false },
+  { word:'au courant', pronunciation:'oh koo-RAHN', ipa:'/oʊ kʊˈrɑ̃/', pos:'adjective', def:'Aware of what is going on; well informed; up to date with current events or trends.', lang:'French, from au (\'at the\') + courant (\'running, current\'), literally \'in the current\'.', example:'The fashion editor prided herself on being au courant with every emerging trend, from street style in Tokyo to haute couture in Paris.', isNoun:false },
+  { word:'au jus', pronunciation:'oh ZHOO', ipa:'/oʊ ˈʒuː/', pos:'adverb', def:'Served with the natural juices or gravy from the meat, especially roast beef.', lang:'French, from au (\'with the\') + jus (\'juice\'), from Latin jus (\'broth, juice\').', example:'The prime rib was served au jus, the rich, savory pan drippings pooling around the perfectly pink slices of beef.', isNoun:false },
+  { word:'auwai', pronunciation:'OW-wy', ipa:'/ˈaʊwaɪ/', pos:'noun', def:'A traditional Hawaiian irrigation ditch or channel used to divert water from streams to taro fields.', lang:'Hawaiian, from auwai (\'a ditch, water channel\'), from au (\'to flow\') + wai (\'water\').', example:'The ancient auwai channeled mountain stream water down to the taro paddies, an irrigation system that sustained Hawaiian agriculture for centuries.', isNoun:true },
+  { word:'avgolemono', pronunciation:'AHV-goh-LEM-oh-noh', ipa:'/ˌɑːvɡoʊˈlɛmoʊnoʊ/', pos:'noun', def:'A traditional Greek sauce or soup made from eggs and lemon juice, often combined with chicken broth and rice.', lang:'Greek, from avgo (\'an egg\') + lemoni (\'a lemon\'), the two essential ingredients of this creamy, tangy preparation.', example:'The velvety avgolemono soup warmed her from the inside, its bright lemon flavor and silky egg-thickened broth the perfect comfort on a cold evening.', isNoun:true },
+  { word:'azotea', pronunciation:'AH-zoh-TAY-uh', ipa:'/ˌɑːzoʊˈteɪə/', pos:'noun', def:'A flat roof or rooftop terrace on a building, common in Spanish and Latin American architecture, used for socializing or drying laundry.', lang:'Spanish, from azotea (\'a flat roof\'), from Arabic as-sutayha (\'a small flat roof\'), diminutive of sath (\'roof, surface\').', example:'The family gathered on the azotea each evening to watch the sunset, the flat rooftop terrace offering sweeping views across the city.', isNoun:true },
+  { word:'azulejo', pronunciation:'AH-zoo-LAY-hoh', ipa:'/ˌɑːzuːˈleɪhoʊ/', pos:'noun', def:'A type of painted, tin-glazed ceramic tile traditionally used in Portuguese and Spanish architecture for decorating walls and floors.', lang:'Spanish, from azulejo, from Arabic az-zulaij (\'a polished stone\'), from zulij (\'a small smooth stone\'), not from azul (\'blue\') despite the common blue coloring.', example:'The Lisbon church was covered floor to ceiling in blue and white azulejos, the hand-painted tiles depicting scenes from the Bible in astonishing detail.', isNoun:true }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Slider
+  const totalA = a.length;
+  const pct = totalA > 1 ? s / (totalA - 1) * 100 : 0;
+  document.getElementById("sliderFill").style.width = pct + "%";
+  const sliderArea = document.getElementById("sliderArea");
+  const areaW = sliderArea.offsetWidth || 200;
+  const pad = 10;
+  const thumbLeft = pad + (pct / 100) * (areaW - pad * 2);
+  const thumb = document.getElementById("sliderThumb");
+  if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
+
+  // Ticks - show ~20 evenly spaced markers
+  const tickCount = Math.min(totalA, 20);
+  let ticksHtml = '';
+  for(let t=0; t<tickCount; t++){
+    const ti = Math.round(t / (tickCount-1) * (totalA-1));
+    const cls = ti===s ? 'active' : (t % 5 === 0 ? 'major' : '');
+    ticksHtml += `<div class="slider-tick ${cls}"></div>`;
+  }
+  document.getElementById("sliderDots").innerHTML = ticksHtml;
+  document.getElementById("sliderCounter").textContent = `${s+1} / ${totalA}`;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Slider drag
+const slArea=document.getElementById("sliderArea");
+const slThumb=document.getElementById("sliderThumb");
+let slDragging=false;
+function sliderFromX(cx){
+  const r=slArea.getBoundingClientRect();
+  const pad=10;
+  const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
+  const a=aw(),idx=Math.round(p*(a.length-1));
+  // Move thumb immediately for smooth feel
+  const thumbLeft=pad+(p)*(r.width-pad*2);
+  slThumb.style.left=thumbLeft+"px";
+  if(idx!==si()){
+    const g=WORDS.findIndex(w=>w.word===a[idx].word);
+    flipped=false; currentIndex=g; render();
+  }
+}
+slArea.addEventListener("touchstart",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(slDragging) sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    // Speak the word after releasing
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+slArea.addEventListener("mousedown",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.clientX); e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(slDragging) sliderFromX(e.clientX);
+});
+document.addEventListener("mouseup",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>

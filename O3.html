@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: Verdana, Geneva, sans-serif; font-size: 36px; font-weight: 400;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 18px; height: 18px; }
+.slider-area {
+  flex: 1; height: 32px; position: relative;
+  display: flex; align-items: center;
+  touch-action: none; cursor: pointer;
+}
+.slider-track-bg {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
+}
+.slider-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(212,175,55,0.5));
+  transition: width 0.15s ease;
+}
+.slider-dots {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; padding: 0 2px;
+}
+.slider-tick {
+  width: 2px; height: 8px; border-radius: 1px;
+  background: rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.slider-tick.major { height: 12px; background: rgba(255,255,255,0.12); }
+.slider-tick.active { background: var(--gold); height: 14px; width: 3px; border-radius: 1.5px; box-shadow: 0 0 6px rgba(212,175,55,0.4); }
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px solid #1a1528;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  cursor: grab; transition: left 0.12s ease;
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
+.slider-thumb.dragging { transition: none; transform: translate(-50%, -50%) scale(1.15); }
+.slider-counter {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.08em;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1><a href="index.html" style="color:inherit;text-decoration:none;">Spelling Bee</a></h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="slider-area" id="sliderArea">
+      <div class="slider-track-bg">
+        <div class="slider-fill" id="sliderFill"></div>
+      </div>
+      <div class="slider-dots" id="sliderDots"></div>
+      <div class="slider-thumb" id="sliderThumb"></div>
+    </div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'Oaxaca', pronunciation:'wah-HAH-kah', ipa:'/wɑːˈhɑːkə/', pos:'noun', def:'A state and city in southern Mexico, renowned for its indigenous cultures, colonial architecture, mezcal, and elaborate cuisine including mole sauces.', lang:'Nahuatl, from Huaxyacac (\'place of the huaje tree\'), the name given by Aztec soldiers to this Zapotec and Mixtec region.', example:'The markets of Oaxaca overflowed with dried chilies, chocolate, and handmade tortillas, the culinary heart of one of Mexico\'s most culturally rich states.', isNoun:true },
+  { word:'obeisant', pronunciation:'oh-BAY-sunt', ipa:'/oʊˈbeɪsənt/', pos:'adjective', def:'Showing deference or homage; respectfully obedient; deferential.', lang:'French, from obeissant, present participle of obeir (\'to obey\'), from Latin oboedire (\'to obey\'), from ob- + audire (\'to hear\').', example:'The courtiers stood in obeisant silence as the queen entered the throne room, every head bowed in deference to her authority.', isNoun:false },
+  { word:'Oenone', pronunciation:'ee-NOH-nee', ipa:'/iːˈnoʊni/', pos:'noun', def:'In Greek mythology, a nymph of Mount Ida who was the first wife of Paris before he abandoned her for Helen of Troy.', lang:'Greek, from Oinone, a mountain nymph with the gift of prophecy who warned Paris that his abduction of Helen would bring ruin to Troy.', example:'Oenone had warned Paris that stealing Helen would destroy Troy, but the lovestruck prince ignored his abandoned wife\'s desperate prophecy.', isNoun:true },
+  { word:'oeuvre', pronunciation:'UH-vruh', ipa:'/ˈʌvrə/', pos:'noun', def:'The complete works of a writer, artist, or composer regarded as a whole; a body of artistic work.', lang:'French, from oeuvre (\'a work\'), from Latin opera (\'works\'), plural of opus (\'a work\').', example:'The retrospective displayed the artist\'s entire oeuvre, from her earliest student sketches to the monumental canvases of her final years.', isNoun:true },
+  { word:'ogival', pronunciation:'oh-JY-vul', ipa:'/oʊˈdʒaɪvəl/', pos:'adjective', def:'Having the form of an ogive; pointed or arched in a Gothic style; of a bullet or projectile, having a curved, pointed nose.', lang:'French, from ogive (\'a pointed arch\'), of uncertain origin, possibly from Arabic auj (\'highest point\'), + -al.', example:'The ogival arches of the Gothic cathedral soared to dizzying heights, their pointed profiles directing the eye — and the spirit — heavenward.', isNoun:false },
+  { word:'olecranon', pronunciation:'oh-LEK-ruh-non', ipa:'/oʊˈlɛkrəˌnɒn/', pos:'noun', def:'The bony prominence at the tip of the elbow, forming the point of the elbow; the proximal end of the ulna.', lang:'Greek, from olekranon (\'the point of the elbow\'), from olene (\'the elbow\') + kranion (\'the head, skull\').', example:'The X-ray revealed a fracture of the olecranon, the bony tip of the elbow cracked by the impact of the fall.', isNoun:true },
+  { word:'onomatopoeia', pronunciation:'ON-uh-MAT-uh-PEE-uh', ipa:'/ˌɒnəˌmætəˈpiːə/', pos:'noun', def:'The formation of a word that imitates the sound it describes, such as "buzz," "hiss," or "splash."', lang:'Greek, from onomatopoiia (\'word-making\'), from onoma (\'a name, word\') + poiein (\'to make, create\').', example:'The comic book was filled with onomatopoeia — "POW!", "CRASH!", and "SPLAT!" leaping from the panels in bold, colorful letters.', isNoun:true },
+  { word:'onychorrhexis', pronunciation:'ON-ih-koh-REK-sis', ipa:'/ˌɒnɪkoʊˈrɛksɪs/', pos:'noun', def:'A condition characterized by brittle, ridged nails that tend to split and break easily along their length.', lang:'Greek, from onyx (genitive onychos, \'a nail\') + rhexis (\'a rupture, breaking\').', example:'The dermatologist diagnosed onychorrhexis, prescribing biotin supplements to strengthen the patient\'s brittle, splitting fingernails.', isNoun:true },
+  { word:'oolite', pronunciation:'OH-oh-lyt', ipa:'/ˈoʊəˌlaɪt/', pos:'noun', def:'A sedimentary rock consisting of small, rounded grains cemented together, each grain built up in concentric layers like tiny pearls.', lang:'Greek, from oon (\'an egg\') + lithos (\'a stone\'), because the tiny round grains resemble fish eggs.', example:'The limestone cliff was composed of oolite, the rock\'s surface showing millions of tiny spherical grains cemented together over millions of years.', isNoun:true },
+  { word:'oopuhue', pronunciation:'OH-oh-POO-hoo-ay', ipa:'/ˌoʊoʊˈpuːhuːeɪ/', pos:'noun', def:'A Hawaiian porcupine fish or balloon fish, traditionally dried and used as a lantern or ornament.', lang:'Hawaiian, from oopuhue (\'a puffer fish\'), the inflatable fish traditionally used in Hawaiian culture as a decorative lantern when dried.', example:'The dried oopuhue hung from the ceiling of the museum, the puffed-up porcupine fish once used by Hawaiians as a natural lantern.', isNoun:true },
+  { word:'Oort cloud', pronunciation:'ORT KLOWD', ipa:'/ˈɔːrt ˌklaʊd/', pos:'noun', def:'A theoretical vast spherical shell of icy objects surrounding the solar system at a great distance, believed to be the source of long-period comets.', lang:'Named after Jan Oort (1900-1992), the Dutch astronomer who proposed its existence in 1950.', example:'The Oort cloud lies at the very edge of the sun\'s gravitational influence, a trillion icy bodies drifting in the darkness nearly a light-year away.', isNoun:true },
+  { word:'oppidan', pronunciation:'OP-ih-dun', ipa:'/ˈɒpɪdən/', pos:'noun', def:'A student at Eton College who boards in the town rather than in the school itself; a townsperson as opposed to a gownsperson.', lang:'Latin, from oppidanus (\'of a town\'), from oppidum (\'a town\'), describing those who reside in the town rather than within the college walls.', example:'The oppidans lodged in houses throughout the town of Eton, while the King\'s Scholars lived within the ancient college walls.', isNoun:true },
+  { word:'Orinoco', pronunciation:'OR-ih-NOH-koh', ipa:'/ˌɒrɪˈnoʊkoʊ/', pos:'noun', def:'One of the longest rivers in South America, flowing through Venezuela and Colombia, surrounded by vast tropical wilderness.', lang:'From an indigenous Guarao language, possibly meaning \'a place to paddle\' or \'great river\', the name of this major South American waterway.', example:'The Orinoco River winds through some of the most remote wilderness in South America, its vast delta home to howler monkeys, jaguars, and giant anacondas.', isNoun:true },
+  { word:'ormolu', pronunciation:'OR-muh-loo', ipa:'/ˈɔːrməˌluː/', pos:'noun', def:'Gilded bronze or a gold-colored alloy used to decorate furniture, clocks, and ornamental objects in the French style.', lang:'French, from or moulu (\'ground gold\'), from or (\'gold\') + moulu, past participle of moudre (\'to grind\'), describing the technique of applying ground gold to bronze.', example:'The Louis XV clock was adorned with exquisite ormolu mounts, the gilded bronze cherubs and scrollwork gleaming as brightly as the day they were cast.', isNoun:true },
+  { word:'orogeny', pronunciation:'oh-ROJ-uh-nee', ipa:'/ɔːˈrɒdʒəni/', pos:'noun', def:'The process of mountain formation, especially by folding and faulting of the earth\'s crust.', lang:'Greek, from oros (\'a mountain\') + -geny (from genesis, \'origin, creation\').', example:'The Himalayan orogeny began when the Indian tectonic plate collided with Asia, the immense forces crumpling the earth\'s crust into the highest mountains on the planet.', isNoun:true },
+  { word:'orpheon', pronunciation:'or-FAY-on', ipa:'/ɔːrˈfeɪɒn/', pos:'noun', def:'A male choral society, especially in 19th-century France; a concert hall for choral performances.', lang:'French, from orpheon, named after Orpheus, the legendary musician of Greek mythology, describing community choral societies.', example:'The orpheon performed Berlioz with stirring conviction, the hundred-voice male chorus filling the concert hall with thunderous harmony.', isNoun:true },
+  { word:'oryx', pronunciation:'OR-iks', ipa:'/ˈɒrɪks/', pos:'noun', def:'A large antelope with long, straight or slightly curved horns, native to the arid regions of Africa and the Arabian Peninsula.', lang:'Greek, from oryx (\'a pickaxe\'), later applied to a pointed-horned antelope, from oryssein (\'to dig\').', example:'The Arabian oryx, once hunted nearly to extinction, has been successfully reintroduced to the wild, its magnificent straight horns silhouetted against the desert sky.', isNoun:true },
+  { word:'ostium', pronunciation:'OS-tee-um', ipa:'/ˈɒstiəm/', pos:'noun', def:'An opening or mouth-like structure in the body, such as the opening of a blood vessel, fallopian tube, or sponge.', lang:'Latin, from ostium (\'a door, entrance, mouth\'), from os (\'a mouth\').', example:'The cardiologist examined the ostium of the coronary artery, checking the vessel\'s opening for any blockage that might restrict blood flow to the heart.', isNoun:true },
+  { word:'Ouagadougou', pronunciation:'WAH-guh-DOO-goo', ipa:'/ˌwɑːɡəˈduːɡuː/', pos:'noun', def:'The capital and largest city of Burkina Faso, a major cultural center of West Africa known for its film festival and vibrant markets.', lang:'Mossi, from Ouagadougou, meaning \'you are welcome here\' in the Mossi language, reflecting the city\'s tradition of hospitality.', example:'Ouagadougou hosts FESPACO, Africa\'s largest film festival, drawing filmmakers from across the continent to this vibrant Sahelian capital every two years.', isNoun:true },
+  { word:'oud', pronunciation:'OOD', ipa:'/uːd/', pos:'noun', def:'A pear-shaped stringed instrument central to Arabic, Turkish, and Persian music, considered the ancestor of the European lute.', lang:'Arabic, from al-ud (\'the wood\'), from ud (\'a thin piece of wood, a stick\'), the instrument that became the European lute.', example:'The musician cradled the oud and began to play, the pear-shaped instrument\'s haunting tones filling the courtyard with the melodies of the Middle East.', isNoun:true },
+  { word:'outre', pronunciation:'oo-TRAY', ipa:'/uːˈtreɪ/', pos:'adjective', def:'Unusual and startling; bizarre; exceeding the bounds of what is considered normal or proper.', lang:'French, from outre (\'exaggerated, excessive\'), past participle of outrer (\'to exceed\'), from Latin ultra (\'beyond\').', example:'The designer\'s outre collection featured dresses made of recycled circuit boards and hats shaped like satellite dishes, dividing critics between admiration and bewilderment.', isNoun:false },
+  { word:'oviparous', pronunciation:'oh-VIP-uh-rus', ipa:'/oʊˈvɪpərəs/', pos:'adjective', def:'Producing young by means of eggs that hatch after being laid by the parent; egg-laying.', lang:'Latin, from oviparus (\'egg-bearing\'), from ovum (\'an egg\') + parere (\'to bring forth, bear\').', example:'Most reptiles are oviparous, laying eggs in nests or burrows and leaving the warmth of the sun to incubate their developing young.', isNoun:false },
+  { word:'oxyacetylene', pronunciation:'OK-see-uh-SET-uh-leen', ipa:'/ˌɒksiəˈsɛtɪˌliːn/', pos:'adjective', def:'Of or using a mixture of oxygen and acetylene, especially in a very hot flame used for cutting and welding metal.', lang:'English, from oxy(gen) (from Greek oxys, \'sharp, acid\' + -gen) + acetylene (from Latin acetum, \'vinegar\', + Greek hyle, \'matter\').', example:'The welder fired up the oxyacetylene torch, its intensely hot blue flame cutting through the steel plate like a knife through warm butter.', isNoun:false }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Slider
+  const totalA = a.length;
+  const pct = totalA > 1 ? s / (totalA - 1) * 100 : 0;
+  document.getElementById("sliderFill").style.width = pct + "%";
+  const sliderArea = document.getElementById("sliderArea");
+  const areaW = sliderArea.offsetWidth || 200;
+  const pad = 10;
+  const thumbLeft = pad + (pct / 100) * (areaW - pad * 2);
+  const thumb = document.getElementById("sliderThumb");
+  if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
+
+  // Ticks - show ~20 evenly spaced markers
+  const tickCount = Math.min(totalA, 20);
+  let ticksHtml = '';
+  for(let t=0; t<tickCount; t++){
+    const ti = Math.round(t / (tickCount-1) * (totalA-1));
+    const cls = ti===s ? 'active' : (t % 5 === 0 ? 'major' : '');
+    ticksHtml += `<div class="slider-tick ${cls}"></div>`;
+  }
+  document.getElementById("sliderDots").innerHTML = ticksHtml;
+  document.getElementById("sliderCounter").textContent = `${s+1} / ${totalA}`;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Slider drag
+const slArea=document.getElementById("sliderArea");
+const slThumb=document.getElementById("sliderThumb");
+let slDragging=false;
+function sliderFromX(cx){
+  const r=slArea.getBoundingClientRect();
+  const pad=10;
+  const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
+  const a=aw(),idx=Math.round(p*(a.length-1));
+  // Move thumb immediately for smooth feel
+  const thumbLeft=pad+(p)*(r.width-pad*2);
+  slThumb.style.left=thumbLeft+"px";
+  if(idx!==si()){
+    const g=WORDS.findIndex(w=>w.word===a[idx].word);
+    flipped=false; currentIndex=g; render();
+  }
+}
+slArea.addEventListener("touchstart",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(slDragging) sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    // Speak the word after releasing
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+slArea.addEventListener("mousedown",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.clientX); e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(slDragging) sliderFromX(e.clientX);
+});
+document.addEventListener("mouseup",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>

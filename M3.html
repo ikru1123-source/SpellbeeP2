@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: Verdana, Geneva, sans-serif; font-size: 36px; font-weight: 400;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 18px; height: 18px; }
+.slider-area {
+  flex: 1; height: 32px; position: relative;
+  display: flex; align-items: center;
+  touch-action: none; cursor: pointer;
+}
+.slider-track-bg {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
+}
+.slider-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(212,175,55,0.5));
+  transition: width 0.15s ease;
+}
+.slider-dots {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; padding: 0 2px;
+}
+.slider-tick {
+  width: 2px; height: 8px; border-radius: 1px;
+  background: rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.slider-tick.major { height: 12px; background: rgba(255,255,255,0.12); }
+.slider-tick.active { background: var(--gold); height: 14px; width: 3px; border-radius: 1.5px; box-shadow: 0 0 6px rgba(212,175,55,0.4); }
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px solid #1a1528;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  cursor: grab; transition: left 0.12s ease;
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
+.slider-thumb.dragging { transition: none; transform: translate(-50%, -50%) scale(1.15); }
+.slider-counter {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.08em;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1><a href="index.html" style="color:inherit;text-decoration:none;">Spelling Bee</a></h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="slider-area" id="sliderArea">
+      <div class="slider-track-bg">
+        <div class="slider-fill" id="sliderFill"></div>
+      </div>
+      <div class="slider-dots" id="sliderDots"></div>
+      <div class="slider-thumb" id="sliderThumb"></div>
+    </div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'macchiato', pronunciation:'MAH-kee-AH-toh', ipa:'/ˌmɑːkiˈɑːtoʊ/', pos:'noun', def:'An espresso coffee drink "stained" or "marked" with a small amount of steamed milk or foam.', lang:'Italian, from macchiato (\'stained, spotted\'), past participle of macchiare (\'to stain\'), from macchia (\'a spot\'), from Latin macula.', example:'She ordered a macchiato, the barista topping the intense espresso shot with just a dollop of velvety foam.', isNoun:true },
+  { word:'macigno', pronunciation:'mah-CHEEN-yoh', ipa:'/mɑːˈtʃiːnjoʊ/', pos:'noun', def:'A type of hard, gray-brown Italian sandstone used extensively in Florentine architecture and sculpture.', lang:'Italian, from macigno (\'a hard sandstone\'), from Latin machina or possibly from a pre-Roman word for stone, the building stone of Florence.', example:'The Palazzo Vecchio was constructed of macigno, the tough Tuscan sandstone giving the fortress-like building its distinctive gray-brown color.', isNoun:true },
+  { word:'mackinaw', pronunciation:'MAK-ih-naw', ipa:'/ˈmækɪˌnɔː/', pos:'noun', def:'A short, heavy, double-breasted coat of plaid wool; also a flat-bottomed boat used on the Great Lakes.', lang:'Named after Mackinac Island in Michigan (from Ojibwe michilimackinac, \'great turtle\'), where such coats and boats were traded.', example:'The lumberjack pulled on his red plaid mackinaw against the biting Michigan wind, the heavy wool coat a symbol of the north woods.', isNoun:true },
+  { word:'macushla', pronunciation:'muh-KOOSH-luh', ipa:'/məˈkʊʃlə/', pos:'noun', def:'An Irish term of endearment meaning "my darling" or "pulse of my heart."', lang:'Irish Gaelic, from mo chuisle (\'my pulse\'), a contraction of a chuisle mo chroí (\'pulse of my heart\'), an intimate term of affection.', example:'The old man whispered macushla to his wife of sixty years, the tender Irish endearment carrying a lifetime of devotion.', isNoun:true },
+  { word:'mademoiselle', pronunciation:'MAD-mwah-ZEL', ipa:'/ˌmædmwɑːˈzɛl/', pos:'noun', def:'A French title of respect for an unmarried woman; the equivalent of "Miss."', lang:'French, from ma (\'my\') + demoiselle (\'a young lady\'), from Old French dameisele, from Latin domicella, diminutive of domina (\'mistress\').', example:'The waiter addressed the young woman as mademoiselle, the formal French title adding an air of old-world courtesy to the Parisian restaurant.', isNoun:true },
+  { word:'maerl', pronunciation:'MARL', ipa:'/mɑːrl/', pos:'noun', def:'A calcareous seaweed that forms hard, coral-like nodules on the ocean floor, used as a soil conditioner and water purifier.', lang:'Breton, from maerl (\'a calcareous seaweed\'), the coralline algae harvested from the coasts of Brittany and the British Isles.', example:'The diver collected samples of maerl from the seabed, the pink calcareous algae forming a living reef that supported a rich diversity of marine life.', isNoun:true },
+  { word:'maillot', pronunciation:'my-OH', ipa:'/maɪˈoʊ/', pos:'noun', def:'A woman\'s one-piece swimsuit; a tight-fitting garment worn by dancers or athletes; in cycling, a jersey.', lang:'French, from maillot (\'a jersey, leotard\'), from maille (\'a mesh, stitch\'), from Latin macula (\'a mesh of a net\').', example:'The Tour de France leader wore the maillot jaune, the iconic yellow jersey marking him as the race\'s overall frontrunner.', isNoun:true },
+  { word:'majuscule', pronunciation:'MAJ-uh-skyool', ipa:'/ˈmædʒəˌskjuːl/', pos:'noun', def:'A large letter, either capital or uncial, used in writing or printing; uppercase lettering.', lang:'Latin, from majusculus (\'somewhat larger\'), diminutive of major (\'larger\'), contrasted with minuscule.', example:'The medieval manuscript began each chapter with an ornate majuscule, the oversized initial letter illuminated in gold leaf and vivid pigments.', isNoun:true },
+  { word:'Makgadikgadi Pans', pronunciation:'mak-GAH-dee-GAH-dee PANZ', ipa:'/mɑːkˌɡɑːdiˈɡɑːdi ˌpænz/', pos:'noun', def:'A vast area of salt flats in northeastern Botswana, the remnants of an ancient superlake, among the largest salt pans in the world.', lang:'Tswana, from Makgadikgadi, the local name for these immense salt flats that were once part of a lake larger than Switzerland.', example:'The Makgadikgadi Pans shimmered like a white mirage under the African sun, the vast salt flats stretching to the horizon in blinding brightness.', isNoun:true },
+  { word:'malaise', pronunciation:'muh-LAYZ', ipa:'/məˈleɪz/', pos:'noun', def:'A general feeling of discomfort, illness, or unease whose cause is difficult to identify; a vague sense that something is wrong.', lang:'French, from malaise (\'discomfort\'), from Old French mal (\'bad\') + aise (\'ease\'), literally \'bad ease\'.', example:'A strange malaise settled over the office after the layoffs were announced, everyone going through the motions with a sense of quiet dread.', isNoun:true },
+  { word:'Mandelbrot set', pronunciation:'MAN-dul-brot SET', ipa:'/ˈmændəlˌbrɒt ˌsɛt/', pos:'noun', def:'A famous mathematical set of complex numbers that produces an infinitely detailed fractal boundary when plotted, revealing self-similar patterns at every scale.', lang:'Named after Benoit Mandelbrot (1924-2010), the Polish-French-American mathematician who studied and popularized fractals.', example:'Zooming into the Mandelbrot set reveals an endless universe of spirals, seahorses, and miniature copies of the whole, each level more intricate than the last.', isNoun:true },
+  { word:'mandorla', pronunciation:'man-DOR-luh', ipa:'/mænˈdɔːrlə/', pos:'noun', def:'An almond-shaped frame or halo surrounding a sacred figure in medieval and Byzantine art, symbolizing divine glory.', lang:'Italian, from mandorla (\'an almond\'), from Latin amygdala, from Greek amygdale, because the shape resembles an almond.', example:'Christ was depicted within a golden mandorla in the apse mosaic, the almond-shaped halo of light signifying his divine radiance.', isNoun:true },
+  { word:'mandragora', pronunciation:'man-DRAG-or-uh', ipa:'/mænˈdræɡərə/', pos:'noun', def:'The mandrake plant, steeped in legend for its human-shaped root, believed to shriek when uprooted and used in love potions and magical rites.', lang:'Latin, from mandragora, from Greek mandragoras (\'the mandrake plant\'), of uncertain origin, the legendary magical root.', example:'Medieval herbalists approached the mandragora with superstitious dread, tying a dog to the root to pull it from the earth and avoid its deadly shriek.', isNoun:true },
+  { word:'mange-tout', pronunciation:'MAHNZH-too', ipa:'/ˌmɑːnʒˈtuː/', pos:'noun', def:'A variety of pea or bean eaten whole, pod and all, such as snow peas or sugar snap peas.', lang:'French, from mange-tout (\'eat-all\'), from manger (\'to eat\') + tout (\'all, everything\'), because the entire pod is consumed.', example:'She tossed the crisp mange-tout into the stir-fry at the last moment, the sugar snap peas adding a sweet crunch to the dish.', isNoun:true },
+  { word:'mangonel', pronunciation:'MANG-guh-nel', ipa:'/ˈmæŋɡəˌnɛl/', pos:'noun', def:'A medieval siege engine that used a rotating arm to hurl stones and projectiles at fortifications.', lang:'Old French, from mangonel, from Medieval Latin manganellus, from Greek manganon (\'an engine of war\'), a torsion-powered catapult.', example:'The attackers positioned their mangonels within range of the castle walls, the siege engines hurling boulders that shattered the ancient stonework.', isNoun:true },
+  { word:'Manu', pronunciation:'MAH-noo', ipa:'/ˈmɑːnuː/', pos:'noun', def:'In Hindu mythology, the progenitor of humanity; the first man and lawgiver, author of the Laws of Manu governing social conduct.', lang:'Sanskrit, from Manu (\'man, thinker\'), from the root man (\'to think\'), the mythological ancestor of all human beings.', example:'According to Hindu tradition, Manu was warned by a divine fish about a great flood and survived by building a boat, a tale echoing flood myths worldwide.', isNoun:true },
+  { word:'Marathi', pronunciation:'muh-RAH-tee', ipa:'/məˈrɑːti/', pos:'noun', def:'An Indo-Aryan language spoken primarily in the Indian state of Maharashtra, with over 80 million native speakers.', lang:'From Maratha, the people and historical kingdom of western India, + -i, the language of Maharashtra state including Mumbai.', example:'Marathi literature boasts a tradition spanning nearly a thousand years, from medieval saint-poets to modern novelists and playwrights.', isNoun:true },
+  { word:'marcel', pronunciation:'mar-SEL', ipa:'/mɑːrˈsɛl/', pos:'noun', def:'A deep, regular wave set in the hair using a heated curling iron, fashionable in the early 20th century.', lang:'Named after Marcel Grateau (1852-1936), the French hairdresser who invented the technique of creating uniform waves with heated irons.', example:'The 1920s film star\'s perfect marcel waves framed her face in glossy, sculpted undulations that defined the glamour of the Jazz Age.', isNoun:true },
+  { word:'marcescent', pronunciation:'mar-SES-unt', ipa:'/mɑːrˈsɛsənt/', pos:'adjective', def:'Of leaves or petals, withering but remaining attached to the plant instead of falling off.', lang:'Latin, from marcescens, present participle of marcescere (\'to wither, fade\'), from marcere (\'to be feeble\').', example:'The beech tree\'s marcescent leaves clung stubbornly to its branches through winter, their papery brown forms rustling in the cold wind until spring growth pushed them off.', isNoun:false },
+  { word:'maringouin', pronunciation:'MAR-in-gwan', ipa:'/ˈmærɪŋɡwæ̃/', pos:'noun', def:'A mosquito; used in Cajun and Creole French to describe the mosquitoes of the Louisiana bayou.', lang:'Canadian and Louisiana French, from maringouin (\'a mosquito\'), from Tupi marigui or a related indigenous South American language.', example:'The maringouins descended in swarms at dusk, the bayou mosquitoes so thick that no amount of repellent could keep them at bay.', isNoun:true },
+  { word:'martinoe', pronunciation:'MAR-tih-noh', ipa:'/ˈmɑːrtɪˌnoʊ/', pos:'noun', def:'A small heraldic bird, depicted without feet, used as a charge in coats of arms, symbolizing continuous flight.', lang:'French, from merlette or martinoe (\'a footless heraldic bird\'), from martin (\'a house martin\'), depicting a swallow-like bird without visible feet.', example:'The knight\'s shield bore three martinoes in silver, the footless heraldic birds symbolizing his family\'s restless spirit and ceaseless ambition.', isNoun:true },
+  { word:'mascarpone', pronunciation:'MAS-kar-POH-nay', ipa:'/ˌmæskɑːrˈpoʊneɪ/', pos:'noun', def:'A rich, smooth Italian cream cheese with a high butterfat content, essential in tiramisu and other Italian desserts.', lang:'Italian, from mascarpone, possibly from mascarpia (\'ricotta cream\'), from a Lombard dialect, the luxuriously creamy cheese of northern Italy.', example:'The chef folded mascarpone into the espresso-soaked ladyfingers, the velvety Italian cream cheese creating the luscious heart of a perfect tiramisu.', isNoun:true },
+  { word:'mässig', pronunciation:'MES-ikh', ipa:'/ˈmɛsɪx/', pos:'adverb', def:'A musical direction meaning moderately; at a moderate tempo.', lang:'German, from mässig (\'moderate\'), from Mass (\'measure\'), a tempo indication used especially in German Romantic music.', example:'The score was marked mässig, the German tempo direction guiding the orchestra to play at a measured, unhurried pace.', isNoun:false },
+  { word:'mediobrome', pronunciation:'MEE-dee-oh-brohm', ipa:'/ˌmiːdioʊˈbroʊm/', pos:'noun', def:'A type of grass belonging to an intermediate form of brome grass, found in temperate meadows and pastures.', lang:'Latin, from medius (\'middle\') + bromus (from Greek bromos, \'oats, a type of grass\'), an intermediate brome grass.', example:'The botanist identified the meadow grass as a mediobrome, its characteristics placing it between the upland and lowland brome species.', isNoun:true },
+  { word:'medulla', pronunciation:'meh-DUL-uh', ipa:'/mɪˈdʌlə/', pos:'noun', def:'The inner region of an organ or tissue, especially the brainstem region controlling vital functions like breathing and heart rate.', lang:'Latin, from medulla (\'marrow, pith, innermost part\'), the central core of organs and structures.', example:'The medulla oblongata controls the body\'s most essential automatic functions — breathing, heart rate, and blood pressure — without conscious thought.', isNoun:true },
+  { word:'megrims', pronunciation:'MEE-grimz', ipa:'/ˈmiːɡrɪmz/', pos:'noun', def:'Low spirits; depression or melancholy; also an archaic term for migraines or whims.', lang:'Middle English, from megrim (\'a migraine\'), from Old French migraine, from Late Latin hemicrania (\'pain in half the head\'), from Greek.', example:'A fit of the megrims kept her in bed all morning, the vague melancholy and listlessness resisting every attempt to shake it off.', isNoun:true },
+  { word:'meiosis', pronunciation:'my-OH-sis', ipa:'/maɪˈoʊsɪs/', pos:'noun', def:'A type of cell division that produces reproductive cells with half the normal number of chromosomes; also a rhetorical understatement.', lang:'Greek, from meiosis (\'a lessening, diminution\'), from meioun (\'to lessen\'), from meion (\'less\').', example:'During meiosis, a single cell divides twice to produce four cells, each carrying only half the genetic information needed to create a new organism.', isNoun:true },
+  { word:'mele', pronunciation:'MEH-leh', ipa:'/ˈmɛleɪ/', pos:'noun', def:'A Hawaiian song or chant, often accompanied by dance; the poetry and music central to Hawaiian cultural expression.', lang:'Hawaiian, from mele (\'a song, poem, chant\'), the oral tradition of musical storytelling in Hawaiian culture.', example:'The kumu hula composed a new mele for the festival, the Hawaiian chant honoring the volcano goddess Pele with ancient words and modern melody.', isNoun:true },
+  { word:'Menaia', pronunciation:'meh-NY-uh', ipa:'/mɛˈnaɪə/', pos:'noun', def:'A set of twelve liturgical books in the Eastern Orthodox Church, one for each month, containing hymns and readings for saints\' feast days.', lang:'Greek, from menaia, plural of menaion (\'a monthly book\'), from men (\'a month\'), the monthly service books of the Orthodox Church.', example:'The monk consulted the Menaia for the appropriate hymns, selecting the chants assigned to the saint whose feast day fell that morning.', isNoun:true },
+  { word:'Merak', pronunciation:'MEH-rak', ipa:'/ˈmɛræk/', pos:'noun', def:'A star in the constellation Ursa Major, forming one of the two "pointer stars" that guide observers to find Polaris, the North Star.', lang:'Arabic, from maraqq (\'the loins, flank\'), from its position on the body of the Great Bear constellation.', example:'By drawing a line through Merak and Dubhe in the Big Dipper and extending it northward, any stargazer can find Polaris.', isNoun:true },
+  { word:'meringue', pronunciation:'muh-RANG', ipa:'/məˈræŋ/', pos:'noun', def:'A light, sweet confection made from whipped egg whites and sugar, baked until crisp on the outside and soft within.', lang:'French, from meringue, of uncertain origin, possibly from Swiss German meringg or from the town of Meiringen in Switzerland.', example:'The lemon meringue pie was crowned with peaks of golden-tipped meringue, each crisp shell giving way to a marshmallow-soft interior.', isNoun:true },
+  { word:'Metonic cycle', pronunciation:'meh-TON-ik SY-kul', ipa:'/mɪˈtɒnɪk ˈsaɪkəl/', pos:'noun', def:'A period of approximately 19 years after which the phases of the moon recur on the same days of the solar year, used to calculate the date of Easter.', lang:'Named after Meton of Athens (5th century BC), the Greek astronomer who discovered this 19-year lunar-solar cycle.', example:'The Metonic cycle allowed ancient astronomers to predict eclipses and align lunar and solar calendars, a discovery still used to calculate the date of Easter.', isNoun:true },
+  { word:'micellar', pronunciation:'my-SEL-ur', ipa:'/maɪˈsɛlər/', pos:'adjective', def:'Of or relating to micelles, tiny clusters of surfactant molecules that form in liquids, used in cosmetics and chemistry.', lang:'Latin, from micella (\'a small crumb\'), diminutive of mica (\'a crumb, grain\'), + -ar.', example:'The micellar cleansing water attracted dirt and oil with its microscopic surfactant clusters, removing makeup without the need for rinsing.', isNoun:false },
+  { word:'microfiche', pronunciation:'MY-kroh-feesh', ipa:'/ˈmaɪkroʊˌfiːʃ/', pos:'noun', def:'A flat piece of film containing greatly reduced photographs of printed pages, used for compact storage and retrieval of documents before digital archiving.', lang:'French, from micro- (from Greek mikros, \'small\') + fiche (\'a slip of paper, index card\'), from ficher (\'to fix\').', example:'The researcher scrolled through rolls of microfiche in the library basement, the tiny filmed pages of old newspapers flickering across the reader screen.', isNoun:true },
+  { word:'mille-feuille', pronunciation:'MEEL-foy', ipa:'/ˌmiːlˈfɔɪ/', pos:'noun', def:'A French pastry consisting of layers of puff pastry alternating with cream and sometimes topped with icing; a Napoleon.', lang:'French, from mille (\'a thousand\') + feuille (\'a leaf, layer\'), literally \'a thousand layers\', describing the flaky pastry.', example:'The mille-feuille shattered at the first bite, its countless flaky layers giving way to smooth vanilla cream and a shower of powdered sugar.', isNoun:true },
+  { word:'millegrain', pronunciation:'MIL-uh-grayn', ipa:'/ˈmɪləˌɡreɪn/', pos:'noun', def:'A decorative technique in jewelry where tiny beads of metal are applied along the edges of settings, creating a delicate beaded border.', lang:'French, from mille (\'a thousand\') + grain (\'a grain, bead\'), literally \'a thousand grains\', the fine beadwork on jewelry settings.', example:'The antique engagement ring featured millegrain edging around the diamond, the tiny metal beads giving the setting a vintage, lace-like delicacy.', isNoun:true },
+  { word:'miombo', pronunciation:'mee-OM-boh', ipa:'/miˈɒmboʊ/', pos:'noun', def:'A type of dry deciduous woodland found across southern and eastern Africa, dominated by trees of the genus Brachystegia.', lang:'Swahili, from miombo (plural of muombo, \'a type of tree\'), the dominant woodland ecosystem of sub-Saharan Africa.', example:'The miombo woodland stretched for hundreds of miles across Tanzania, its open canopy of deciduous trees sheltering elephants, sable antelope, and wild dogs.', isNoun:true },
+  { word:'Mirach', pronunciation:'MY-rak', ipa:'/ˈmaɪræk/', pos:'noun', def:'A bright red giant star in the constellation Andromeda, used as a guide to find the Andromeda Galaxy.', lang:'Arabic, from mi\'zar (\'a girdle, waistcloth\'), describing the star\'s position on the body of the constellation Andromeda.', example:'The amateur astronomer used Mirach as a stepping stone, hopping from the bright star to find the faint smudge of the Andromeda Galaxy nearby.', isNoun:true },
+  { word:'miscible', pronunciation:'MIS-ih-bul', ipa:'/ˈmɪsɪbəl/', pos:'adjective', def:'Capable of being mixed together in any proportion without separating, especially of liquids.', lang:'Latin, from miscibilis (\'that can be mixed\'), from miscere (\'to mix\').', example:'Water and alcohol are miscible, blending together in any ratio, while water and oil are famously immiscible and always separate.', isNoun:false },
+  { word:'mittimus', pronunciation:'MIT-ih-mus', ipa:'/ˈmɪtɪməs/', pos:'noun', def:'A warrant committing a person to prison; a legal writ directing a jailer to hold a prisoner.', lang:'Latin, from mittimus (\'we send\'), first person plural present indicative of mittere (\'to send\'), the opening word of the commitment warrant.', example:'The judge signed the mittimus, the warrant directing the sheriff to transport the convicted man to the state penitentiary.', isNoun:true },
+  { word:'moiety', pronunciation:'MOY-uh-tee', ipa:'/ˈmɔɪəti/', pos:'noun', def:'Each of two parts into which a thing is divided; a half; in anthropology, one of two kinship groups in a society.', lang:'Old French, from moitié (\'a half\'), from Latin medietas (\'the middle, a half\'), from medius (\'middle\').', example:'The anthropologist discovered that the tribe was divided into two moieties, each clan group responsible for different ceremonial duties.', isNoun:true },
+  { word:'moline', pronunciation:'moh-LEEN', ipa:'/moʊˈliːn/', pos:'adjective', def:'In heraldry, of a cross having each arm forked and curved back at the end, resembling the iron support of a millstone.', lang:'French, from moline (\'of a mill\'), from moulin (\'a mill\'), from Latin molina, because the cross shape resembles the iron clamp holding a millstone.', example:'The family crest displayed a cross moline in gold, its curved, forked arms giving it an elegant, distinctive appearance among heraldic symbols.', isNoun:false },
+  { word:'mondegreen', pronunciation:'MON-duh-green', ipa:'/ˈmɒndəˌɡriːn/', pos:'noun', def:'A misheard or misinterpreted phrase, especially in a song lyric, that gives it a new meaning.', lang:'Coined by Sylvia Wright in 1954, who misheard the Scottish ballad line "and laid him on the green" as "and Lady Mondegreen."', example:'One of the most famous mondegreens is hearing "excuse me while I kiss this guy" instead of the actual lyric about kissing the sky.', isNoun:true },
+  { word:'MOOC', pronunciation:'MOOK', ipa:'/muːk/', pos:'noun', def:'A Massive Open Online Course; a free or low-cost online educational course available to a large number of participants worldwide.', lang:'English acronym, from Massive Open Online Course, coined in 2008 to describe large-scale internet-based educational offerings.', example:'She enrolled in a MOOC on artificial intelligence taught by a Stanford professor, joining fifty thousand other students from around the world.', isNoun:true },
+  { word:'moraine', pronunciation:'muh-RAYN', ipa:'/məˈreɪn/', pos:'noun', def:'An accumulation of earth, rocks, and debris carried and deposited by a glacier, forming ridges and mounds.', lang:'French, from moraine, from Savoyard morena (\'a mound of earth\'), describing the debris left behind by retreating glaciers.', example:'The long moraine curved across the valley like a natural dam, the ridge of boulders and gravel marking where the glacier had stopped thousands of years ago.', isNoun:true },
+  { word:'morion', pronunciation:'MOR-ee-on', ipa:'/ˈmɔːriən/', pos:'noun', def:'A type of open helmet with a curved brim and high crest, worn by soldiers in the 16th and 17th centuries, especially Spanish conquistadors.', lang:'Spanish, from morrión (\'a helmet\'), from morro (\'the crown of the head\'), the iconic crested helmet of the Age of Exploration.', example:'The conquistador\'s polished morion gleamed in the tropical sun, its distinctive high comb and curved brim recognizable from countless paintings of the era.', isNoun:true },
+  { word:'mortadella', pronunciation:'MOR-tuh-DEL-uh', ipa:'/ˌmɔːrtəˈdɛlə/', pos:'noun', def:'A large Italian cured sausage from Bologna, made of finely ground pork studded with cubes of fat, pistachios, and peppercorns.', lang:'Italian, from mortadella, possibly from Latin murtatum (\'sausage seasoned with myrtle berries\'), from murtus (\'myrtle\').', example:'The mortadella was sliced paper-thin, each pink round dotted with white cubes of fat and green pistachios, the pride of Bologna\'s delicatessens.', isNoun:true },
+  { word:'motherumbung', pronunciation:'MUTH-ur-um-bung', ipa:'/ˈmʌðərʌmˌbʌŋ/', pos:'noun', def:'An Australian Aboriginal term for a large, dark storm cloud or thunderhead.', lang:'From an Aboriginal Australian language, describing the massive, dark thunderstorm clouds of the Australian interior.', example:'The stockman watched the motherumbung building on the horizon, the towering black thunderhead promising a violent storm before nightfall.', isNoun:true },
+  { word:'mozo', pronunciation:'MOH-soh', ipa:'/ˈmoʊsoʊ/', pos:'noun', def:'A male servant, attendant, or helper in Spanish-speaking countries; a young man employed as an assistant or porter.', lang:'Spanish, from mozo (\'a young man, servant\'), possibly from Latin musteus (\'young, fresh\').', example:'The mozo loaded the mules with supplies for the journey, the experienced young attendant working with quiet efficiency in the mountain dawn.', isNoun:true },
+  { word:'muesli', pronunciation:'MYOOZ-lee', ipa:'/ˈmjuːzli/', pos:'noun', def:'A breakfast cereal of Swiss origin consisting of rolled oats, nuts, dried fruit, and seeds, typically eaten with milk or yogurt.', lang:'Swiss German, from Müesli (\'a little mush\'), diminutive of Mues (\'a mush, porridge\'), popularized by the Swiss physician Maximilian Bircher-Benner.', example:'She poured milk over a bowl of muesli, the mix of oats, almonds, dried apricots, and sunflower seeds her healthy start to every morning.', isNoun:true },
+  { word:'mufti', pronunciation:'MUF-tee', ipa:'/ˈmʌfti/', pos:'noun', def:'An Islamic legal expert authorized to issue rulings on religious law; also, plain clothes worn by someone who usually wears a uniform.', lang:'Arabic, from mufti (\'one who gives a fatwa\'), from afta (\'to give a legal opinion\'); the civilian clothing sense may derive from the loose robes a mufti wore.', example:'The naval officer appeared in mufti at the weekend party, his civilian clothes making him nearly unrecognizable without his uniform and medals.', isNoun:true },
+  { word:'muktuk', pronunciation:'MUK-tuk', ipa:'/ˈmʌktʌk/', pos:'noun', def:'A traditional Inuit food consisting of frozen whale skin and blubber, usually eaten raw, a vital source of vitamins in the Arctic diet.', lang:'Inuktitut, from muktuk (\'whale skin and blubber\'), a staple food of Arctic indigenous peoples rich in vitamin C.', example:'The elder cut the muktuk into small cubes, the whale skin and blubber providing essential nutrients during the long Arctic winter.', isNoun:true },
+  { word:'muliebrity', pronunciation:'MYOO-lee-EB-rih-tee', ipa:'/ˌmjuːliˈɛbrɪti/', pos:'noun', def:'Womanhood; the qualities or characteristics traditionally associated with being a woman; femininity.', lang:'Latin, from muliebris (\'womanly\'), from mulier (\'a woman\'), + -ity.', example:'The Renaissance painter celebrated muliebrity in every canvas, his portraits capturing the strength, grace, and complexity of the women who sat for him.', isNoun:true },
+  { word:'Muzak', pronunciation:'MYOO-zak', ipa:'/ˈmjuːzæk/', pos:'noun', def:'Recorded background music played in public places; generic, unobtrusive instrumental arrangements, often used pejoratively for bland music.', lang:'American trademark, coined in the 1930s as a blend of music + Kodak, the brand name for piped background music in commercial spaces.', example:'The elevator played soft Muzak, the blandly pleasant instrumental version of a pop song barely registering in anyone\'s conscious awareness.', isNoun:true },
+  { word:'myeloma', pronunciation:'MY-uh-LOH-muh', ipa:'/ˌmaɪəˈloʊmə/', pos:'noun', def:'A malignant tumor of the bone marrow, especially multiple myeloma, a cancer affecting plasma cells throughout the body.', lang:'Greek, from myelos (\'marrow\') + -oma (\'a tumor, swelling\'), describing cancer originating in the bone marrow.', example:'The oncologist diagnosed multiple myeloma after the blood tests revealed abnormal proteins and the bone scan showed characteristic lesions.', isNoun:true }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Slider
+  const totalA = a.length;
+  const pct = totalA > 1 ? s / (totalA - 1) * 100 : 0;
+  document.getElementById("sliderFill").style.width = pct + "%";
+  const sliderArea = document.getElementById("sliderArea");
+  const areaW = sliderArea.offsetWidth || 200;
+  const pad = 10;
+  const thumbLeft = pad + (pct / 100) * (areaW - pad * 2);
+  const thumb = document.getElementById("sliderThumb");
+  if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
+
+  // Ticks - show ~20 evenly spaced markers
+  const tickCount = Math.min(totalA, 20);
+  let ticksHtml = '';
+  for(let t=0; t<tickCount; t++){
+    const ti = Math.round(t / (tickCount-1) * (totalA-1));
+    const cls = ti===s ? 'active' : (t % 5 === 0 ? 'major' : '');
+    ticksHtml += `<div class="slider-tick ${cls}"></div>`;
+  }
+  document.getElementById("sliderDots").innerHTML = ticksHtml;
+  document.getElementById("sliderCounter").textContent = `${s+1} / ${totalA}`;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Slider drag
+const slArea=document.getElementById("sliderArea");
+const slThumb=document.getElementById("sliderThumb");
+let slDragging=false;
+function sliderFromX(cx){
+  const r=slArea.getBoundingClientRect();
+  const pad=10;
+  const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
+  const a=aw(),idx=Math.round(p*(a.length-1));
+  // Move thumb immediately for smooth feel
+  const thumbLeft=pad+(p)*(r.width-pad*2);
+  slThumb.style.left=thumbLeft+"px";
+  if(idx!==si()){
+    const g=WORDS.findIndex(w=>w.word===a[idx].word);
+    flipped=false; currentIndex=g; render();
+  }
+}
+slArea.addEventListener("touchstart",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(slDragging) sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    // Speak the word after releasing
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+slArea.addEventListener("mousedown",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.clientX); e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(slDragging) sliderFromX(e.clientX);
+});
+document.addEventListener("mouseup",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>

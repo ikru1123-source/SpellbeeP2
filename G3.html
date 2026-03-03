@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: Verdana, Geneva, sans-serif; font-size: 36px; font-weight: 400;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 18px; height: 18px; }
+.slider-area {
+  flex: 1; height: 32px; position: relative;
+  display: flex; align-items: center;
+  touch-action: none; cursor: pointer;
+}
+.slider-track-bg {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
+}
+.slider-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(212,175,55,0.5));
+  transition: width 0.15s ease;
+}
+.slider-dots {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; padding: 0 2px;
+}
+.slider-tick {
+  width: 2px; height: 8px; border-radius: 1px;
+  background: rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.slider-tick.major { height: 12px; background: rgba(255,255,255,0.12); }
+.slider-tick.active { background: var(--gold); height: 14px; width: 3px; border-radius: 1.5px; box-shadow: 0 0 6px rgba(212,175,55,0.4); }
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px solid #1a1528;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  cursor: grab; transition: left 0.12s ease;
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
+.slider-thumb.dragging { transition: none; transform: translate(-50%, -50%) scale(1.15); }
+.slider-counter {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.08em;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1><a href="index.html" style="color:inherit;text-decoration:none;">Spelling Bee</a></h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="slider-area" id="sliderArea">
+      <div class="slider-track-bg">
+        <div class="slider-fill" id="sliderFill"></div>
+      </div>
+      <div class="slider-dots" id="sliderDots"></div>
+      <div class="slider-thumb" id="sliderThumb"></div>
+    </div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'gabarit', pronunciation:'GAB-uh-rit', ipa:'/ˈɡæbərɪt/', pos:'noun', def:'A template or gauge used to check dimensions, especially in shipbuilding and engineering; a structural clearance outline.', lang:'French, from gabarit (\'a template, model\'), of uncertain origin, possibly from Provençal or Spanish gálibo.', example:'The engineer checked the railway car against the gabarit to ensure it would clear every tunnel and bridge along the route.', isNoun:true },
+  { word:'gabbro', pronunciation:'GAB-roh', ipa:'/ˈɡæbroʊ/', pos:'noun', def:'A dark, coarse-grained igneous rock formed deep underground, composed mainly of calcium-rich plagioclase and pyroxene.', lang:'Italian, from gabbro, named after Gabbro, a village in Tuscany, Italy, near where this type of rock was first studied.', example:'The geologist identified the dark, crystalline sample as gabbro, its coarse texture indicating it had cooled slowly deep within the earth\'s crust.', isNoun:true },
+  { word:'gaffe', pronunciation:'GAF', ipa:'/ɡæf/', pos:'noun', def:'An unintentional act or remark causing embarrassment; a blunder or faux pas.', lang:'French, from gaffe (\'a blunder\'), originally \'a boat hook\', from Provençal gaf, of uncertain origin.', example:'The politician\'s gaffe at the press conference — mispronouncing the foreign leader\'s name three times — became the evening news headline.', isNoun:true },
+  { word:'Gaia', pronunciation:'GUY-uh', ipa:'/ˈɡaɪə/', pos:'noun', def:'The Greek goddess personifying Earth; also the scientific hypothesis that Earth\'s biosphere functions as a self-regulating system.', lang:'Greek, from Gaia or Gaea (\'Earth\'), the primordial goddess who gave birth to the sky, the sea, and the mountains.', example:'The Gaia hypothesis suggests that living organisms interact with their environment to maintain conditions suitable for life on Earth.', isNoun:true },
+  { word:'gaillardia', pronunciation:'gay-LAR-dee-uh', ipa:'/ɡeɪˈlɑːrdiə/', pos:'noun', def:'A genus of brightly colored flowering plants also known as blanket flowers, native to North and South America.', lang:'Named after Gaillard de Charentonneau, an 18th-century French magistrate and patron of botany, + -ia.', example:'The gaillardias blazed across the prairie garden in rings of red and gold, their daisy-like blooms earning them the nickname blanket flowers.', isNoun:true },
+  { word:'Galahad', pronunciation:'GAL-uh-had', ipa:'/ˈɡæləˌhæd/', pos:'noun', def:'A person of exceptional purity and nobility; from the Arthurian knight who achieved the Holy Grail through his perfect virtue.', lang:'Old French, from Galahad (Galaad), the purest of King Arthur\'s knights, possibly from a Welsh or Hebrew name.', example:'He was the office Galahad, always volunteering to help, never complaining, and conducting himself with a decency that shamed the cynics around him.', isNoun:true },
+  { word:'galatea', pronunciation:'GAL-uh-TEE-uh', ipa:'/ˌɡæləˈtiːə/', pos:'noun', def:'A sturdy cotton fabric with a twill weave, used for children\'s clothing and work garments; also the mythological statue brought to life by Aphrodite.', lang:'Named after HMS Galatea, a British naval vessel whose crew wore uniforms of this fabric, ultimately from Greek Galateia (\'milk-white\').', example:'The children\'s sailor suits were made of durable galatea cloth, the sturdy cotton standing up to years of rough play and repeated washing.', isNoun:true },
+  { word:'galena', pronunciation:'guh-LEE-nuh', ipa:'/ɡəˈliːnə/', pos:'noun', def:'A bluish-gray mineral consisting of lead sulfide, the principal ore of lead, often found in cubic crystals with a metallic luster.', lang:'Latin, from galena (\'lead ore\'), possibly from Greek galene (\'calmness, stillness\'), perhaps referring to its smooth crystal faces.', example:'The galena specimen displayed perfect cubic crystals with a brilliant metallic luster, the lead ore prized by both miners and mineral collectors.', isNoun:true },
+  { word:'gallivat', pronunciation:'GAL-ih-vat', ipa:'/ˈɡælɪˌvæt/', pos:'noun', def:'A small, fast-sailing vessel with oars, used historically on the coasts of India, particularly by pirates and coastal traders.', lang:'Portuguese, from galeota or galiveta, a diminutive of galé (\'a galley\'), describing the small coastal craft of the Indian Ocean.', example:'The Maratha gallivats swarmed around the merchant ship, the small swift vessels darting in to attack before the larger guns could be brought to bear.', isNoun:true },
+  { word:'gambol', pronunciation:'GAM-bul', ipa:'/ˈɡæmbəl/', pos:'verb', def:'To run or jump about playfully; to frolic and skip with delight.', lang:'French, from gambade (\'a leap, caper\'), from Italian gambata (\'a tripping up\'), from gamba (\'a leg\'), from Latin gamba.', example:'The lambs gamboled across the spring meadow with pure joy, leaping and twisting in the warm sunshine as their mothers grazed nearby.', isNoun:false },
+  { word:'Gaspesian', pronunciation:'gas-PEE-zhun', ipa:'/ɡæsˈpiːʒən/', pos:'adjective', def:'Of or relating to the Gaspé Peninsula in eastern Quebec, Canada, known for its dramatic coastline and maritime heritage.', lang:'From Gaspé (possibly from Mi\'kmaq gespeg, \'end of the land\') + -ian, describing the peninsula at the mouth of the St. Lawrence.', example:'The Gaspesian coastline rose in sheer red cliffs above the Gulf of St. Lawrence, its rugged beauty drawing painters and photographers from around the world.', isNoun:false },
+  { word:'gasthaus', pronunciation:'GAHST-hows', ipa:'/ˈɡɑːstˌhaʊs/', pos:'noun', def:'A small German inn or guesthouse offering food, drink, and lodging to travelers.', lang:'German, from Gast (\'a guest\') + Haus (\'a house\'), literally \'guesthouse\'.', example:'The weary hikers found refuge at a charming gasthaus in the Bavarian village, warming themselves by the fire with hearty stew and dark beer.', isNoun:true },
+  { word:'gattine', pronunciation:'gah-TEEN', ipa:'/ɡɑːˈtiːn/', pos:'noun', def:'A disease of silkworms caused by a parasitic protozoan, resulting in dark spots on the skin and eventual death of the larvae.', lang:'French, from gattine (\'a silkworm disease\'), from Italian gattina (\'a kitten\'), possibly because affected worms curl up like kittens.', example:'Pasteur\'s research on gattine in French silk farms led to methods of prevention that saved the silk industry from devastating losses.', isNoun:true },
+  { word:'gayatri', pronunciation:'GUY-uh-tree', ipa:'/ˈɡaɪətri/', pos:'noun', def:'A sacred Vedic meter of 24 syllables arranged in three lines of eight; also the most revered mantra in Hinduism, the Gayatri Mantra.', lang:'Sanskrit, from gayatri (\'a song, hymn\'), from gai (\'to sing\'), the most sacred verse form of the Vedas.', example:'The Brahmin chanted the Gayatri mantra at dawn, the ancient Sanskrit verse invoking the divine light of the sun to illuminate the mind.', isNoun:true },
+  { word:'Geatish', pronunciation:'YAY-tish', ipa:'/ˈjeɪtɪʃ/', pos:'adjective', def:'Of or relating to the Geats, an ancient North Germanic people of southern Sweden, the tribe of the legendary hero Beowulf.', lang:'Old English, from Geatas (\'the Geats\'), the Scandinavian people featured in the epic poem Beowulf, + -ish.', example:'The Geatish warriors sailed across the sea to Denmark to help King Hrothgar, their courage tested against the monster Grendel.', isNoun:false },
+  { word:'gegenschein', pronunciation:'GAY-gun-shyn', ipa:'/ˈɡeɪɡənˌʃaɪn/', pos:'noun', def:'A faint, oval patch of light in the night sky opposite the sun, caused by sunlight reflecting off interplanetary dust.', lang:'German, from gegen (\'opposite, against\') + Schein (\'shine, glow\'), literally \'counter-glow\'.', example:'The astronomer pointed out the faint gegenschein in the midnight sky, the ghostly glow visible only from the darkest locations far from city lights.', isNoun:true },
+  { word:'Gehenna', pronunciation:'geh-HEN-uh', ipa:'/ɡɪˈhɛnə/', pos:'noun', def:'A place of torment and punishment in Jewish and Christian tradition; hell; a place of burning and suffering.', lang:'Hebrew, from Ge Hinnom (\'Valley of Hinnom\'), a valley near Jerusalem where children were said to have been sacrificed by fire to the god Moloch.', example:'The preacher described Gehenna in vivid, terrifying detail, the ancient name for the fiery valley of punishment striking fear into his congregation.', isNoun:true },
+  { word:'gelilah', pronunciation:'geh-LEE-lah', ipa:'/ɡɛˈliːlə/', pos:'noun', def:'The honor of rolling up and dressing the Torah scroll after it has been read during a Jewish synagogue service.', lang:'Hebrew, from gelilah (\'rolling\'), from galal (\'to roll\'), the ceremonial wrapping and binding of the Torah scroll.', example:'He was called to perform gelilah, carefully rolling the Torah scroll closed and binding it with its sash before replacing its decorative cover.', isNoun:true },
+  { word:'gendarme', pronunciation:'ZHAHN-darm', ipa:'/ˈʒɑːndɑːrm/', pos:'noun', def:'A member of an armed police force in France and other French-speaking countries; also a rock tower on a mountain ridge.', lang:'French, from gens d\'armes (\'men-at-arms\'), from gens (\'people\') + de (\'of\') + armes (\'arms, weapons\').', example:'The gendarme directed traffic at the village crossroads with brisk authority, his kepi and uniform immediately recognizable across rural France.', isNoun:true },
+  { word:'genet', pronunciation:'JEN-it', ipa:'/ˈdʒɛnɪt/', pos:'noun', def:'A slender, nocturnal mammal of Africa and southern Europe with spotted fur and a long ringed tail, related to civets.', lang:'Old French, from genette, from Arabic jarnait, the name for this small, cat-like carnivore.', example:'The genet crept along the branch in the moonlight, its spotted coat and enormous eyes perfectly adapted for hunting in the African dark.', isNoun:true },
+  { word:'genizah', pronunciation:'geh-NEE-zah', ipa:'/ɡɛˈniːzə/', pos:'noun', def:'A storage area in a Jewish synagogue for worn-out sacred texts and ritual objects that cannot be destroyed because they contain God\'s name.', lang:'Hebrew, from genizah (\'a hiding place, storage\'), from ganaz (\'to hide, store away\').', example:'The Cairo Genizah yielded hundreds of thousands of medieval manuscripts, the synagogue storeroom preserving fragments of Jewish life spanning a thousand years.', isNoun:true },
+  { word:'gesellschaft', pronunciation:'geh-ZEL-shaft', ipa:'/ɡəˈzɛlʃɑːft/', pos:'noun', def:'A society based on impersonal, contractual relationships rather than bonds of kinship, as described by sociologist Ferdinand Tönnies.', lang:'German, from Gesellschaft (\'society, company\'), from Geselle (\'companion\') + -schaft (\'-ship\'), contrasted with Gemeinschaft (\'community\').', example:'The sociologist argued that modern urban life exemplifies Gesellschaft, where relationships are transactional and people interact as strangers rather than as community.', isNoun:true },
+  { word:'giallolino', pronunciation:'JAH-loh-LEE-noh', ipa:'/ˌdʒɑːloʊˈliːnoʊ/', pos:'noun', def:'A yellow pigment made from lead and tin oxides, used by Italian Renaissance painters; Naples yellow.', lang:'Italian, from giallolino (\'pale yellow\'), diminutive of giallo (\'yellow\'), from Old French jalne, from Latin galbinus (\'greenish-yellow\').', example:'The restorer identified giallolino in the painting\'s bright yellow drapery, the lead-tin pigment characteristic of 16th-century Venetian technique.', isNoun:true },
+  { word:'ginglymus', pronunciation:'JIN-glih-mus', ipa:'/ˈdʒɪŋɡlɪməs/', pos:'noun', def:'A hinge joint that allows movement in only one plane, such as the elbow or knee joint.', lang:'Greek, from ginglymos (\'a hinge\'), describing joints that open and close like a door hinge.', example:'The anatomy professor described the elbow as a ginglymus, demonstrating how the hinge joint allows flexion and extension but not rotation.', isNoun:true },
+  { word:'Giorgionesque', pronunciation:'JOR-joh-NESK', ipa:'/ˌdʒɔːrdʒoʊˈnɛsk/', pos:'adjective', def:'Resembling or characteristic of the style of Giorgione, the Venetian painter known for his soft, atmospheric landscapes and mysterious mood.', lang:'Named after Giorgione (c.1477-1510), the Venetian Renaissance painter, + -esque.', example:'The painting had a Giorgionesque quality — dreamlike figures in a misty landscape, bathed in golden light that seemed to emanate from the canvas itself.', isNoun:false },
+  { word:'Gippsland', pronunciation:'GIPS-land', ipa:'/ˈɡɪpslənd/', pos:'noun', def:'A large rural region in southeastern Victoria, Australia, known for its lakes, forests, and dairy farming.', lang:'Named after Sir George Gipps (1791-1847), Governor of New South Wales, who administered the region during early European settlement.', example:'The Gippsland Lakes glittered beneath a vast Australian sky, the network of coastal lagoons stretching for miles along the Victorian coastline.', isNoun:true },
+  { word:'glabella', pronunciation:'gluh-BEL-uh', ipa:'/ɡləˈbɛlə/', pos:'noun', def:'The smooth area of the forehead between and directly above the eyebrows.', lang:'Latin, from glabellus (\'smooth, without hair\'), diminutive of glaber (\'bald, smooth\').', example:'The dermatologist injected the glabella area between the patient\'s eyebrows to smooth the deep frown lines that had developed over the years.', isNoun:true },
+  { word:'glacis', pronunciation:'GLAY-sis', ipa:'/ˈɡleɪsɪs/', pos:'noun', def:'A gentle slope in front of a fortification, designed to expose attackers to defensive fire; any similar gradual incline.', lang:'French, from glacis (\'a slippery slope\'), from glacer (\'to freeze, make slippery\'), from Latin glacies (\'ice\').', example:'The attackers had to cross the bare glacis under withering cannon fire, the open slope offering no cover as they charged toward the fortress walls.', isNoun:true },
+  { word:'glengarry', pronunciation:'glen-GAR-ee', ipa:'/ɡlɛnˈɡæri/', pos:'noun', def:'A brimless Scottish cap with a crease along the top, ribbons hanging at the back, and often decorated with a badge or feather.', lang:'Named after Glengarry, a valley in the Scottish Highlands where this style of bonnet originated.', example:'The Highland soldier wore his glengarry at a jaunty angle, the ribbons trailing behind as he marched with his regiment through the Scottish mist.', isNoun:true },
+  { word:'gliriform', pronunciation:'GLIR-ih-form', ipa:'/ˈɡlɪrɪˌfɔːrm/', pos:'adjective', def:'Resembling a dormouse or rodent in form or characteristics.', lang:'Latin, from glis (genitive gliris, \'a dormouse\') + -form (from forma, \'shape\').', example:'The paleontologist described the fossil skull as gliriform, its rounded shape and prominent incisors closely resembling those of modern dormice.', isNoun:false },
+  { word:'glyceraldehyde', pronunciation:'GLIS-ur-AL-duh-hyd', ipa:'/ˌɡlɪsərˈældɪˌhaɪd/', pos:'noun', def:'A simple three-carbon sugar that serves as a building block in biochemistry and is an intermediate in carbohydrate metabolism.', lang:'English, from glycer(in) (from Greek glykeros, \'sweet\') + aldehyde (from Latin al(cohol) dehyd(rogenatum), \'dehydrogenated alcohol\').', example:'Glyceraldehyde plays a key role in cellular metabolism, serving as an intermediate in the breakdown of glucose for energy production.', isNoun:true },
+  { word:'Gondwana', pronunciation:'gond-WAH-nuh', ipa:'/ɡɒndˈwɑːnə/', pos:'noun', def:'An ancient supercontinent that included present-day South America, Africa, Antarctica, Australia, and India before breaking apart about 180 million years ago.', lang:'Named after the Gondwana region of central India (from Sanskrit gondavana, \'forest of the Gonds\'), where geological evidence of the supercontinent was first found.', example:'Fossils of the same fern species found on every southern continent provided early evidence that they were once joined as the supercontinent Gondwana.', isNoun:true },
+  { word:'goondie', pronunciation:'GOON-dee', ipa:'/ˈɡuːndi/', pos:'noun', def:'An Aboriginal Australian shelter or dwelling, typically a simple structure of bark, branches, and leaves.', lang:'From an Aboriginal Australian language, the indigenous term for a temporary shelter or bark hut.', example:'The archaeological site revealed the remains of an ancient goondie, the postholes and scattered bark fragments showing where the shelter once stood.', isNoun:true },
+  { word:'graywacke', pronunciation:'GRAY-wak-ee', ipa:'/ˈɡreɪˌwæki/', pos:'noun', def:'A dark, coarse-grained sandstone composed of poorly sorted fragments of rock and minerals, commonly found in ancient geological formations.', lang:'German, partial translation of Grauwacke, from grau (\'gray\') + Wacke (\'a type of rock\'), from Old High German wacko (\'a large stone\').', example:'The cliffs were formed of ancient graywacke, the dark, gritty sandstone dating back hundreds of millions of years to a time of violent seas.', isNoun:true },
+  { word:'griot', pronunciation:'GREE-oh', ipa:'/ˈɡriːoʊ/', pos:'noun', def:'A West African storyteller, musician, and oral historian who preserves and transmits the history, genealogy, and traditions of a community through performance.', lang:'French, from griot, possibly from Portuguese criado (\'a servant\') or from a Mande language, the keepers of oral tradition in West Africa.', example:'The griot sat beneath the baobab tree and began to chant the genealogy of the village, tracing bloodlines back twenty generations from memory.', isNoun:true },
+  { word:'Groenendael', pronunciation:'GROO-nun-dahl', ipa:'/ˈɡruːnənˌdɑːl/', pos:'noun', def:'A variety of Belgian Shepherd dog with a long, thick black coat, known for its intelligence and versatility in herding and police work.', lang:'Named after the village of Groenendael near Brussels, Belgium, where this variety of Belgian Shepherd was first bred in the late 19th century.', example:'The sleek black Groenendael moved with fluid grace around the flock, its long dark coat rippling as it guided the sheep with quiet authority.', isNoun:true },
+  { word:'Grundriss', pronunciation:'GROONT-ris', ipa:'/ˈɡrʊntˌrɪs/', pos:'noun', def:'A ground plan or floor plan; in academic usage, a comprehensive outline or foundational survey of a subject.', lang:'German, from Grund (\'ground, foundation\') + Riss (\'a sketch, drawing\'), literally \'ground sketch\'.', example:'The professor\'s Grundriss of medieval philosophy became the standard reference, its comprehensive outline guiding students through centuries of thought.', isNoun:true },
+  { word:'Gruyère', pronunciation:'groo-YAIR', ipa:'/ɡruːˈjɛər/', pos:'noun', def:'A firm, pale yellow Swiss cheese with a rich, slightly nutty flavor, traditionally made in the canton of Fribourg, widely used in fondue and gratins.', lang:'Named after Gruyères, a town in the canton of Fribourg, Switzerland, where this cheese has been produced since the 12th century.', example:'The fondue was made with authentic Gruyère, the nutty Swiss cheese melting into a silky, aromatic pool perfect for dipping crusty bread.', isNoun:true },
+  { word:'guan', pronunciation:'GWAHN', ipa:'/ɡwɑːn/', pos:'noun', def:'A large, turkey-like bird of Central and South American tropical forests, belonging to the family Cracidae.', lang:'Spanish, from a South American indigenous language, the name for these large arboreal birds of the Neotropics.', example:'The crested guan perched high in the canopy of the cloud forest, its loud honking calls echoing through the misty treetops at dawn.', isNoun:true },
+  { word:'guapena', pronunciation:'gwah-PAY-nuh', ipa:'/ɡwɑːˈpeɪnə/', pos:'noun', def:'A vigorous traditional dance of the Philippines, characterized by lively footwork and graceful arm movements.', lang:'Spanish-Filipino, from guapa (\'beautiful, handsome\') + -ena, a lively courtship dance reflecting Spanish colonial influence on Filipino culture.', example:'The dancers performed the guapena with infectious energy, their quick footwork and flowing arm gestures telling a story of playful courtship.', isNoun:true },
+  { word:'Guarnerius', pronunciation:'gwar-NEER-ee-us', ipa:'/ɡwɑːrˈnɪəriəs/', pos:'noun', def:'A violin made by the Guarneri family of Cremona, Italy, considered among the finest ever crafted, rivaling Stradivarius instruments.', lang:'Latinized form of Guarneri, the Italian family of luthiers active in Cremona from the 17th to 18th centuries, especially Giuseppe Guarneri del Gesù.', example:'The soloist played on a priceless Guarnerius, its dark, powerful tone filling the concert hall with a richness that modern instruments struggle to match.', isNoun:true },
+  { word:'guayabera', pronunciation:'GWY-uh-BAIR-uh', ipa:'/ˌɡwaɪəˈbɛərə/', pos:'noun', def:'A lightweight men\'s shirt with pleats and pockets, worn untucked, popular in Latin America and the Caribbean as formal and casual wear.', lang:'Spanish, from guayabera, possibly from guayaba (\'guava\'), perhaps because the shirt was originally worn by guava farmers in Cuba.', example:'He wore a crisp white guayabera to the outdoor wedding, the pleated linen shirt perfectly suited to the tropical heat.', isNoun:true },
+  { word:'guerite', pronunciation:'geh-REET', ipa:'/ɡɛˈriːt/', pos:'noun', def:'A small turret or watchtower projecting from the wall of a fortification, used as a sentry box or lookout post.', lang:'French, from guérite (\'a sentry box\'), from Old French garite (\'a refuge\'), from garir (\'to protect\'), of Germanic origin.', example:'The stone guerite jutted from the castle wall high above the moat, giving the sentinel a commanding view of anyone approaching the gate.', isNoun:true },
+  { word:'guichet', pronunciation:'gee-SHAY', ipa:'/ɡiːˈʃeɪ/', pos:'noun', def:'A small window or opening in a wall, door, or gate, used as a ticket booth, service counter, or peephole.', lang:'French, from guichet (\'a wicket, small gate\'), from Old Norse vik (\'a nook, small bay\'), describing a small opening in a larger structure.', example:'She purchased her train ticket at the guichet, the small window in the station wall barely large enough to pass the money through.', isNoun:true },
+  { word:'Guidonian', pronunciation:'gwi-DOH-nee-un', ipa:'/ɡwɪˈdoʊniən/', pos:'adjective', def:'Of or relating to Guido d\'Arezzo, the medieval Italian monk who developed the foundations of modern musical notation, including the staff and solmization.', lang:'Named after Guido d\'Arezzo (c. 991-1033), the Benedictine monk who revolutionized music education and notation, + -ian.', example:'The Guidonian hand was a medieval teaching tool, with each joint of the fingers representing a different note in the musical scale.', isNoun:false },
+  { word:'Gurmukhi', pronunciation:'gur-MOO-kee', ipa:'/ɡʊrˈmuːki/', pos:'noun', def:'The script used to write the Punjabi language, developed from the Landa script and standardized by the Sikh gurus.', lang:'Punjabi, from Gurmukhi (\'from the mouth of the Guru\'), from gur (\'guru, teacher\') + mukhi (\'from the mouth\'), the script of Sikh scripture.', example:'The Guru Granth Sahib is written in Gurmukhi script, the sacred alphabet that the Sikh gurus refined to record their divine hymns.', isNoun:true },
+  { word:'gyascutus', pronunciation:'jy-AS-kyoo-tus', ipa:'/dʒaɪˈæskjʊtəs/', pos:'noun', def:'A mythical animal of American tall tales, said to have legs shorter on one side so it could walk on steep hillsides without tipping over.', lang:'American English, a humorous coinage from frontier tall-tale tradition, the imaginary hillside creature of lumberjack folklore.', example:'The old lumberjack swore he\'d seen a gyascutus trotting sideways along the mountainside, its mismatched legs perfectly suited to the steep terrain.', isNoun:true },
+  { word:'gyokuro', pronunciation:'GYOH-koo-roh', ipa:'/ˈɡjoʊkʊˌroʊ/', pos:'noun', def:'The highest grade of Japanese green tea, shaded from sunlight before harvesting to increase chlorophyll and produce a rich, sweet, umami flavor.', lang:'Japanese, from gyokuro (\'jade dew\'), from gyoku (\'jade\') + ro (\'dew\'), describing the tea\'s precious, jewel-like quality.', example:'The tea master brewed the gyokuro at a low temperature, coaxing out the jade-green liquor\'s extraordinary sweetness and deep umami richness.', isNoun:true },
+  { word:'gypsophila', pronunciation:'jip-SOF-ih-luh', ipa:'/dʒɪpˈsɒfɪlə/', pos:'noun', def:'A genus of delicate flowering plants producing clouds of tiny white or pink blossoms, commonly known as baby\'s breath, used widely in floral arrangements.', lang:'Greek, from gypsos (\'gypsum, chalk\') + philos (\'loving\'), because many species thrive in chalky, alkalite soils.', example:'The bridal bouquet was wreathed in clouds of white gypsophila, the tiny blossoms creating an ethereal haze around the central roses.', isNoun:true }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Slider
+  const totalA = a.length;
+  const pct = totalA > 1 ? s / (totalA - 1) * 100 : 0;
+  document.getElementById("sliderFill").style.width = pct + "%";
+  const sliderArea = document.getElementById("sliderArea");
+  const areaW = sliderArea.offsetWidth || 200;
+  const pad = 10;
+  const thumbLeft = pad + (pct / 100) * (areaW - pad * 2);
+  const thumb = document.getElementById("sliderThumb");
+  if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
+
+  // Ticks - show ~20 evenly spaced markers
+  const tickCount = Math.min(totalA, 20);
+  let ticksHtml = '';
+  for(let t=0; t<tickCount; t++){
+    const ti = Math.round(t / (tickCount-1) * (totalA-1));
+    const cls = ti===s ? 'active' : (t % 5 === 0 ? 'major' : '');
+    ticksHtml += `<div class="slider-tick ${cls}"></div>`;
+  }
+  document.getElementById("sliderDots").innerHTML = ticksHtml;
+  document.getElementById("sliderCounter").textContent = `${s+1} / ${totalA}`;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Slider drag
+const slArea=document.getElementById("sliderArea");
+const slThumb=document.getElementById("sliderThumb");
+let slDragging=false;
+function sliderFromX(cx){
+  const r=slArea.getBoundingClientRect();
+  const pad=10;
+  const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
+  const a=aw(),idx=Math.round(p*(a.length-1));
+  // Move thumb immediately for smooth feel
+  const thumbLeft=pad+(p)*(r.width-pad*2);
+  slThumb.style.left=thumbLeft+"px";
+  if(idx!==si()){
+    const g=WORDS.findIndex(w=>w.word===a[idx].word);
+    flipped=false; currentIndex=g; render();
+  }
+}
+slArea.addEventListener("touchstart",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(slDragging) sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    // Speak the word after releasing
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+slArea.addEventListener("mousedown",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.clientX); e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(slDragging) sliderFromX(e.clientX);
+});
+document.addEventListener("mouseup",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>

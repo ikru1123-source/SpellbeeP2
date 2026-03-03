@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: Verdana, Geneva, sans-serif; font-size: 36px; font-weight: 400;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 18px; height: 18px; }
+.slider-area {
+  flex: 1; height: 32px; position: relative;
+  display: flex; align-items: center;
+  touch-action: none; cursor: pointer;
+}
+.slider-track-bg {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
+}
+.slider-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(212,175,55,0.5));
+  transition: width 0.15s ease;
+}
+.slider-dots {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; padding: 0 2px;
+}
+.slider-tick {
+  width: 2px; height: 8px; border-radius: 1px;
+  background: rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.slider-tick.major { height: 12px; background: rgba(255,255,255,0.12); }
+.slider-tick.active { background: var(--gold); height: 14px; width: 3px; border-radius: 1.5px; box-shadow: 0 0 6px rgba(212,175,55,0.4); }
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px solid #1a1528;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  cursor: grab; transition: left 0.12s ease;
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
+.slider-thumb.dragging { transition: none; transform: translate(-50%, -50%) scale(1.15); }
+.slider-counter {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.08em;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1><a href="index.html" style="color:inherit;text-decoration:none;">Spelling Bee</a></h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="slider-area" id="sliderArea">
+      <div class="slider-track-bg">
+        <div class="slider-fill" id="sliderFill"></div>
+      </div>
+      <div class="slider-dots" id="sliderDots"></div>
+      <div class="slider-thumb" id="sliderThumb"></div>
+    </div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'cabochon', pronunciation:'KAB-uh-shon', ipa:'/ˈkæbəˌʃɒn/', pos:'noun', def:'A gemstone that has been shaped and polished into a smooth, rounded dome rather than faceted, often used for opaque stones.', lang:'French, from cabochon (\'a small dome\'), from caboche (\'a head, knob\'), from Latin caput (\'head\').', example:'The ruby was cut en cabochon, its smooth domed surface glowing with a deep inner fire rather than the sparkle of a faceted stone.', isNoun:true },
+  { word:'cabotage', pronunciation:'KAB-uh-tahzh', ipa:'/ˈkæbəˌtɑːʒ/', pos:'noun', def:'The right to operate sea, air, or other transport services within a particular country, restricted to that country\'s own carriers.', lang:'French, from caboter (\'to sail along the coast\'), possibly from Spanish cabo (\'a cape, headland\').', example:'International cabotage laws prevented the foreign airline from carrying passengers between two domestic cities within the country.', isNoun:true },
+  { word:"ca'canny", pronunciation:'kah-KAN-ee', ipa:'/kɑːˈkæni/', pos:'noun', def:'A policy of deliberately working slowly as a form of industrial protest; caution or wariness; a go-slow strike.', lang:'Scottish, from ca\' (\'to call, drive\') + canny (\'carefully, gently\'), literally \'drive carefully\'.', example:'The workers adopted a ca\'canny policy, performing their tasks at half speed to pressure management into improving conditions.', isNoun:true },
+  { word:'cacaxte', pronunciation:'kah-KAHSH-tay', ipa:'/kɑːˈkɑːʃteɪ/', pos:'noun', def:'A wooden carrying frame used in Mesoamerica to transport heavy loads on the back, supported by a tumpline across the forehead.', lang:'Nahuatl, from cacaxtli (\'a carrying frame\'), a traditional wooden pack frame used by porters throughout pre-Columbian Mexico.', example:'The merchant loaded his cacaxte with bundles of cacao and began the long trek over the mountain pass to the market town.', isNoun:true },
+  { word:'cachexia', pronunciation:'kuh-KEK-see-uh', ipa:'/kəˈkɛksiə/', pos:'noun', def:'Severe weight loss, muscle wasting, and general physical decline associated with chronic illness such as cancer or AIDS.', lang:'Greek, from kachexia (\'a bad condition\'), from kakos (\'bad\') + hexis (\'condition, habit of body\').', example:'The oncologist noted signs of cachexia in the patient, the profound muscle wasting a concern that went beyond the cancer itself.', isNoun:true },
+  { word:'cacoëthes', pronunciation:'KAK-oh-EE-theez', ipa:'/ˌkækoʊˈiːθiːz/', pos:'noun', def:'An irresistible urge or mania to do something inadvisable; an insatiable desire, especially for writing.', lang:'Greek, from kakoethes (\'an ill habit\'), from kakos (\'bad\') + ethos (\'habit, disposition\').', example:'The writer suffered from cacoëthes scribendi — an uncontrollable compulsion to write that kept her at her desk until dawn every night.', isNoun:true },
+  { word:'Caerphilly', pronunciation:'kar-FIL-ee', ipa:'/kɑːrˈfɪli/', pos:'noun', def:'A mild, crumbly white cheese originally made in the town of Caerphilly in South Wales.', lang:'Welsh, from Caerphilly (Caerffili), a town in South Wales, from caer (\'fortress\') + a personal name, where this cheese was traditionally produced.', example:'The Caerphilly crumbled pleasantly on the tongue, its mild, slightly tangy flavor pairing beautifully with crusty bread and chutney.', isNoun:true },
+  { word:'caesious', pronunciation:'SEE-zhus', ipa:'/ˈsiːʒəs/', pos:'adjective', def:'Of a pale bluish-gray color; having a waxy, blue-green bloom, especially on plant surfaces.', lang:'Latin, from caesius (\'bluish-gray\'), describing a pale blue-green coloring found on certain leaves and fruits.', example:'The caesious bloom on the plum\'s skin gave it a frosty, blue-gray appearance that rubbed away to reveal the dark purple fruit beneath.', isNoun:false },
+  { word:'cahiers', pronunciation:'kah-YAY', ipa:'/kɑːˈjeɪ/', pos:'noun', def:'Notebooks or journals; in French history, the lists of grievances drawn up by each estate before the Estates-General of 1789.', lang:'French, from cahier (\'a notebook, quire\'), from Latin quaternum (\'a set of four sheets\'), from quattuor (\'four\').', example:'The cahiers de doléances submitted to the king cataloged the suffering of the French people, their grievances helping to ignite the Revolution.', isNoun:true },
+  { word:'caique', pronunciation:'kah-EEK', ipa:'/kɑːˈiːk/', pos:'noun', def:'A light, narrow boat used on the Bosporus and in the eastern Mediterranean; a small sailing vessel of the Levant.', lang:'Turkish, from kayık (\'a small boat\'), the traditional rowing boat of Istanbul\'s waterways.', example:'The caique glided silently across the moonlit Bosporus, its slender hull cutting through the dark water between Europe and Asia.', isNoun:true },
+  { word:'cairn', pronunciation:'KAIRN', ipa:'/kɛərn/', pos:'noun', def:'A mound of rough stones built as a memorial, landmark, or burial monument, especially in the Scottish Highlands.', lang:'Scottish Gaelic, from càrn (\'a heap of stones\'), of Celtic origin.', example:'The hikers stacked a cairn at the summit to mark the trail, adding their own stones to the growing pile as tradition demanded.', isNoun:true },
+  { word:'caisson', pronunciation:'KAY-son', ipa:'/ˈkeɪsɒn/', pos:'noun', def:'A watertight chamber used in construction work underwater or as a foundation; a large ammunition chest; a horse-drawn wagon for carrying artillery shells.', lang:'French, from caisson (\'a large chest\'), from caisse (\'a chest, box\'), from Latin capsa (\'a box\').', example:'Workers descended into the pressurized caisson sunk deep into the riverbed, excavating mud to lay the bridge\'s massive stone foundations.', isNoun:true },
+  { word:'calabash', pronunciation:'KAL-uh-bash', ipa:'/ˈkæləˌbæʃ/', pos:'noun', def:'A tropical American tree bearing large round fruit; the dried shell of this fruit, used as a container, utensil, or musical instrument.', lang:'French, from calebasse, from Spanish calabaza (\'a gourd\'), possibly from Arabic qar\'a yābisa (\'dry gourd\').', example:'The musician shook the dried calabash filled with seeds, its hollow gourd producing a bright, rattling rhythm that drove the dancers faster.', isNoun:true },
+  { word:'calamondin', pronunciation:'KAL-uh-MON-din', ipa:'/ˌkæləˈmɒndɪn/', pos:'noun', def:'A small citrus tree bearing tiny, sour orange fruits used in Filipino and Southeast Asian cooking and as an ornamental houseplant.', lang:'Tagalog, from kalamunding, the Philippine name for this small citrus fruit that is a hybrid of mandarin and kumquat.', example:'She squeezed fresh calamondin juice over the grilled fish, the tiny sour citrus adding a bright, tangy note to every bite.', isNoun:true },
+  { word:'calenture', pronunciation:'KAL-un-chur', ipa:'/ˈkælənˌtʃʊər/', pos:'noun', def:'A tropical fever formerly affecting sailors, in which they supposedly hallucinated that the sea was green fields and tried to walk into it.', lang:'Spanish, from calentura (\'fever, heat\'), from calentar (\'to heat\'), from Latin calere (\'to be warm\').', example:'Old sailing logs describe sailors seized by calenture, the delirious men seeing lush meadows in the ocean waves and leaping overboard.', isNoun:true },
+  { word:'caliche', pronunciation:'kuh-LEE-chee', ipa:'/kəˈliːtʃi/', pos:'noun', def:'A hardened deposit of calcium carbonate found in arid soils, forming a cement-like layer beneath the surface.', lang:'Spanish, from caliche (\'limestone crust\'), from cal (\'lime\'), from Latin calx (\'limestone\').', example:'The construction crew hit a stubborn layer of caliche three feet down, the rock-hard calcium deposit requiring a jackhammer to break through.', isNoun:true },
+  { word:'caló', pronunciation:'kah-LOH', ipa:'/kɑːˈloʊ/', pos:'noun', def:'A Spanish argot or slang spoken by Chicano communities in the southwestern United States, blending Spanish, English, and Romani influences.', lang:'Spanish, from caló, originally the language of Spanish Roma (Gitanos), from Romani kalo (\'black\'), later adopted by Mexican-American youth culture.', example:'The poet wrote in caló, weaving together Spanish slang and English to capture the unique bilingual voice of the barrio.', isNoun:true },
+  { word:'calusar', pronunciation:'kah-loo-SAR', ipa:'/ˌkɑːluːˈsɑːr/', pos:'noun', def:'A member of a Romanian ritual dance troupe that performs the călușari, an ancient healing dance believed to cure those bewitched by fairies.', lang:'Romanian, from călușar (\'a ritual dancer\'), from căluș (\'a small horse, hobby horse\'), used in the ceremonial dance.', example:'The calusar leaped and spun in the ancient ritual dance, their acrobatic movements believed to drive away evil spirits and restore health.', isNoun:true },
+  { word:'calvities', pronunciation:'kal-VISH-ee-eez', ipa:'/kælˈvɪʃiˌiːz/', pos:'noun', def:'Baldness; the condition of having no hair on the head.', lang:'Latin, from calvities (\'baldness\'), from calvus (\'bald\').', example:'The dermatologist explained that calvities can be hereditary, with the pattern of hair loss often following the maternal family line.', isNoun:true },
+  { word:'camarilla', pronunciation:'KAM-uh-RIL-uh', ipa:'/ˌkæməˈrɪlə/', pos:'noun', def:'A small group of people who secretly influence or advise a person in authority; a clique of scheming advisors.', lang:'Spanish, from camarilla (\'a small room\'), diminutive of cámara (\'a chamber\'), from Latin camera, referring to the private room where intrigues were hatched.', example:'The king\'s camarilla whispered poisonous advice behind closed doors, manipulating policy while the official ministers were kept in the dark.', isNoun:true },
+  { word:'Camembert', pronunciation:'KAM-um-bair', ipa:'/ˈkæməmˌbɛər/', pos:'noun', def:'A rich, soft, creamy French cheese with a white rind, originally made in Normandy.', lang:'Named after Camembert, a village in Normandy, France, where the cheese was first made by Marie Harel around 1791.', example:'The ripe Camembert oozed across the cheese board when cut, its pungent aroma and buttery interior the highlight of the dinner course.', isNoun:true },
+  { word:'canaille', pronunciation:'kah-NY', ipa:'/kɑːˈnaɪ/', pos:'noun', def:'The common people regarded contemptuously; the rabble or mob; the lowest class of people.', lang:'French, from canaille (\'a pack of dogs, rabble\'), from Italian canaglia, from cane (\'a dog\'), from Latin canis.', example:'The aristocrat sneered at what he called the canaille, too blind to see that the common people he despised would soon overthrow him.', isNoun:true },
+  { word:'canions', pronunciation:'KAN-ee-unz', ipa:'/ˈkæniənz/', pos:'noun', def:'Short ornamental tubes or rolls of fabric worn on the legs below the trunk hose in Elizabethan fashion.', lang:'French, from canon (\'a tube, pipe\'), from Latin canna (\'a reed, tube\'), describing the tubular leg coverings.', example:'The Elizabethan courtier wore embroidered silk canions below his puffed trunk hose, the decorative tubes covering his thighs above the stockings.', isNoun:true },
+  { word:'cantatrice', pronunciation:'KAN-tuh-TREES', ipa:'/ˌkæntəˈtriːs/', pos:'noun', def:'A professional female singer, especially an opera singer; a prima donna.', lang:'Italian, from cantatrice (\'a female singer\'), from cantare (\'to sing\'), from Latin cantare.', example:'The celebrated cantatrice received a standing ovation after her aria, the audience overwhelmed by the purity and power of her soprano voice.', isNoun:true },
+  { word:'caprifig', pronunciation:'KAP-rih-fig', ipa:'/ˈkæprɪˌfɪɡ/', pos:'noun', def:'A wild fig tree whose inedible fruit harbors fig wasps essential for pollinating cultivated fig varieties through a process called caprification.', lang:'Latin, from caprificus (\'wild fig\'), from caper (\'a goat\') + ficus (\'a fig tree\'), because goats were thought to eat the wild figs.', example:'Farmers hung branches of caprifig in their orchards so the tiny wasps inside would emerge and pollinate the cultivated Smyrna fig trees.', isNoun:true },
+  { word:'Caracas', pronunciation:'kuh-RAH-kus', ipa:'/kəˈrɑːkəs/', pos:'noun', def:'The capital and largest city of Venezuela, situated in a mountain valley near the Caribbean coast.', lang:'Named after the Caracas people, an indigenous group that inhabited the valley before Spanish colonization in the 16th century.', example:'Caracas sprawls across a narrow valley in the coastal mountains, its modern skyscrapers rising dramatically against the green slopes of El Ávila.', isNoun:true },
+  { word:'carcajou', pronunciation:'KAR-kuh-zhoo', ipa:'/ˈkɑːrkəˌʒuː/', pos:'noun', def:'The wolverine, a stocky and muscular carnivore of the weasel family found in northern forests and tundra.', lang:'Canadian French, from carcajou, from Algonquian (possibly Montagnais) kwi\'kwa\'ju, the indigenous name for the wolverine.', example:'The carcajou was feared by trappers for its ferocity and cunning, the powerful wolverine capable of driving bears away from their kills.', isNoun:true },
+  { word:'carnifices', pronunciation:'kar-NIF-ih-seez', ipa:'/kɑːrˈnɪfɪˌsiːz/', pos:'noun', def:'Executioners; those who carry out capital punishment; in ancient Rome, the public executioners who were socially despised.', lang:'Latin, plural of carnifex (\'an executioner, butcher\'), from caro (genitive carnis, \'flesh\') + facere (\'to make\'), literally \'flesh-makers\'.', example:'The Roman carnifices were shunned by polite society, forbidden to live within the city walls despite performing an essential public function.', isNoun:true },
+  { word:'carrageenan', pronunciation:'KAR-uh-GEE-nun', ipa:'/ˌkærəˈɡiːnən/', pos:'noun', def:'A gelatinous substance extracted from red seaweed, used as a thickener and stabilizer in food products, cosmetics, and medicines.', lang:'Irish, from carraigín (\'little rock\'), from carraig (\'a rock\'), named after Carrageen, a coastal area in Ireland where the seaweed was traditionally harvested.', example:'The ingredient label listed carrageenan as a thickener, the seaweed extract giving the ice cream its smooth, creamy texture.', isNoun:true },
+  { word:'Carrickmacross', pronunciation:'KAR-ik-muh-KROS', ipa:'/ˌkærɪkməˈkrɒs/', pos:'noun', def:'A type of fine Irish lace made by appliquéing muslin onto a net background, or by cutting and embroidering the muslin itself.', lang:'Named after Carrickmacross, a town in County Monaghan, Ireland, where this lace-making tradition was established in the 1820s.', example:'The bride\'s veil was made of Carrickmacross lace, its delicate floral patterns handcrafted by Irish artisans using techniques centuries old.', isNoun:true },
+  { word:'cartouches', pronunciation:'kar-TOOSH-iz', ipa:'/kɑːrˈtuːʃɪz/', pos:'noun', def:'Oval or oblong frames enclosing Egyptian hieroglyphic royal names; ornamental tablet shapes used in architecture and design.', lang:'French, from cartouche (\'a cartridge, scroll\'), from Italian cartoccio (\'a paper cone\'), from carta (\'paper\'), because the shape resembles a rolled scroll.', example:'The Egyptologist deciphered the cartouches on the temple wall, each oval frame containing the hieroglyphic name of a different pharaoh.', isNoun:true },
+  { word:'caryatid', pronunciation:'KAR-ee-AT-id', ipa:'/ˌkæriˈætɪd/', pos:'noun', def:'A sculpted female figure serving as an architectural support, taking the place of a column or pillar.', lang:'Greek, from Karyatides (\'priestesses of Artemis at Karyai\'), women of the town of Karyai in Laconia who danced balancing baskets on their heads.', example:'The six caryatids of the Erechtheion on the Acropolis have stood for over two thousand years, their draped figures gracefully bearing the weight of the porch roof.', isNoun:true },
+  { word:'Casimir effect', pronunciation:'KAZ-ih-meer ih-FEKT', ipa:'/ˈkæzɪˌmɪər ɪˌfɛkt/', pos:'noun', def:'A quantum mechanical force of attraction between two uncharged, parallel plates placed very close together in a vacuum, caused by quantum fluctuations.', lang:'Named after Hendrik Casimir (1909-2000), the Dutch physicist who predicted this phenomenon in 1948.', example:'The Casimir effect demonstrates that even empty space is not truly empty, with quantum fluctuations creating a measurable force between closely spaced plates.', isNoun:true },
+  { word:'Castalia', pronunciation:'kas-TAY-lee-uh', ipa:'/kæsˈteɪliə/', pos:'noun', def:'A sacred spring on Mount Parnassus in ancient Greece, dedicated to the Muses and Apollo, whose waters were believed to inspire poetic genius.', lang:'Greek, from Kastalia, named after the nymph Castalia who threw herself into the spring to escape Apollo\'s pursuit.', example:'Ancient poets made pilgrimage to Castalia, believing that drinking from the sacred spring would grant them divine inspiration for their verses.', isNoun:true },
+  { word:'catachresis', pronunciation:'KAT-uh-KREE-sis', ipa:'/ˌkætəˈkriːsɪs/', pos:'noun', def:'The misuse or strained use of words, either in error or for deliberate rhetorical effect; an extreme mixed metaphor.', lang:'Greek, from katachresis (\'a misuse\'), from katachresthai (\'to misuse\'), from kata- (\'against\') + chresthai (\'to use\').', example:'Calling the arm of a chair or the leg of a table is technically catachresis — the creative extension of body words to describe furniture parts.', isNoun:true },
+  { word:'cataphora', pronunciation:'kuh-TAF-or-uh', ipa:'/kəˈtæfərə/', pos:'noun', def:'The use of a pronoun or other linguistic unit to refer forward to a word or phrase that appears later in the text.', lang:'Greek, from kataphora (\'a carrying down\'), from kata- (\'down, forward\') + pherein (\'to carry\').', example:'In the sentence "When he arrived, John was exhausted," the pronoun "he" is an example of cataphora, referring forward to John.', isNoun:true },
+  { word:'catarrh', pronunciation:'kuh-TAR', ipa:'/kəˈtɑːr/', pos:'noun', def:'Excessive buildup of mucus in the nose or throat, associated with inflammation of the mucous membranes.', lang:'Greek, from katarrhein (\'to flow down\'), from kata- (\'down\') + rhein (\'to flow\').', example:'The persistent catarrh kept him clearing his throat all winter, the constant mucus buildup a miserable companion through the cold months.', isNoun:true },
+  { word:'catjang', pronunciation:'KAT-jang', ipa:'/ˈkætdʒæŋ/', pos:'noun', def:'A variety of cowpea grown in tropical regions for its edible seeds and as animal fodder; a type of tropical bean.', lang:'Malay, from kacang (\'a bean, nut\'), adopted into English through Dutch colonial usage in Southeast Asia.', example:'The farmer planted catjang as both a food crop and a nitrogen fixer, the tropical bean enriching the soil while providing a reliable harvest.', isNoun:true },
+  { word:'cavalletti', pronunciation:'KAV-uh-LET-ee', ipa:'/ˌkævəˈlɛti/', pos:'noun', def:'Small, adjustable jumping obstacles used in horse training to improve a horse\'s stride, balance, and coordination.', lang:'Italian, plural of cavalletto (\'a small horse, trestle\'), diminutive of cavallo (\'a horse\'), from Latin caballus.', example:'The trainer set up a line of cavalletti at even intervals, the low rails teaching the young horse to pick up its feet and regulate its stride.', isNoun:true },
+  { word:'caveola', pronunciation:'kav-ee-OH-luh', ipa:'/ˌkæviˈoʊlə/', pos:'noun', def:'A tiny flask-shaped invagination in the cell membrane involved in cell signaling and molecular transport.', lang:'Latin, from caveola (\'a small cave\'), diminutive of cavea (\'a hollow, cave\').', example:'The biologist studied caveolae under the electron microscope, the tiny membrane pockets playing a crucial role in how cells absorb molecules.', isNoun:true },
+  { word:'cecidium', pronunciation:'seh-SID-ee-um', ipa:'/sɪˈsɪdiəm/', pos:'noun', def:'A plant gall; an abnormal growth on a plant caused by parasitic insects, mites, fungi, or bacteria.', lang:'Greek, from kekidion (\'a gall nut\'), from kekis (\'a gall\'), describing the growths produced on plants by parasites.', example:'The oak leaf was dotted with round cecidia, each tiny gall housing a wasp larva developing inside the swollen plant tissue.', isNoun:true },
+  { word:'cephalopod', pronunciation:'SEF-uh-luh-pod', ipa:'/ˈsɛfələˌpɒd/', pos:'noun', def:'A marine mollusk of the class including octopuses, squid, cuttlefish, and nautiluses, characterized by tentacles attached to the head.', lang:'Greek, from kephale (\'head\') + pous (genitive podos, \'foot\'), because the tentacles (feet) extend from the head.', example:'The cephalopod changed color in an instant, its skin rippling with waves of pigment as the octopus camouflaged itself against the coral.', isNoun:true },
+  { word:'Cereus', pronunciation:'SEER-ee-us', ipa:'/ˈsɪəriəs/', pos:'noun', def:'A genus of tall, columnar cacti native to the Americas, some species blooming spectacularly at night with large white flowers.', lang:'Latin, from cereus (\'a wax candle, taper\'), because the tall, columnar stems resemble candles.', example:'The night-blooming Cereus opened its enormous white flower just once a year, its intoxicating fragrance filling the desert air for a single night.', isNoun:true },
+  { word:'cermet', pronunciation:'SUR-met', ipa:'/ˈsɜːrmɛt/', pos:'noun', def:'A composite material made of ceramic and metallic materials, combining heat resistance with toughness, used in cutting tools and jet engines.', lang:'English, a portmanteau of cer(amic) + met(al), coined to describe these hybrid materials developed in the mid-20th century.', example:'The drill bit was tipped with cermet, the ceramic-metal composite maintaining its cutting edge even at temperatures that would soften pure steel.', isNoun:true },
+  { word:'certiorari', pronunciation:'SUR-shee-oh-RAIR-ee', ipa:'/ˌsɜːrʃiəˈrɛəri/', pos:'noun', def:'A writ by which a higher court reviews a decision of a lower court; the process by which the Supreme Court selects cases to hear.', lang:'Latin, from certiorari (\'to be informed\'), passive infinitive of certiorare (\'to inform, certify\'), from certior (\'more certain\').', example:'The Supreme Court granted certiorari in the landmark case, agreeing to review the lower court\'s controversial ruling on privacy rights.', isNoun:true },
+  { word:'chalaza', pronunciation:'kuh-LAY-zuh', ipa:'/kəˈleɪzə/', pos:'noun', def:'One of two spiral bands of tissue in an egg that anchor the yolk in the center of the white; a similar structure in plants.', lang:'Greek, from chalaza (\'a hailstone, small lump\'), because the coiled strands resemble twisted knots.', example:'The prominent chalazae in the fresh egg were a sign of quality, the ropy white strands holding the yolk perfectly centered in the albumen.', isNoun:true },
+  { word:'chalumeau', pronunciation:'SHAL-oo-moh', ipa:'/ˌʃæluːˈmoʊ/', pos:'noun', def:'The lowest register of the clarinet, producing a rich, dark tone; also an early single-reed woodwind instrument that preceded the clarinet.', lang:'French, from chalumeau (\'a reed pipe\'), from Latin calamellus, diminutive of calamus (\'a reed\').', example:'The clarinetist played a haunting melody in the chalumeau register, the instrument\'s lowest range producing a dark, velvety sound.', isNoun:true },
+  { word:'chalybeate', pronunciation:'kuh-LIB-ee-ut', ipa:'/kəˈlɪbiɪt/', pos:'adjective', def:'Of water or a spring, containing iron salts and having a rust-like taste; of or relating to iron-rich mineral water.', lang:'Latin, from chalybeatus (\'containing iron\'), from chalybs (\'steel, iron\'), from Greek Chalybes, an ancient people of Asia Minor famous for iron-working.', example:'Visitors flocked to the chalybeate spring, believing the iron-rich water had healing properties that could cure everything from anemia to fatigue.', isNoun:false },
+  { word:'Chamonix', pronunciation:'SHAM-uh-nee', ipa:'/ˈʃæməˌniː/', pos:'noun', def:'A resort town in the French Alps at the foot of Mont Blanc, famous for mountaineering, skiing, and hosting the first Winter Olympics in 1924.', lang:'French, from Chamonix-Mont-Blanc, possibly from a pre-Roman Alpine language, the name of this valley beneath Europe\'s highest peak.', example:'The climbers gathered in Chamonix before their assault on Mont Blanc, the charming Alpine town buzzing with mountaineers from around the world.', isNoun:true },
+  { word:'champignon', pronunciation:'sham-PIN-yun', ipa:'/ʃæmˈpɪnjən/', pos:'noun', def:'An edible mushroom, especially the common white button mushroom used widely in French and European cooking.', lang:'French, from champignon (\'a mushroom\'), from Old French champaignol (\'a field mushroom\'), from campagne (\'open country\'), from Latin campus (\'a field\').', example:'The chef sautéed the champignons in butter and garlic until golden, their earthy aroma filling the kitchen.', isNoun:true },
+  { word:'Charon', pronunciation:'KAIR-on', ipa:'/ˈkɛərɒn/', pos:'noun', def:'In Greek mythology, the ferryman who carries the souls of the dead across the rivers Styx and Acheron to the underworld.', lang:'Greek, from Charon, of uncertain etymology, possibly meaning \'fierce brightness\' or related to charopós (\'of keen gaze\').', example:'The ancient Greeks placed a coin in the mouth of the dead to pay Charon for passage across the dark river into the realm of Hades.', isNoun:true },
+  { word:'charybdis', pronunciation:'kuh-RIB-dis', ipa:'/kəˈrɪbdɪs/', pos:'noun', def:'A deadly whirlpool in Greek mythology, personified as a sea monster, located opposite the six-headed monster Scylla in the Strait of Messina.', lang:'Greek, from Charybdis, the name of the mythological whirlpool, of uncertain etymology.', example:'Odysseus faced the impossible choice between Scylla and Charybdis, the monstrous whirlpool threatening to swallow his entire ship.', isNoun:true },
+  { word:'chastushka', pronunciation:'chah-STOOSH-kah', ipa:'/tʃɑːˈstuːʃkə/', pos:'noun', def:'A short, humorous Russian folk poem or song, typically four lines with a distinctive rhythmic pattern, often bawdy or satirical.', lang:'Russian, from chastushka (\'a short ditty\'), from chastyi (\'frequent, quick\'), describing the rapid, rhythmic delivery of these folk verses.', example:'The babushka sang a chastushka poking fun at the village mayor, the four-line ditty so witty that even he laughed along.', isNoun:true },
+  { word:'chasuble', pronunciation:'CHAZ-yoo-bul', ipa:'/ˈtʃæzjʊbəl/', pos:'noun', def:'The outermost liturgical vestment worn by a priest when celebrating Mass, a sleeveless garment draped over the shoulders.', lang:'Old French, from chasuble, from Latin casubla, a diminutive of casa (\'a house, hut\'), because the garment envelops the wearer like a little house.', example:'The priest donned the gold-embroidered chasuble for the Easter service, the richly decorated vestment reserved for the most solemn occasions.', isNoun:true },
+  { word:'chauve-souris', pronunciation:'SHOHV-soo-REE', ipa:'/ˌʃoʊvsuːˈriː/', pos:'noun', def:'A bat; the French word for a bat, literally meaning \'bald mouse\'; also a type of decorative theater curtain.', lang:'French, from chauve (\'bald\') + souris (\'mouse\'), a fanciful description of the flying mammal as a bald mouse.', example:'The Gothic tale featured a chauve-souris swooping through the moonlit castle ruins, its leathery wings casting shadows on the ancient walls.', isNoun:true },
+  { word:'cheongsam', pronunciation:'CHONG-sam', ipa:'/ˈtʃɒŋˌsæm/', pos:'noun', def:'A form-fitting Chinese dress with a high collar and side slits, also known as a qipao, iconic in Chinese fashion.', lang:'Cantonese, from cheung sam (\'long gown\'), from Mandarin chángshān, the traditional fitted dress that became fashionable in 1920s Shanghai.', example:'She wore a silk cheongsam embroidered with golden chrysanthemums, the elegant dress\'s high collar and fitted silhouette drawing admiring glances.', isNoun:true },
+  { word:'chèvre', pronunciation:'SHEV-ruh', ipa:'/ˈʃɛvrə/', pos:'noun', def:'Cheese made from goat\'s milk, with a distinctive tangy flavor and creamy texture.', lang:'French, from chèvre (\'a goat\'), from Latin capra (\'a she-goat\').', example:'The salad was topped with crumbled chèvre, the tangy goat cheese melting slightly on the warm roasted beets beneath.', isNoun:true },
+  { word:'chevrotain', pronunciation:'SHEV-roh-tayn', ipa:'/ˈʃɛvroʊˌteɪn/', pos:'noun', def:'A small, deer-like mammal also known as a mouse deer, the smallest hoofed animals in the world, found in tropical forests.', lang:'French, from chevrotain (\'a small deer\'), diminutive of chevreau (\'a kid, young goat\'), from chèvre (\'goat\'), from Latin capra.', example:'The tiny chevrotain, no bigger than a rabbit, tiptoed through the rainforest on legs as thin as pencils, the world\'s smallest hoofed animal.', isNoun:true },
+  { word:'chopine', pronunciation:'choh-PEEN', ipa:'/tʃoʊˈpiːn/', pos:'noun', def:'A type of platform shoe with a very tall base, worn by women in 15th-17th century Venice, sometimes reaching 20 inches in height.', lang:'Spanish, from chapín (\'a clog, overshoe\'), possibly from Arabic, describing the extreme platform shoes fashionable in Renaissance Venice.', example:'The Venetian noblewoman tottered on her towering chopines, the platform shoes so high that servants had to support her on either side as she walked.', isNoun:true },
+  { word:'chorten', pronunciation:'CHOR-ten', ipa:'/ˈtʃɔːrtɛn/', pos:'noun', def:'A Tibetan Buddhist shrine or reliquary monument, equivalent to a stupa, containing sacred relics or scriptures.', lang:'Tibetan, from mchod rten (\'a receptacle of offerings\'), the Tibetan form of the Buddhist stupa used for devotional worship.', example:'Prayer flags fluttered from the whitewashed chorten at the mountain pass, the Buddhist shrine marking the boundary between two valleys.', isNoun:true },
+  { word:'choucroute', pronunciation:'SHOO-kroot', ipa:'/ˈʃuːkruːt/', pos:'noun', def:'The French term for sauerkraut; also a dish of sauerkraut cooked with sausages, pork, and potatoes, a specialty of Alsace.', lang:'French, from choucroute, an adaptation of Alsatian sürkrüt (from German Sauerkraut), from sauer (\'sour\') + Kraut (\'cabbage\').', example:'The choucroute garnie arrived steaming on a vast platter, the tangy sauerkraut heaped with smoked sausages, ham hocks, and boiled potatoes.', isNoun:true },
+  { word:'ciénaga', pronunciation:'see-AY-nah-gah', ipa:'/siˈeɪnɑːɡɑː/', pos:'noun', def:'A swamp, marsh, or wetland area, especially in Spanish-speaking regions of the Americas.', lang:'Spanish, from ciénaga (\'a swamp, marsh\'), from cieno (\'mud, mire\'), from Latin caenum (\'mud, filth\').', example:'The ciénaga stretched for miles along the river delta, its murky waters teeming with herons, caimans, and clouds of mosquitoes.', isNoun:true },
+  { word:'ciliopathy', pronunciation:'SIL-ee-OP-uh-thee', ipa:'/ˌsɪliˈɒpəθi/', pos:'noun', def:'Any genetic disorder caused by defects in the structure or function of cilia, the tiny hair-like projections on cells.', lang:'Latin, from cilium (\'an eyelash\') + Greek pathos (\'suffering, disease\'), describing diseases caused by malfunctioning cellular cilia.', example:'The geneticist identified a rare ciliopathy affecting the patient\'s kidneys and eyes, both organs dependent on properly functioning cilia.', isNoun:true },
+  { word:'cioppino', pronunciation:'chuh-PEE-noh', ipa:'/tʃəˈpiːnoʊ/', pos:'noun', def:'A fish stew originating in San Francisco, made with various shellfish and fish in a tomato and wine broth.', lang:'Italian-American, possibly from Ligurian ciuppin (\'to chop\'), or from ciuppín (\'a fish stew\'), created by Italian fishermen in San Francisco.', example:'The steaming bowl of cioppino was loaded with Dungeness crab, clams, shrimp, and chunks of white fish in a rich tomato broth.', isNoun:true },
+  { word:'cire perdue', pronunciation:'SEER pair-DU', ipa:'/ˌsɪər pɛərˈdjuː/', pos:'noun', def:'The lost-wax method of metal casting, in which a wax model is coated in clay, heated to melt the wax out, then filled with molten metal.', lang:'French, from cire (\'wax\') + perdue (\'lost\'), describing the technique where the wax model is melted away and replaced by metal.', example:'The bronze sculpture was created using the cire perdue technique, a method unchanged since ancient Greek artisans perfected it thousands of years ago.', isNoun:true },
+  { word:'cirri', pronunciation:'SIR-eye', ipa:'/ˈsɪraɪ/', pos:'noun', def:'Plural of cirrus; slender, flexible appendages of certain organisms; also wispy, high-altitude cloud formations.', lang:'Latin, plural of cirrus (\'a curl, tendril, tuft of hair\').', example:'The barnacle extended its feathery cirri into the current, the delicate appendages combing the water for microscopic particles of food.', isNoun:true },
+  { word:'clerihew', pronunciation:'KLER-ih-hyoo', ipa:'/ˈklɛrɪˌhjuː/', pos:'noun', def:'A humorous four-line biographical verse with an irregular meter, in which the first line is the name of the subject.', lang:'Named after Edmund Clerihew Bentley (1875-1956), the English writer who invented this whimsical verse form as a schoolboy.', example:'The teacher challenged the class to write a clerihew about a historical figure, the four-line comic poem beginning with the person\'s name.', isNoun:true },
+  { word:'cobalamin', pronunciation:'koh-BAL-uh-min', ipa:'/koʊˈbæləmɪn/', pos:'noun', def:'Vitamin B12, a cobalt-containing compound essential for nerve function and the production of red blood cells.', lang:'English, from cobalt (from German Kobalt, \'a goblin\') + -amin (from vitamin), because the molecule contains a cobalt atom.', example:'The doctor prescribed cobalamin supplements after blood tests revealed a deficiency that was causing the patient\'s fatigue and tingling hands.', isNoun:true },
+  { word:'coccygeal', pronunciation:'kok-SIJ-ee-ul', ipa:'/kɒkˈsɪdʒiəl/', pos:'adjective', def:'Of or relating to the coccyx, the small triangular bone at the base of the spinal column; the tailbone.', lang:'Greek, from kokkyx (genitive kokkygos, \'a cuckoo\'), because the coccyx bone resembles a cuckoo\'s beak, + -eal.', example:'The patient complained of coccygeal pain after the fall, the bruised tailbone making sitting uncomfortable for weeks.', isNoun:false },
+  { word:'cochineal', pronunciation:'KOCH-ih-neel', ipa:'/ˌkɒtʃɪˈniːl/', pos:'noun', def:'A brilliant red dye made from the crushed bodies of a scale insect native to Central America, used in food coloring and cosmetics.', lang:'Spanish, from cochinilla (\'a wood louse\'), diminutive of cochino (\'a pig\'), from Latin coccinus (\'scarlet\'), from Greek kokkos (\'a berry\').', example:'The vivid crimson of the Aztec emperor\'s cloak came from cochineal, thousands of tiny insects crushed to produce the precious dye.', isNoun:true },
+  { word:'colcannon', pronunciation:'kol-KAN-un', ipa:'/kɒlˈkænən/', pos:'noun', def:'A traditional Irish dish of mashed potatoes mixed with kale or cabbage, butter, and milk, often served at Halloween.', lang:'Irish, from cál ceannann (\'white-headed cabbage\'), from cál (\'cabbage\') + ceann (\'head\') + fionn (\'white\').', example:'The colcannon was the centerpiece of the Halloween supper, the creamy potatoes studded with tender cabbage and pools of melted butter.', isNoun:true },
+  { word:'colloque', pronunciation:'KOL-ohk', ipa:'/ˈkɒloʊk/', pos:'noun', def:'A conference or seminar; a formal conversation or dialogue, especially on an academic or theological topic.', lang:'French, from colloque (\'a conversation, conference\'), from Latin colloquium (\'a conversation\'), from con- (\'together\') + loqui (\'to speak\').', example:'The theologians gathered for a colloque on the nature of free will, their three-day conference producing more questions than answers.', isNoun:true },
+  { word:'colluctation', pronunciation:'KOL-uk-TAY-shun', ipa:'/ˌkɒlʌkˈteɪʃən/', pos:'noun', def:'A struggle or conflict; a wrestling or contention against something.', lang:'Latin, from colluctatio (\'a wrestling together\'), from colluctari (\'to struggle with\'), from con- (\'together\') + luctari (\'to wrestle\').', example:'The patient\'s colluctation with the disease lasted years, every remission followed by another round of treatment and determined resistance.', isNoun:true },
+  { word:'colporteur', pronunciation:'KOL-por-tur', ipa:'/ˈkɒlpɔːrtər/', pos:'noun', def:'A person who distributes religious tracts, books, or Bibles, especially by traveling from place to place.', lang:'French, from colporteur (\'a peddler\'), from colporter (\'to peddle\'), possibly from col (\'neck\') + porter (\'to carry\'), carrying goods on a strap around the neck.', example:'The colporteur traveled remote mountain villages with a pack of Bibles, distributing them to families who had never owned a copy.', isNoun:true },
+  { word:'colubrine', pronunciation:'KOL-yoo-bryn', ipa:'/ˈkɒljʊbraɪn/', pos:'adjective', def:'Of or resembling a snake; snake-like; cunning and treacherous.', lang:'Latin, from colubrinus (\'of a snake\'), from coluber (\'a snake\').', example:'The spy moved with colubrine stealth through the embassy corridors, his sinuous, serpentine manner making everyone instinctively uneasy.', isNoun:false },
+  { word:'concatenate', pronunciation:'kon-KAT-uh-nayt', ipa:'/kɒnˈkætɪˌneɪt/', pos:'verb', def:'To link things together in a chain or series; to connect in a sequence.', lang:'Latin, from concatenatus, past participle of concatenare (\'to link together\'), from con- (\'together\') + catena (\'a chain\').', example:'The programmer concatenated the two strings of text, joining them end to end to create a single continuous line of data.', isNoun:false },
+  { word:'concours', pronunciation:'kon-KOOR', ipa:'/kɒnˈkʊər/', pos:'noun', def:'A competition or contest, especially a show for displaying fine automobiles, art, or design; short for concours d\'élégance.', lang:'French, from concours (\'a competition, gathering\'), from Latin concursus (\'a running together\'), from concurrere.', example:'The vintage Ferraris and Bugattis gleamed on the lawn at the concours d\'élégance, each classic car restored to flawless perfection.', isNoun:true },
+  { word:'connoisseur', pronunciation:'KON-uh-SUR', ipa:'/ˌkɒnəˈsɜːr/', pos:'noun', def:'An expert judge in matters of fine art, cuisine, or taste; a person with refined discrimination and deep knowledge.', lang:'French, from connaisseur (\'a knower\'), from connaître (\'to know\'), from Latin cognoscere (\'to learn, know\').', example:'The wine connoisseur swirled the glass, inhaled deeply, and identified the vintage, region, and grape variety with remarkable accuracy.', isNoun:true },
+  { word:'consanguine', pronunciation:'kon-SANG-gwin', ipa:'/kɒnˈsæŋɡwɪn/', pos:'adjective', def:'Related by blood; descended from the same ancestor; sharing a common lineage.', lang:'Latin, from consanguineus (\'of the same blood\'), from con- (\'together\') + sanguineus (\'of blood\'), from sanguis (\'blood\').', example:'The genealogist proved the two families were consanguine, tracing their shared bloodline back seven generations to a common ancestor.', isNoun:false },
+  { word:'consigliere', pronunciation:'KON-seel-YAIR-ay', ipa:'/ˌkɒnsɪlˈjɛəreɪ/', pos:'noun', def:'A trusted advisor or counselor, especially to a Mafia boss; a close confidant who provides strategic guidance.', lang:'Italian, from consigliere (\'a counselor, advisor\'), from consiglio (\'counsel, advice\'), from Latin consilium.', example:'The consigliere whispered his advice to the don, the trusted counselor\'s quiet words carrying more weight than any shouted command.', isNoun:true },
+  { word:'conteur', pronunciation:'kon-TUR', ipa:'/kɒnˈtɜːr/', pos:'noun', def:'A professional storyteller, especially one who tells stories with great skill and artistry.', lang:'French, from conteur (\'a storyteller\'), from conter (\'to tell, relate\'), from Latin computare (\'to reckon, tell\').', example:'The conteur captivated the dinner party with his tales, each story more vivid and surprising than the last.', isNoun:true },
+  { word:'contrapposto', pronunciation:'KON-truh-POS-toh', ipa:'/ˌkɒntrəˈpɒstoʊ/', pos:'noun', def:'A pose in sculpture in which the figure stands with most of its weight on one foot, creating a natural S-curve in the body.', lang:'Italian, from contrapposto (\'set against\'), past participle of contrapporre (\'to set opposite\'), from Latin contra (\'against\') + ponere (\'to place\').', example:'Michelangelo\'s David stands in classic contrapposto, the relaxed weight shift giving the marble figure a lifelike, dynamic presence.', isNoun:true },
+  { word:'contretemps', pronunciation:'KON-truh-tahn', ipa:'/ˈkɒntrəˌtɑ̃/', pos:'noun', def:'An unexpected and unfortunate occurrence; an embarrassing disagreement or mishap.', lang:'French, from contretemps (\'a bad time, mishap\'), from contre (\'against\') + temps (\'time\').', example:'The diplomatic contretemps at the state dinner — when the ambassador spilled wine on the president — made headlines the next morning.', isNoun:true },
+  { word:'copernicium', pronunciation:'KOH-pur-NIS-ee-um', ipa:'/ˌkoʊpɜːrˈnɪsiəm/', pos:'noun', def:'A synthetic radioactive chemical element with atomic number 112, named in honor of the astronomer Nicolaus Copernicus.', lang:'Named after Nicolaus Copernicus (1473-1543), the Polish astronomer who proposed the heliocentric model, + -ium.', example:'Copernicium exists for only fractions of a second before decaying, the superheavy element created in particle accelerators one atom at a time.', isNoun:true },
+  { word:'corrigenda', pronunciation:'KOR-ih-JEN-duh', ipa:'/ˌkɒrɪˈdʒɛndə/', pos:'noun', def:'Errors in a printed work discovered after printing, listed with their corrections; plural of corrigendum.', lang:'Latin, from corrigenda (\'things to be corrected\'), neuter plural gerundive of corrigere (\'to correct\'), from con- + regere (\'to guide\').', example:'The publisher issued a sheet of corrigenda listing the twelve typographical errors found in the first edition of the scholarly text.', isNoun:true },
+  { word:'corybantic', pronunciation:'KOR-ih-BAN-tik', ipa:'/ˌkɒrɪˈbæntɪk/', pos:'adjective', def:'Wildly excited and frenzied; resembling the ecstatic dancing of the Corybantes, priests of the goddess Cybele.', lang:'Greek, from Korybantes, the wild dancing priests of Cybele who celebrated her rites with clashing cymbals and frenzied movement, + -ic.', example:'The crowd erupted into corybantic celebration when the winning goal was scored, fans leaping and screaming in uncontrollable ecstasy.', isNoun:false },
+  { word:'coryphée', pronunciation:'KOR-ih-FAY', ipa:'/ˌkɒrɪˈfeɪ/', pos:'noun', def:'A leading dancer in a ballet company, ranking above the corps de ballet but below the soloists.', lang:'French, from coryphée, from Greek koryphaios (\'a leader\'), from koryphe (\'the head, summit\').', example:'After years in the corps de ballet, she was promoted to coryphée, leading small groups and performing brief featured passages.', isNoun:true },
+  { word:'coterie', pronunciation:'KOH-tuh-ree', ipa:'/ˈkoʊtəri/', pos:'noun', def:'A small, exclusive group of people with shared interests or tastes; a clique.', lang:'French, from coterie (\'an association of tenants\'), from cotier (\'a cottager\'), from Old French cote (\'a cottage\').', example:'The literary coterie met every Thursday at the same café, exchanging manuscripts and critiquing each other\'s work over endless cups of coffee.', isNoun:true },
+  { word:'cotoneaster', pronunciation:'kuh-TOH-nee-AS-tur', ipa:'/kəˈtoʊniˌæstər/', pos:'noun', def:'A genus of ornamental shrubs with small flowers and bright red or orange berries, popular in gardens and for hedging.', lang:'Latin, from cotoneum (\'a quince\') + -aster (\'resembling but inferior\'), because the leaves resemble those of a quince tree.', example:'The cotoneaster hedge blazed with thousands of tiny red berries in autumn, providing a feast for blackbirds and thrushes throughout the winter.', isNoun:true },
+  { word:'coulibiac', pronunciation:'KOO-lee-bee-AK', ipa:'/ˌkuːlibiˈæk/', pos:'noun', def:'An elaborate Russian fish pie made with salmon or sturgeon, rice, mushrooms, and hard-boiled eggs wrapped in brioche dough.', lang:'Russian, from kulibiak or kulibyaka, of uncertain origin, possibly from Finnish or a Russian dialect word for a type of pie.', example:'The coulibiac arrived at the table golden and magnificent, the buttery brioche crust encasing layers of salmon, rice, and mushroom duxelles.', isNoun:true },
+  { word:'coulisse', pronunciation:'koo-LEES', ipa:'/kuːˈliːs/', pos:'noun', def:'A groove or channel in which something slides; the side scenes or wings of a theater stage; backstage political maneuvering.', lang:'French, from coulisse (\'a sliding groove\'), from couler (\'to flow, slide\'), from Latin colare (\'to strain, filter\').', example:'The negotiations took place in the coulisses of the parliament building, the real decisions made behind the scenes far from public view.', isNoun:true },
+  { word:'coulrophobia', pronunciation:'KOOL-roh-FOH-bee-uh', ipa:'/ˌkuːlroʊˈfoʊbiə/', pos:'noun', def:'An irrational fear of clowns, a surprisingly common phobia triggered by the exaggerated features and unpredictable behavior of clowns.', lang:'Greek, possibly from kolon (\'stilt\', used by clown performers) + phobos (\'fear\'), though the etymology is debated.', example:'Her coulrophobia was so severe that she couldn\'t even look at pictures of clowns without feeling her heart race and palms sweat.', isNoun:true },
+  { word:'coup de grace', pronunciation:'KOO duh GRAHS', ipa:'/ˌkuː də ˈɡrɑːs/', pos:'noun', def:'A final blow or shot given to kill a wounded person or animal; an action that brings something to an end decisively.', lang:'French, from coup (\'a blow\') + de (\'of\') + grâce (\'grace, mercy\'), literally \'a stroke of mercy\'.', example:'The CEO\'s resignation was the coup de grace for the troubled company, ending any remaining hope of avoiding bankruptcy.', isNoun:true },
+  { word:'courgette', pronunciation:'koor-ZHET', ipa:'/kʊərˈʒɛt/', pos:'noun', def:'The British and French term for a zucchini; a small, green summer squash.', lang:'French, from courgette, diminutive of courge (\'a gourd, squash\'), from Latin cucurbita (\'a gourd\').', example:'She sliced the courgettes into thin ribbons and tossed them with olive oil and lemon, creating a light, elegant summer salad.', isNoun:true },
+  { word:'couverture', pronunciation:'KOO-vur-toor', ipa:'/ˈkuːvɜːrtʊər/', pos:'noun', def:'High-quality chocolate with a high cocoa butter content, used by professional confectioners for coating and molding.', lang:'French, from couverture (\'covering\'), from couvrir (\'to cover\'), from Latin cooperire, because the chocolate is used to cover confections.', example:'The chocolatier tempered the couverture to a perfect sheen, the professional-grade chocolate flowing like silk over the truffles.', isNoun:true },
+  { word:'creances', pronunciation:'kree-AHNS-iz', ipa:'/kriˈɑːnsɪz/', pos:'noun', def:'Long, light lines attached to a hawk during training, allowing the falconer to control and retrieve the bird while it learns to fly.', lang:'French, from créance (\'belief, trust\'), from Latin credentia (\'trust\'), because the trainer extends trust to the hawk gradually.', example:'The falconer flew the young hawk on creances for weeks, the long training lines giving the bird freedom while ensuring it could be safely retrieved.', isNoun:true },
+  { word:'crokinole', pronunciation:'KROH-kih-nohl', ipa:'/ˈkroʊkɪˌnoʊl/', pos:'noun', def:'A tabletop dexterity game of Canadian origin in which players flick wooden discs across a round board, aiming for the center hole.', lang:'Canadian English, possibly from French croquignole (\'a flick, fillip\'), describing the finger-flicking action used to propel the discs.', example:'The family gathered around the crokinole board after dinner, flicking wooden discs with practiced precision toward the coveted center hole.', isNoun:true },
+  { word:'croquembouche', pronunciation:'KROK-um-BOOSH', ipa:'/ˌkrɒkəmˈbuːʃ/', pos:'noun', def:'A French dessert consisting of a cone-shaped tower of cream-filled pastry puffs bound together with caramelized sugar threads.', lang:'French, from croque-en-bouche (\'crunches in the mouth\'), from croquer (\'to crunch\') + en (\'in\') + bouche (\'mouth\').', example:'The wedding croquembouche rose three feet tall, a golden tower of profiteroles laced with spun caramel that crackled with each delicious bite.', isNoun:true },
+  { word:'croquignole', pronunciation:'KROK-in-yohl', ipa:'/ˈkrɒkɪnˌjoʊl/', pos:'noun', def:'A crisp, curled pastry or cookie; also a method of curling hair by winding it from the ends toward the scalp on a heated rod.', lang:'French, from croquignole (\'a flick, crispy pastry\'), from croquer (\'to crunch\'), of imitative origin.', example:'The baker shaped the delicate croquignoles into curled wafers, the crisp pastries shattering into sweet shards at the first bite.', isNoun:true },
+  { word:'croustade', pronunciation:'kroo-STAHD', ipa:'/kruːˈstɑːd/', pos:'noun', def:'A crisp shell or case of bread, pastry, or potato used to hold a savory filling such as creamed mushrooms or seafood.', lang:'French, from croustade, from Provençal croustado (\'something crusty\'), from crousta (\'a crust\'), from Latin crusta.', example:'The chef filled each golden croustade with creamy lobster in tarragon sauce, the crisp pastry shell providing a perfect contrast.', isNoun:true },
+  { word:'cryptozoa', pronunciation:'KRIP-toh-ZOH-uh', ipa:'/ˌkrɪptoʊˈzoʊə/', pos:'noun', def:'Small invertebrate animals that live hidden in soil, leaf litter, under bark, or in other concealed habitats.', lang:'Greek, from kryptos (\'hidden\') + zoa (\'animals\'), plural of zoon, describing the hidden fauna of the forest floor.', example:'Turning over a rotting log revealed a world of cryptozoa — woodlice, centipedes, beetles, and earthworms going about their hidden lives.', isNoun:true },
+  { word:'cushag', pronunciation:'KOOSH-ag', ipa:'/ˈkʊʃæɡ/', pos:'noun', def:'The ragwort plant, the national flower of the Isle of Man, bearing bright yellow daisy-like flowers.', lang:'Manx Gaelic, from cushag (\'ragwort\'), the traditional name for this yellow wildflower that symbolizes the Isle of Man.', example:'The hillsides of the Isle of Man blazed golden with cushag each summer, the national flower covering the landscape in cheerful yellow.', isNoun:true },
+  { word:'cynghanedd', pronunciation:'kung-HAN-eth', ipa:'/kəŋˈhænɛð/', pos:'noun', def:'A complex system of sound correspondences, alliteration, and internal rhyme in traditional Welsh poetry, considered the hallmark of Welsh bardic craft.', lang:'Welsh, from cynghanedd (\'harmony\'), from cyn- (\'together\') + ghanedd (related to canu, \'to sing\'), describing poetic sound harmony.', example:'Mastering cynghanedd takes years of study, the intricate rules of consonant echoing and internal rhyme defining the highest art of Welsh poetry.', isNoun:true },
+  { word:'cynocephali', pronunciation:'SY-noh-SEF-uh-ly', ipa:'/ˌsaɪnoʊˈsɛfəlaɪ/', pos:'noun', def:'Mythical dog-headed people described in ancient and medieval accounts, believed to inhabit distant lands beyond the known world.', lang:'Greek, from kynokephaloi (\'dog-headed ones\'), from kyon (genitive kynos, \'a dog\') + kephale (\'head\').', example:'Medieval travelers reported encounters with cynocephali in far-off lands, describing them as savage dog-headed beings who barked instead of spoke.', isNoun:true }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Slider
+  const totalA = a.length;
+  const pct = totalA > 1 ? s / (totalA - 1) * 100 : 0;
+  document.getElementById("sliderFill").style.width = pct + "%";
+  const sliderArea = document.getElementById("sliderArea");
+  const areaW = sliderArea.offsetWidth || 200;
+  const pad = 10;
+  const thumbLeft = pad + (pct / 100) * (areaW - pad * 2);
+  const thumb = document.getElementById("sliderThumb");
+  if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
+
+  // Ticks - show ~20 evenly spaced markers
+  const tickCount = Math.min(totalA, 20);
+  let ticksHtml = '';
+  for(let t=0; t<tickCount; t++){
+    const ti = Math.round(t / (tickCount-1) * (totalA-1));
+    const cls = ti===s ? 'active' : (t % 5 === 0 ? 'major' : '');
+    ticksHtml += `<div class="slider-tick ${cls}"></div>`;
+  }
+  document.getElementById("sliderDots").innerHTML = ticksHtml;
+  document.getElementById("sliderCounter").textContent = `${s+1} / ${totalA}`;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Slider drag
+const slArea=document.getElementById("sliderArea");
+const slThumb=document.getElementById("sliderThumb");
+let slDragging=false;
+function sliderFromX(cx){
+  const r=slArea.getBoundingClientRect();
+  const pad=10;
+  const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
+  const a=aw(),idx=Math.round(p*(a.length-1));
+  // Move thumb immediately for smooth feel
+  const thumbLeft=pad+(p)*(r.width-pad*2);
+  slThumb.style.left=thumbLeft+"px";
+  if(idx!==si()){
+    const g=WORDS.findIndex(w=>w.word===a[idx].word);
+    flipped=false; currentIndex=g; render();
+  }
+}
+slArea.addEventListener("touchstart",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(slDragging) sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    // Speak the word after releasing
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+slArea.addEventListener("mousedown",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.clientX); e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(slDragging) sliderFromX(e.clientX);
+});
+document.addEventListener("mouseup",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>

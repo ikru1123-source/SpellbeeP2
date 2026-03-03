@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: Verdana, Geneva, sans-serif; font-size: 36px; font-weight: 400;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 18px; height: 18px; }
+.slider-area {
+  flex: 1; height: 32px; position: relative;
+  display: flex; align-items: center;
+  touch-action: none; cursor: pointer;
+}
+.slider-track-bg {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
+}
+.slider-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(212,175,55,0.5));
+  transition: width 0.15s ease;
+}
+.slider-dots {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; padding: 0 2px;
+}
+.slider-tick {
+  width: 2px; height: 8px; border-radius: 1px;
+  background: rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.slider-tick.major { height: 12px; background: rgba(255,255,255,0.12); }
+.slider-tick.active { background: var(--gold); height: 14px; width: 3px; border-radius: 1.5px; box-shadow: 0 0 6px rgba(212,175,55,0.4); }
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px solid #1a1528;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  cursor: grab; transition: left 0.12s ease;
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
+.slider-thumb.dragging { transition: none; transform: translate(-50%, -50%) scale(1.15); }
+.slider-counter {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.08em;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1><a href="index.html" style="color:inherit;text-decoration:none;">Spelling Bee</a></h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="slider-area" id="sliderArea">
+      <div class="slider-track-bg">
+        <div class="slider-fill" id="sliderFill"></div>
+      </div>
+      <div class="slider-dots" id="sliderDots"></div>
+      <div class="slider-thumb" id="sliderThumb"></div>
+    </div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'kakapo', pronunciation:'KAH-kuh-poh', ipa:'/ˈkɑːkəˌpoʊ/', pos:'noun', def:'A large, flightless, nocturnal parrot native to New Zealand, critically endangered and one of the world\'s rarest birds.', lang:'Māori, from kākāpō (\'night parrot\'), from kākā (\'parrot\') + pō (\'night\').', example:'The kakapo is so rare that every surviving individual has been named, each bird monitored around the clock by dedicated conservation teams.', isNoun:true },
+  { word:'kaleidoscope', pronunciation:'kuh-LY-duh-skohp', ipa:'/kəˈlaɪdəˌskoʊp/', pos:'noun', def:'A tube containing mirrors and pieces of colored glass that produce changing symmetrical patterns when rotated; a constantly changing pattern or scene.', lang:'Greek, from kalos (\'beautiful\') + eidos (\'form\') + skopein (\'to look at\'), literally \'a viewer of beautiful forms\'.', example:'The sunset over the harbor was a kaleidoscope of color, the sky shifting through gold, pink, crimson, and violet as the sun sank below the horizon.', isNoun:true },
+  { word:'kalimba', pronunciation:'kuh-LIM-buh', ipa:'/kəˈlɪmbə/', pos:'noun', def:'An African musical instrument consisting of a wooden board with metal tines that are plucked with the thumbs; a thumb piano.', lang:'Bantu, from kalimba, the traditional name for this lamellaphone instrument found across sub-Saharan Africa.', example:'The musician plucked the metal tines of the kalimba with her thumbs, producing a bright, bell-like melody that seemed to float in the evening air.', isNoun:true },
+  { word:'kalopanax', pronunciation:'kuh-LOP-uh-naks', ipa:'/kəˈlɒpəˌnæks/', pos:'noun', def:'A spiny deciduous tree native to East Asia, also called the prickly castor oil tree, valued for its timber and ornamental qualities.', lang:'Greek, from kalos (\'beautiful\') + Panax (the ginseng genus), because the tree resembles a beautiful member of the ginseng family.', example:'The kalopanax towered at the edge of the Japanese forest, its trunk covered in fierce thorns that discouraged even the most determined climbers.', isNoun:true },
+  { word:'kangri', pronunciation:'KANG-ree', ipa:'/ˈkæŋɡri/', pos:'noun', def:'A small, portable earthenware pot filled with burning charcoal, carried under clothing for warmth in Kashmir during winter.', lang:'Kashmiri, from kangri (\'a fire pot\'), the traditional personal heater carried beneath the loose pheran garment in the Himalayan winter.', example:'The Kashmiri woman tucked the kangri beneath her pheran, the small pot of glowing embers keeping her warm through the bitter mountain cold.', isNoun:true },
+  { word:'Kannada', pronunciation:'KAN-uh-duh', ipa:'/ˈkænədə/', pos:'noun', def:'A Dravidian language spoken primarily in the Indian state of Karnataka, with its own distinctive script and a literary tradition over a thousand years old.', lang:'Kannada, from Kannada or Karunādu (\'lofty land\'), the self-designation of this language spoken by over 40 million people.', example:'The inscription was written in Old Kannada, the ancient Dravidian script preserving a royal decree from over a millennium ago.', isNoun:true },
+  { word:'kapparah', pronunciation:'kah-PAH-rah', ipa:'/kɑːˈpɑːrə/', pos:'noun', def:'A Jewish ritual of atonement performed before Yom Kippur, traditionally involving the symbolic transfer of sins to a chicken or to coins given to charity.', lang:'Hebrew, from kapparah (\'atonement, expiation\'), from kaper (\'to atone, cover over\').', example:'On the eve of Yom Kippur, the family performed kapparah, waving coins above their heads while reciting prayers of atonement before donating them to charity.', isNoun:true },
+  { word:'katakana', pronunciation:'KAH-tuh-KAH-nuh', ipa:'/ˌkɑːtəˈkɑːnə/', pos:'noun', def:'One of the two Japanese syllabic writing systems, used primarily for foreign words, scientific terms, and emphasis.', lang:'Japanese, from katakana (\'fragmentary kana\'), from kata (\'partial, one-sided\') + kana (\'syllabic character\'), because the characters were derived from parts of kanji.', example:'The menu listed Western dishes in katakana, the angular Japanese script transforming \'hamburger\' and \'coffee\' into familiar syllabic patterns.', isNoun:true },
+  { word:'katana', pronunciation:'kuh-TAH-nuh', ipa:'/kəˈtɑːnə/', pos:'noun', def:'A traditional Japanese single-edged curved sword used by samurai, renowned for its sharpness and the quality of its steel.', lang:'Japanese, from katana (\'a sword\'), the iconic weapon of the samurai class, forged through a complex process of folding and tempering steel.', example:'The katana\'s blade gleamed with a subtle wave pattern along its edge, the visible signature of the ancient folding technique used in its forging.', isNoun:true },
+  { word:'kathakali', pronunciation:'KAH-tuh-KAH-lee', ipa:'/ˌkɑːtəˈkɑːli/', pos:'noun', def:'A classical Indian dance-drama from Kerala, featuring elaborate makeup, costumes, and highly stylized gestures to tell stories from Hindu epics.', lang:'Malayalam, from kathakali (\'story-play\'), from katha (\'story\') + kali (\'play, performance\').', example:'The kathakali performer\'s face was painted in vivid green and red, his enormous eyes rolling expressively as he portrayed the demon king Ravana.', isNoun:true },
+  { word:'keeshond', pronunciation:'KAYZ-hond', ipa:'/ˈkeɪzˌhɒnd/', pos:'noun', def:'A medium-sized dog with a thick silver and black coat, pointed ears, and a plumed tail, the national dog of the Netherlands.', lang:'Dutch, named after Kees de Gyselaer, an 18th-century Dutch patriot whose dog became a symbol of the political resistance, + hond (\'a dog\').', example:'The fluffy keeshond pranced through the park, its spectacular silver-gray coat and fox-like face drawing admiring glances from every passerby.', isNoun:true },
+  { word:'kentledge', pronunciation:'KENT-lij', ipa:'/ˈkɛntlɪdʒ/', pos:'noun', def:'Pig iron or scrap metal used as permanent ballast in a ship; heavy metal used as counterweight in construction.', lang:'English, of uncertain origin, possibly from quintal (\'a hundredweight\') + -age, describing heavy metal used to weigh down ships.', example:'The construction crew stacked kentledge on the platform to counterbalance the crane\'s load, the heavy iron blocks providing essential stability.', isNoun:true },
+  { word:'Keplerian', pronunciation:'kep-LEER-ee-un', ipa:'/kɛˈplɪəriən/', pos:'adjective', def:'Of or relating to Johannes Kepler or his laws of planetary motion, which describe the elliptical orbits of planets around the sun.', lang:'Named after Johannes Kepler (1571-1630), the German astronomer who discovered the laws governing planetary orbits, + -ian.', example:'The Keplerian telescope design, using two convex lenses, produced an inverted image but offered a wider field of view than Galileo\'s instrument.', isNoun:false },
+  { word:'kerril', pronunciation:'KER-il', ipa:'/ˈkɛrɪl/', pos:'noun', def:'A small, low-growing Australian shrub or bush; scrubby vegetation of the Australian outback.', lang:'Aboriginal Australian, from a local language describing the low scrubby bushes of the arid interior.', example:'The outback landscape was dotted with sparse kerril bushes, their low, hardy forms the only vegetation surviving in the red desert soil.', isNoun:true },
+  { word:'kichel', pronunciation:'KIH-kul', ipa:'/ˈkɪxəl/', pos:'noun', def:'A light, crisp Jewish cookie or wafer, often shaped like a bow tie and dusted with sugar, traditionally served at celebrations.', lang:'Yiddish, from kichel (\'a little cake\'), from German Küchel or Küchlein, diminutive of Kuchen (\'cake\').', example:'The grandmother\'s kichel were perfectly light and crisp, the sugary bow-tie cookies disappearing from the plate within minutes at every family gathering.', isNoun:true },
+  { word:'kipuka', pronunciation:'kee-POO-kuh', ipa:'/kiːˈpuːkə/', pos:'noun', def:'An area of older land surrounded by younger lava flows, forming an ecological island with its own preserved ecosystem.', lang:'Hawaiian, from kīpuka (\'a variation in form\'), describing land features created when lava flows around but does not cover an elevated area.', example:'The kipuka was an island of lush forest surrounded by barren black lava, its isolated ecosystem preserving species found nowhere else on the volcano.', isNoun:true },
+  { word:'Kitksan', pronunciation:'KIT-san', ipa:'/ˈkɪtsæn/', pos:'noun', def:'A First Nations people of northwestern British Columbia, Canada, known for their totem poles, longhouses, and rich artistic tradition.', lang:'Tsimshian, from Gitxsan (\'people of the river of mist\'), the self-designation of this First Nations group of the Skeena River valley.', example:'The Kitksan totem poles along the Skeena River are among the finest examples of Northwest Coast art, their carved figures telling clan histories.', isNoun:true },
+  { word:'kiva', pronunciation:'KEE-vuh', ipa:'/ˈkiːvə/', pos:'noun', def:'A ceremonial underground chamber used by Pueblo peoples for religious rituals and community gatherings.', lang:'Hopi, from kiva (\'a ceremonial room\'), the sacred underground chambers central to Puebloan spiritual life.', example:'The archaeologist descended the ladder into the ancient kiva, the circular underground chamber where Ancestral Puebloans held sacred ceremonies a thousand years ago.', isNoun:true },
+  { word:'Kjeldahl', pronunciation:'KYEL-dahl', ipa:'/ˈkjɛldɑːl/', pos:'noun', def:'A chemical method for determining the nitrogen content in organic substances, widely used in food science and agriculture.', lang:'Named after Johan Kjeldahl (1849-1900), the Danish chemist who developed this nitrogen analysis technique in 1883.', example:'The lab technician used the Kjeldahl method to measure the protein content of the grain sample, converting nitrogen content to an estimate of total protein.', isNoun:true },
+  { word:'koh-i-noor', pronunciation:'KOH-ih-NOOR', ipa:'/ˌkoʊɪˈnʊər/', pos:'noun', def:'A famous large diamond, now part of the British Crown Jewels, with a history spanning centuries and multiple empires.', lang:'Persian, from kōh-i-nūr (\'mountain of light\'), from kōh (\'mountain\') + nūr (\'light\'), describing its extraordinary brilliance.', example:'The Koh-i-Noor diamond has passed through the hands of Mughal emperors, Persian shahs, and Sikh maharajas before ending up in the British Crown Jewels.', isNoun:true },
+  { word:'Koine', pronunciation:'koy-NAY', ipa:'/kɔɪˈneɪ/', pos:'noun', def:'The common form of Greek spoken throughout the eastern Mediterranean from the 4th century BC, the language of the New Testament.', lang:'Greek, from koine (dialektos) (\'common dialect\'), from koinos (\'common, shared\'), the lingua franca of the Hellenistic world.', example:'The New Testament was written in Koine Greek, the common language understood by people across the entire Roman Empire.', isNoun:true },
+  { word:'koji', pronunciation:'KOH-jee', ipa:'/ˈkoʊdʒi/', pos:'noun', def:'A mold (Aspergillus oryzae) cultivated on rice, barley, or soybeans, essential for making soy sauce, miso, sake, and other fermented foods.', lang:'Japanese, from koji (\'malted grain\'), the cultured mold that is the foundation of Japanese fermentation and umami flavor.', example:'The brewmaster carefully tended the koji, the delicate rice mold whose enzymes would transform the grain into the rich, complex flavors of premium sake.', isNoun:true },
+  { word:'konditorei', pronunciation:'kon-DEE-toh-ry', ipa:'/kɒnˈdiːtoʊˌraɪ/', pos:'noun', def:'A German or Austrian pastry shop or café specializing in fine cakes, tortes, and confections.', lang:'German, from Konditorei (\'a pastry shop\'), from Konditor (\'a confectioner\'), from Latin conditor (\'one who stores or preserves\').', example:'The Viennese konditorei displayed towering slices of Sachertorte and Linzertorte behind gleaming glass cases, each pastry a work of edible art.', isNoun:true },
+  { word:'korrigan', pronunciation:'KOR-ih-gun', ipa:'/ˈkɒrɪɡən/', pos:'noun', def:'A fairy or sprite in Breton folklore, often depicted as a beautiful but mischievous nature spirit associated with springs and forests.', lang:'Breton, from korrigan (\'a little dwarf\'), from korr (\'dwarf\') + -igan (diminutive), the fairy folk of Celtic Brittany.', example:'Breton legends warn travelers not to dance with the korrigans at midnight, for the enchanting fairies will trap mortals in their revels until dawn.', isNoun:true },
+  { word:'krewe', pronunciation:'KROO', ipa:'/kruː/', pos:'noun', def:'A private organization that puts on a parade or ball during Mardi Gras in New Orleans; a Carnival club.', lang:'English, an archaic or fanciful spelling of crew, adopted by Mardi Gras organizations in New Orleans beginning in the 19th century.', example:'The krewe of Rex paraded through the French Quarter on Fat Tuesday, its elaborate floats showering the crowd with beads, doubloons, and trinkets.', isNoun:true },
+  { word:'kriegspiel', pronunciation:'KREEG-shpeel', ipa:'/ˈkriːɡˌʃpiːl/', pos:'noun', def:'A form of chess played on two separate boards where each player can see only their own pieces, with an umpire mediating; also a military war game.', lang:'German, from Krieg (\'war\') + Spiel (\'game\'), originally a Prussian military training exercise using maps and miniature armies.', example:'The two chess masters played kriegspiel blind to each other\'s positions, forced to deduce where the opponent\'s pieces lurked from the umpire\'s rulings.', isNoun:true },
+  { word:'Kuiper Belt', pronunciation:'KY-pur BELT', ipa:'/ˈkaɪpər ˌbɛlt/', pos:'noun', def:'A region of the solar system beyond Neptune, containing thousands of small icy bodies including Pluto, extending roughly 30 to 50 AU from the Sun.', lang:'Named after Gerard Kuiper (1905-1973), the Dutch-American astronomer who predicted the existence of this disc of icy objects beyond Neptune.', example:'The Kuiper Belt contains millions of frozen remnants from the solar system\'s formation, icy worlds orbiting in the cold darkness beyond Neptune.', isNoun:true },
+  { word:'Kutani', pronunciation:'koo-TAH-nee', ipa:'/kuːˈtɑːni/', pos:'noun', def:'A style of Japanese porcelain from Ishikawa Prefecture, known for its bold overglaze enamel designs in deep green, yellow, purple, and red.', lang:'Japanese, from Kutani (\'nine valleys\'), the mountainous region in Ishikawa Prefecture where this distinctive porcelain has been produced since the 17th century.', example:'The Kutani tea bowl glowed with rich overglaze enamels in deep green and gold, the bold Japanese porcelain a masterpiece of ceramic art.', isNoun:true },
+  { word:'kwashiorkor', pronunciation:'KWASH-ee-OR-kor', ipa:'/ˌkwɒʃiˈɔːrkɔːr/', pos:'noun', def:'A form of severe protein malnutrition in young children, characterized by a swollen belly, skin changes, and reddish hair discoloration.', lang:'Ga (a Ghanaian language), from kwashiorkor (\'the disease of the displaced child\'), describing a child weaned too early when a new sibling arrives.', example:'The humanitarian workers encountered children suffering from kwashiorkor, their distended bellies and discolored hair the heartbreaking signs of severe protein deficiency.', isNoun:true },
+  { word:'kyphoplasty', pronunciation:'KY-foh-PLAS-tee', ipa:'/ˈkaɪfoʊˌplæsti/', pos:'noun', def:'A minimally invasive spinal procedure in which a balloon is inserted into a collapsed vertebra and inflated to restore height before filling the space with bone cement.', lang:'Greek, from kyphos (\'bent, hunched\') + plassein (\'to mold, form\'), + -y.', example:'The surgeon performed kyphoplasty on the fractured vertebra, the balloon restoring the bone\'s height and the cement stabilizing it against further collapse.', isNoun:true }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Slider
+  const totalA = a.length;
+  const pct = totalA > 1 ? s / (totalA - 1) * 100 : 0;
+  document.getElementById("sliderFill").style.width = pct + "%";
+  const sliderArea = document.getElementById("sliderArea");
+  const areaW = sliderArea.offsetWidth || 200;
+  const pad = 10;
+  const thumbLeft = pad + (pct / 100) * (areaW - pad * 2);
+  const thumb = document.getElementById("sliderThumb");
+  if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
+
+  // Ticks - show ~20 evenly spaced markers
+  const tickCount = Math.min(totalA, 20);
+  let ticksHtml = '';
+  for(let t=0; t<tickCount; t++){
+    const ti = Math.round(t / (tickCount-1) * (totalA-1));
+    const cls = ti===s ? 'active' : (t % 5 === 0 ? 'major' : '');
+    ticksHtml += `<div class="slider-tick ${cls}"></div>`;
+  }
+  document.getElementById("sliderDots").innerHTML = ticksHtml;
+  document.getElementById("sliderCounter").textContent = `${s+1} / ${totalA}`;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Slider drag
+const slArea=document.getElementById("sliderArea");
+const slThumb=document.getElementById("sliderThumb");
+let slDragging=false;
+function sliderFromX(cx){
+  const r=slArea.getBoundingClientRect();
+  const pad=10;
+  const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
+  const a=aw(),idx=Math.round(p*(a.length-1));
+  // Move thumb immediately for smooth feel
+  const thumbLeft=pad+(p)*(r.width-pad*2);
+  slThumb.style.left=thumbLeft+"px";
+  if(idx!==si()){
+    const g=WORDS.findIndex(w=>w.word===a[idx].word);
+    flipped=false; currentIndex=g; render();
+  }
+}
+slArea.addEventListener("touchstart",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(slDragging) sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    // Speak the word after releasing
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+slArea.addEventListener("mousedown",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.clientX); e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(slDragging) sliderFromX(e.clientX);
+});
+document.addEventListener("mouseup",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>

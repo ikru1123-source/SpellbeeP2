@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: Verdana, Geneva, sans-serif; font-size: 36px; font-weight: 400;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 18px; height: 18px; }
+.slider-area {
+  flex: 1; height: 32px; position: relative;
+  display: flex; align-items: center;
+  touch-action: none; cursor: pointer;
+}
+.slider-track-bg {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
+}
+.slider-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(212,175,55,0.5));
+  transition: width 0.15s ease;
+}
+.slider-dots {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; padding: 0 2px;
+}
+.slider-tick {
+  width: 2px; height: 8px; border-radius: 1px;
+  background: rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.slider-tick.major { height: 12px; background: rgba(255,255,255,0.12); }
+.slider-tick.active { background: var(--gold); height: 14px; width: 3px; border-radius: 1.5px; box-shadow: 0 0 6px rgba(212,175,55,0.4); }
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px solid #1a1528;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  cursor: grab; transition: left 0.12s ease;
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
+.slider-thumb.dragging { transition: none; transform: translate(-50%, -50%) scale(1.15); }
+.slider-counter {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.08em;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1><a href="index.html" style="color:inherit;text-decoration:none;">Spelling Bee</a></h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="slider-area" id="sliderArea">
+      <div class="slider-track-bg">
+        <div class="slider-fill" id="sliderFill"></div>
+      </div>
+      <div class="slider-dots" id="sliderDots"></div>
+      <div class="slider-thumb" id="sliderThumb"></div>
+    </div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'La Tène', pronunciation:'lah TEN', ipa:'/lɑː ˈtɛn/', pos:'noun', def:'A late Iron Age Celtic culture and art style that flourished in Europe from about 450 BC, characterized by flowing, curvilinear decorative motifs.', lang:'Named after La Tène, an archaeological site on Lake Neuchâtel in Switzerland where artifacts of this culture were first discovered in 1857.', example:'The La Tène brooch featured the flowing, interlacing curves that define Celtic art, its spiraling tendrils still mesmerizing after two and a half millennia.', isNoun:true },
+  { word:'laccolith', pronunciation:'LAK-uh-lith', ipa:'/ˈlækəlɪθ/', pos:'noun', def:'A mass of igneous rock that has been intruded between rock layers, causing the overlying strata to dome upward.', lang:'Greek, from lakkos (\'a cistern, pond\') + lithos (\'a stone\'), describing the lens-shaped intrusion of magma between rock layers.', example:'The mountain was formed by a laccolith, the dome of magma pushing up the sedimentary layers above it like a blister beneath the earth\'s skin.', isNoun:true },
+  { word:'lanceolate', pronunciation:'LAN-see-oh-layt', ipa:'/ˈlænsiəlɪt/', pos:'adjective', def:'Shaped like a lance head; tapering to a point at each end, especially of a leaf that is much longer than wide.', lang:'Latin, from lanceolatus (\'lance-shaped\'), from lanceola (\'a small lance\'), diminutive of lancea (\'a lance\').', example:'The willow\'s lanceolate leaves dangled gracefully over the pond, their narrow, pointed forms swaying with every breath of wind.', isNoun:false },
+  { word:'langrage', pronunciation:'LANG-grij', ipa:'/ˈlæŋɡrɪdʒ/', pos:'noun', def:'A type of anti-personnel cannon ammunition consisting of scraps of iron, bolts, and nails packed into a canister, designed to shred sails and rigging.', lang:'French, from langrée, of uncertain origin, describing the improvised shrapnel ammunition used in naval warfare.', example:'The pirate ship fired langrage at the merchant vessel\'s rigging, the canister of jagged metal scraps tearing through sails and ropes like a giant shotgun blast.', isNoun:true },
+  { word:'Latinxua', pronunciation:'lah-TIN-shwah', ipa:'/lɑːˈtɪnʃwɑː/', pos:'noun', def:'A romanization system for Chinese developed in the Soviet Union in the 1930s, using the Latin alphabet to write Mandarin and other Chinese dialects.', lang:'Chinese, from Latinxua Sin Wenz (\'Latinized New Script\'), a romanization system created for Chinese workers in the USSR.', example:'Latinxua was designed to promote literacy among Chinese speakers, its Latin-based script far simpler to learn than thousands of traditional characters.', isNoun:true },
+  { word:'lebensraum', pronunciation:'LAY-bunz-rowm', ipa:'/ˈleɪbənzˌraʊm/', pos:'noun', def:'The territory that a nation or group believes is needed for its natural development; living space, especially as claimed by Nazi Germany.', lang:'German, from Leben (\'life\') + Raum (\'space, room\'), the geopolitical concept of territorial expansion for national survival.', example:'The dangerous ideology of lebensraum drove Nazi Germany\'s territorial expansion eastward, with devastating consequences for millions of people.', isNoun:true },
+  { word:'leberwurst', pronunciation:'LAY-bur-wurst', ipa:'/ˈleɪbərˌwɜːrst/', pos:'noun', def:'A German liver sausage made from pork or calf liver, typically spreadable in texture and served on bread.', lang:'German, from Leber (\'liver\') + Wurst (\'sausage\'), the traditional German liver sausage.', example:'He spread leberwurst thickly on dark pumpernickel bread, the rich liver sausage a staple of his German grandmother\'s kitchen.', isNoun:true },
+  { word:'lebkuchen', pronunciation:'LAYB-koo-khun', ipa:'/ˈleɪbˌkuːxən/', pos:'noun', def:'A traditional German baked Christmas treat similar to gingerbread, flavored with honey, spices, nuts, and candied fruit.', lang:'German, from Lebkuchen (\'a spice cake\'), possibly from Latin libum (\'a flat cake\') or from Laib (\'a loaf\') + Kuchen (\'a cake\').', example:'The Nuremberg lebkuchen was soft and chewy, its blend of honey, cinnamon, and cloves the taste of a traditional German Christmas.', isNoun:true },
+  { word:'lecithin', pronunciation:'LES-ih-thin', ipa:'/ˈlɛsɪθɪn/', pos:'noun', def:'A fatty substance found in animal and plant tissues, widely used as an emulsifier in food processing, especially in chocolate and margarine.', lang:'Greek, from lekithos (\'egg yolk\'), because lecithin was first isolated from egg yolk in 1846, + -in.', example:'The chocolate manufacturer added lecithin to the mixture, the soy-derived emulsifier creating the smooth, glossy texture consumers expect.', isNoun:true },
+  { word:'lefse', pronunciation:'LEF-suh', ipa:'/ˈlɛfsə/', pos:'noun', def:'A traditional Norwegian flatbread made from potatoes, flour, and butter, cooked on a griddle and often served with butter and sugar.', lang:'Norwegian, from lefse (\'a thin flatbread\'), the traditional Scandinavian potato bread prepared during holidays and celebrations.', example:'The grandmother rolled the lefse paper-thin on the special grooved board, each delicate potato flatbread a labor of love for the holiday table.', isNoun:true },
+  { word:'lierre', pronunciation:'lee-AIR', ipa:'/liˈɛər/', pos:'noun', def:'Ivy; the French word for ivy, used in English in artistic and decorative contexts.', lang:'French, from lierre (\'ivy\'), from Old French ierre, from Latin hedera (\'ivy\').', example:'The porcelain vase was decorated with delicate lierre motifs, the ivy leaves climbing in graceful spirals around the vessel.', isNoun:true },
+  { word:'ligas', pronunciation:'LEE-gahs', ipa:'/ˈliːɡɑːs/', pos:'noun', def:'In Filipino culture, ceremonial ornamental leg bands or garters worn as traditional adornment, especially during festivals.', lang:'Spanish, from ligas (\'garters, bands\'), from ligar (\'to bind, tie\'), from Latin ligare.', example:'The dancers wore colorful ligas around their calves, the ornamental bands adding flash and movement to the traditional festival performance.', isNoun:true },
+  { word:'lilliputian', pronunciation:'LIL-ih-PYOO-shun', ipa:'/ˌlɪlɪˈpjuːʃən/', pos:'adjective', def:'Extremely small; tiny; trivially small in comparison; from the land of tiny people in Gulliver\'s Travels.', lang:'Named after Lilliput, the land of six-inch-tall people in Jonathan Swift\'s 1726 satirical novel Gulliver\'s Travels, + -ian.', example:'The lilliputian apartment was barely larger than a closet, but its clever design made every square inch count.', isNoun:false },
+  { word:'limaçon', pronunciation:'LIM-uh-son', ipa:'/ˈlɪməˌsɒn/', pos:'noun', def:'A plane curve shaped like a snail shell, generated by a point on the circumference of a circle rolling around a fixed circle; a mathematical spiral.', lang:'French, from limaçon (\'a snail\'), from limace (\'a slug\'), from Latin limax (\'a snail, slug\').', example:'The mathematics student plotted the limaçon curve, its elegant snail-shell shape emerging as the equation traced an inner loop on the graph.', isNoun:true },
+  { word:'Llullaillaco', pronunciation:'YOO-yay-YAH-koh', ipa:'/ˌjuːjaɪˈjɑːkoʊ/', pos:'noun', def:'A volcano on the border of Argentina and Chile, the highest historically active volcano in the world at 22,110 feet, and site of Inca child mummies.', lang:'Quechua and Aymara, from Llullaillaco, possibly meaning \'deceptive water\' or \'clear water\', the name of this immense Andean stratovolcano.', example:'Llullaillaco\'s summit held perfectly preserved five-hundred-year-old Inca mummies, the extreme altitude and cold keeping them in remarkable condition.', isNoun:true },
+  { word:'lobscouse', pronunciation:'LOB-skows', ipa:'/ˈlɒbskaʊs/', pos:'noun', def:'A thick stew of meat, potatoes, and onions traditionally eaten by sailors; the origin of the nickname "Scousers" for people from Liverpool.', lang:'English, possibly from Low German labskaus or Danish and Norwegian lapskaus (\'a hash, stew\'), the hearty sailor\'s stew.', example:'The cook ladled out thick lobscouse to the hungry crew, the simple stew of salt beef, potatoes, and onions sustaining sailors across countless Atlantic crossings.', isNoun:true },
+  { word:'loggia', pronunciation:'LOH-juh', ipa:'/ˈloʊdʒə/', pos:'noun', def:'A roofed gallery or arcade open on one or more sides, especially one forming part of a house and having one side open to the garden.', lang:'Italian, from loggia (\'a lodge, covered gallery\'), from Old French loge (\'an arbor, covered walk\'), of Germanic origin.', example:'They dined in the loggia overlooking the Tuscan valley, the arched colonnade framing a view of olive groves and cypress trees stretching to the horizon.', isNoun:true },
+  { word:'logodaedaly', pronunciation:'LOG-oh-DED-uh-lee', ipa:'/ˌlɒɡoʊˈdɛdəli/', pos:'noun', def:'Cunning or skill in the use of words; verbal cleverness and artful manipulation of language.', lang:'Greek, from logos (\'word\') + daidalos (\'skillfully wrought, cunning\'), from Daedalus, the legendary master craftsman.', example:'The barrister\'s logodaedaly was legendary — he could twist the most damaging testimony into something that sounded almost favorable through sheer verbal artistry.', isNoun:true },
+  { word:'logothete', pronunciation:'LOG-oh-theet', ipa:'/ˈlɒɡoʊˌθiːt/', pos:'noun', def:'A high-ranking official in the Byzantine Empire responsible for finance, law, or administration.', lang:'Greek, from logothetes (\'an accountant, auditor\'), from logos (\'word, account\') + thetes (\'one who places\'), describing imperial administrators.', example:'The logothete of the treasury managed the Byzantine Empire\'s vast finances, his position one of the most powerful in Constantinople.', isNoun:true },
+  { word:'lokelani', pronunciation:'LOH-keh-LAH-nee', ipa:'/ˌloʊkɛˈlɑːni/', pos:'noun', def:'The Damask rose, designated as the official flower of the island of Maui in Hawaii.', lang:'Hawaiian, from lokelani (\'small red rose\'), from loke (\'rose\', from English) + lani (\'heavenly, royal\').', example:'The lokelani bloomed in the gardens of Maui, the pink Damask rose thriving in the island\'s warm climate as the cherished flower of the valley isle.', isNoun:true },
+  { word:'loquitur', pronunciation:'LOK-wih-tur', ipa:'/ˈlɒkwɪtər/', pos:'verb', def:'He or she speaks; a stage direction in dramatic texts indicating that a character is speaking.', lang:'Latin, from loquitur (\'he/she speaks\'), third person singular present indicative of loqui (\'to speak\').', example:'The stage direction read simply \'loquitur,\' indicating the moment when the previously silent character finally breaks into speech.', isNoun:false },
+  { word:'louche', pronunciation:'LOOSH', ipa:'/luːʃ/', pos:'adjective', def:'Disreputable or sordid in a rakish or appealing way; shady but fascinating.', lang:'French, from louche (\'squinting, shady\'), from Latin luscus (\'one-eyed\'), suggesting something not quite straight or honest.', example:'The louche nightclub attracted artists, gamblers, and aristocrats in equal measure, its shadowy reputation only adding to its irresistible allure.', isNoun:false },
+  { word:'loupe', pronunciation:'LOOP', ipa:'/luːp/', pos:'noun', def:'A small magnifying glass used by jewelers and watchmakers, typically held close to the eye for examining fine details.', lang:'French, from loupe (\'a magnifying glass\'), originally \'an imperfect gem\', of uncertain origin.', example:'The jeweler screwed the loupe into her eye and examined the diamond, the tiny magnifier revealing a microscopic inclusion invisible to the naked eye.', isNoun:true },
+  { word:'luftmensch', pronunciation:'LOOFT-mensh', ipa:'/ˈlʊftmɛnʃ/', pos:'noun', def:'An impractical dreamer with no visible means of support; literally an \'air person\' who lives on dreams rather than reality.', lang:'Yiddish, from Luft (\'air\') + Mensch (\'a person\'), literally \'an air person\', describing someone whose head is in the clouds.', example:'The lovable luftmensch spent his days writing poetry and philosophizing in cafés, blissfully unconcerned about trivial matters like rent or groceries.', isNoun:true },
+  { word:'lunulae', pronunciation:'LOO-nyoo-lee', ipa:'/ˈluːnjʊˌliː/', pos:'noun', def:'Plural of lunula; crescent-shaped objects or markings, especially the white half-moon shapes at the base of fingernails or crescent-shaped gold ornaments.', lang:'Latin, plural of lunula (\'a small moon\'), diminutive of luna (\'the moon\').', example:'The archaeologist uncovered a pair of gold lunulae, the crescent-shaped neck ornaments dating back to the Bronze Age and glowing as brightly as the day they were made.', isNoun:true },
+  { word:'Lupercalia', pronunciation:'LOO-pur-KAY-lee-uh', ipa:'/ˌluːpərˈkeɪliə/', pos:'noun', def:'An ancient Roman fertility festival held annually on February 15, involving rituals of purification and the striking of women with goatskin thongs for fertility.', lang:'Latin, from Lupercalia, from Lupercus (a Roman god associated with wolves and fertility), from lupus (\'a wolf\').', example:'The Lupercalia was one of Rome\'s wildest festivals, its priests running through the streets striking bystanders with goatskin strips to promote fertility.', isNoun:true }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Slider
+  const totalA = a.length;
+  const pct = totalA > 1 ? s / (totalA - 1) * 100 : 0;
+  document.getElementById("sliderFill").style.width = pct + "%";
+  const sliderArea = document.getElementById("sliderArea");
+  const areaW = sliderArea.offsetWidth || 200;
+  const pad = 10;
+  const thumbLeft = pad + (pct / 100) * (areaW - pad * 2);
+  const thumb = document.getElementById("sliderThumb");
+  if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
+
+  // Ticks - show ~20 evenly spaced markers
+  const tickCount = Math.min(totalA, 20);
+  let ticksHtml = '';
+  for(let t=0; t<tickCount; t++){
+    const ti = Math.round(t / (tickCount-1) * (totalA-1));
+    const cls = ti===s ? 'active' : (t % 5 === 0 ? 'major' : '');
+    ticksHtml += `<div class="slider-tick ${cls}"></div>`;
+  }
+  document.getElementById("sliderDots").innerHTML = ticksHtml;
+  document.getElementById("sliderCounter").textContent = `${s+1} / ${totalA}`;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Slider drag
+const slArea=document.getElementById("sliderArea");
+const slThumb=document.getElementById("sliderThumb");
+let slDragging=false;
+function sliderFromX(cx){
+  const r=slArea.getBoundingClientRect();
+  const pad=10;
+  const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
+  const a=aw(),idx=Math.round(p*(a.length-1));
+  // Move thumb immediately for smooth feel
+  const thumbLeft=pad+(p)*(r.width-pad*2);
+  slThumb.style.left=thumbLeft+"px";
+  if(idx!==si()){
+    const g=WORDS.findIndex(w=>w.word===a[idx].word);
+    flipped=false; currentIndex=g; render();
+  }
+}
+slArea.addEventListener("touchstart",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(slDragging) sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    // Speak the word after releasing
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+slArea.addEventListener("mousedown",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.clientX); e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(slDragging) sliderFromX(e.clientX);
+});
+document.addEventListener("mouseup",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>

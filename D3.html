@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: Verdana, Geneva, sans-serif; font-size: 36px; font-weight: 400;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 18px; height: 18px; }
+.slider-area {
+  flex: 1; height: 32px; position: relative;
+  display: flex; align-items: center;
+  touch-action: none; cursor: pointer;
+}
+.slider-track-bg {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
+}
+.slider-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(212,175,55,0.5));
+  transition: width 0.15s ease;
+}
+.slider-dots {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; padding: 0 2px;
+}
+.slider-tick {
+  width: 2px; height: 8px; border-radius: 1px;
+  background: rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.slider-tick.major { height: 12px; background: rgba(255,255,255,0.12); }
+.slider-tick.active { background: var(--gold); height: 14px; width: 3px; border-radius: 1.5px; box-shadow: 0 0 6px rgba(212,175,55,0.4); }
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px solid #1a1528;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  cursor: grab; transition: left 0.12s ease;
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
+.slider-thumb.dragging { transition: none; transform: translate(-50%, -50%) scale(1.15); }
+.slider-counter {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.08em;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1><a href="index.html" style="color:inherit;text-decoration:none;">Spelling Bee</a></h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="slider-area" id="sliderArea">
+      <div class="slider-track-bg">
+        <div class="slider-fill" id="sliderFill"></div>
+      </div>
+      <div class="slider-dots" id="sliderDots"></div>
+      <div class="slider-thumb" id="sliderThumb"></div>
+    </div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'daguerreotype', pronunciation:'duh-GAIR-oh-typ', ipa:'/dəˈɡɛroʊˌtaɪp/', pos:'noun', def:'An early photographic process producing an image on a silver-coated copper plate, the first commercially practical form of photography.', lang:'Named after Louis-Jacques-Mandé Daguerre (1787-1851), the French artist and inventor who developed the process in 1839, + -type.', example:'The daguerreotype of the young Civil War soldier was hauntingly sharp, his eyes staring directly into the camera with startling clarity after 160 years.', isNoun:true },
+  { word:'Darjeeling', pronunciation:'dar-JEE-ling', ipa:'/dɑːrˈdʒiːlɪŋ/', pos:'noun', def:'A fine quality black tea grown in the Darjeeling district of West Bengal, India, often called the "Champagne of teas" for its delicate muscatel flavor.', lang:'Tibetan, from dorje (\'thunderbolt\') + ling (\'place\'), the name of the hill town in the eastern Himalayas where this tea is cultivated.', example:'She savored the cup of first-flush Darjeeling, its light golden liquor and delicate muscatel notes unlike any other tea in the world.', isNoun:true },
+  { word:'darmstadtium', pronunciation:'DARM-shtat-ee-um', ipa:'/dɑːrmˈʃtætiəm/', pos:'noun', def:'A synthetic radioactive chemical element with atomic number 110, produced in particle accelerators and existing only for fractions of a second.', lang:'Named after Darmstadt, the German city where the element was first synthesized at the GSI Helmholtz Centre in 1994, + -ium.', example:'Darmstadtium was created by bombarding lead atoms with nickel ions, producing just a few atoms of the superheavy element before they decayed.', isNoun:true },
+  { word:'de rigueur', pronunciation:'duh ree-GUR', ipa:'/də rɪˈɡɜːr/', pos:'adjective', def:'Required by etiquette or current fashion; considered obligatory or necessary in polite society.', lang:'French, from de (\'of\') + rigueur (\'strictness, rigor\'), from Latin rigor, literally \'of strictness\'.', example:'A dark suit and conservative tie were de rigueur at the law firm, any deviation from the dress code earning a quiet word from the partners.', isNoun:false },
+  { word:'decastich', pronunciation:'DEK-uh-stik', ipa:'/ˈdɛkəˌstɪk/', pos:'noun', def:'A poem or stanza consisting of ten lines.', lang:'Greek, from deka (\'ten\') + stichos (\'a line of verse, row\').', example:'The poet structured her meditation on the seasons as a decastich, each of the ten lines capturing a different month of change.', isNoun:true },
+  { word:'degauss', pronunciation:'dee-GOWS', ipa:'/diːˈɡaʊs/', pos:'verb', def:'To remove unwanted magnetic fields from a device, ship, or recording medium; to demagnetize.', lang:'Named after Carl Friedrich Gauss (1777-1855), the German mathematician for whom the unit of magnetic flux density is named, with de- (\'remove\').', example:'The navy degaussed the warship by running electric cables around the hull, neutralizing its magnetic signature to protect against sea mines.', isNoun:false },
+  { word:'Deimos', pronunciation:'DY-mos', ipa:'/ˈdaɪmɒs/', pos:'noun', def:'The smaller and outermost of the two moons of Mars; in Greek mythology, the personification of dread and terror, son of Ares.', lang:'Greek, from Deimos (\'dread, terror\'), the companion of Ares (Mars) in battle, along with his brother Phobos (\'fear\').', example:'Deimos orbits Mars as a tiny, irregular lump of rock barely seven miles across, its surface scarred by ancient impacts.', isNoun:true },
+  { word:'demitasse', pronunciation:'DEM-ee-tass', ipa:'/ˈdɛmɪˌtæs/', pos:'noun', def:'A small cup used to serve strong black coffee, especially espresso; the coffee served in such a cup.', lang:'French, from demi (\'half\') + tasse (\'a cup\'), from Arabic tassah (\'a cup\'), literally \'a half cup\'.', example:'After dinner, the waiter brought demitasses of rich espresso, the tiny porcelain cups holding just enough concentrated coffee to finish the meal perfectly.', isNoun:true },
+  { word:'démodé', pronunciation:'day-moh-DAY', ipa:'/ˌdeɪmoʊˈdeɪ/', pos:'adjective', def:'Out of fashion; no longer stylish or current; outdated.', lang:'French, from démodé (\'out of fashion\'), from dé- (\'un-\') + mode (\'fashion\'), from Latin modus (\'manner\').', example:'The once-glamorous resort now looked sadly démodé, its 1970s décor and shag carpeting desperately in need of a modern update.', isNoun:false },
+  { word:'demurrage', pronunciation:'dih-MUR-ij', ipa:'/dɪˈmʌrɪdʒ/', pos:'noun', def:'A charge payable to the owner of a ship or freight container for failure to load or unload within the agreed time; the detention of a vessel.', lang:'Old French, from demeurage (\'a delay\'), from demeurer (\'to delay, remain\'), from Latin demorari (\'to linger\').', example:'The shipping company charged steep demurrage fees after the containers sat on the dock for two weeks beyond the agreed unloading period.', isNoun:true },
+  { word:'Déné', pronunciation:'DEN-ay', ipa:'/ˈdɛneɪ/', pos:'noun', def:'A group of indigenous peoples of northwestern Canada and Alaska; also their Athabaskan language family.', lang:'Déné, from déné or dene (\'people\'), the self-designation of these Athabaskan-speaking First Nations of northern Canada.', example:'The Déné people have inhabited the subarctic forests and tundra of northern Canada for thousands of years, their culture shaped by the vast wilderness.', isNoun:true },
+  { word:'dentifrice', pronunciation:'DEN-tih-fris', ipa:'/ˈdɛntɪfrɪs/', pos:'noun', def:'A paste or powder used for cleaning the teeth; toothpaste or tooth powder.', lang:'Latin, from dentifricium (\'a tooth powder\'), from dens (genitive dentis, \'a tooth\') + fricare (\'to rub\').', example:'The Victorian dentifrice was a gritty powder of chalk and charcoal, a far cry from the minty paste that fills modern tubes.', isNoun:true },
+  { word:'derring-do', pronunciation:'DAIR-ing DOO', ipa:'/ˌdɛrɪŋ ˈduː/', pos:'noun', def:'Heroic courage; daring action or adventure; brave and reckless deeds.', lang:'English, a misreading by Edmund Spenser of a phrase in Chaucer\'s Troilus and Criseyde, where dorring don meant \'daring to do\'.', example:'The swashbuckling hero was famous for feats of derring-do, from scaling castle walls to dueling three swordsmen at once.', isNoun:true },
+  { word:'Deseret', pronunciation:'DEZ-uh-ret', ipa:'/ˌdɛzəˈrɛt/', pos:'noun', def:'The name proposed by Brigham Young for a vast territory in the American West settled by Mormons; a word from the Book of Mormon meaning "honeybee."', lang:'From the Book of Mormon, where deseret means \'honeybee\', symbolizing industry and cooperative effort in the proposed Mormon state.', example:'The provisional State of Deseret once claimed territory stretching from the Rockies to the Pacific, though Congress reduced it to create Utah Territory.', isNoun:true },
+  { word:'desiccate', pronunciation:'DES-ih-kayt', ipa:'/ˈdɛsɪˌkeɪt/', pos:'verb', def:'To remove all moisture from something; to dry out completely; to preserve food by removing water.', lang:'Latin, from desiccatus, past participle of desiccare (\'to dry up\'), from de- (\'completely\') + siccare (\'to dry\'), from siccus (\'dry\').', example:'The desert sun desiccated the riverbed completely, leaving nothing but cracked mud and bleached stones where water once flowed.', isNoun:false },
+  { word:'Devanagari', pronunciation:'DAY-vuh-NAH-guh-ree', ipa:'/ˌdeɪvəˈnɑːɡəri/', pos:'noun', def:'The script used to write Hindi, Sanskrit, and several other South Asian languages, characterized by a horizontal line connecting the letters at the top.', lang:'Sanskrit, from deva (\'divine, god\') + nagari (\'of the city\'), literally \'divine city script\', or \'script of the city of the gods\'.', example:'The ancient Sanskrit text was written in elegant Devanagari script, the distinctive horizontal line linking each character like beads on a string.', isNoun:true },
+  { word:'dghaisa', pronunciation:'DY-suh', ipa:'/ˈdaɪsə/', pos:'noun', def:'A traditional Maltese water taxi, a brightly painted wooden boat with high prows used in the harbors of Malta.', lang:'Maltese, from dgħajsa (\'a boat\'), of Arabic origin, describing the traditional harbor boats of Valletta\'s Grand Harbour.', example:'The colorful dghaisa bobbed alongside the quay in Valletta\'s Grand Harbour, its high painted prows a familiar sight for centuries of seafarers.', isNoun:true },
+  { word:'dhole', pronunciation:'DOHL', ipa:'/doʊl/', pos:'noun', def:'A wild dog native to Central and Southeast Asia, living in packs and known for its reddish coat and whistling calls.', lang:'Possibly from Kannada tōḷa (\'wolf\'), or from another Dravidian language, the name for this Asian wild dog.', example:'The pack of dholes hunted cooperatively through the Indian forest, their eerie whistling calls coordinating the chase across dense undergrowth.', isNoun:true },
+  { word:'dhurrie', pronunciation:'DUR-ee', ipa:'/ˈdʌri/', pos:'noun', def:'A flat-woven cotton rug from India, traditionally used as a floor covering, characterized by geometric patterns and bright colors.', lang:'Hindi, from dari or dhurri (\'a cotton rug\'), a traditional Indian flat-weave textile used across the subcontinent.', example:'The handwoven dhurrie covered the stone floor in bold stripes of indigo and saffron, the cotton rug softening the room with color and warmth.', isNoun:true },
+  { word:'diapason', pronunciation:'DY-uh-PAY-zun', ipa:'/ˌdaɪəˈpeɪzən/', pos:'noun', def:'The entire range or compass of musical notes; a grand swelling burst of harmony; a principal organ stop sounding the full range.', lang:'Greek, from dia pason (khordon) (\'through all the strings\'), from dia (\'through\') + pason, genitive plural of pas (\'all\').', example:'The organist pulled out the diapason stops and filled the cathedral with a magnificent wall of sound that seemed to make the stone pillars vibrate.', isNoun:true },
+  { word:'diaphanous', pronunciation:'dy-AF-uh-nus', ipa:'/daɪˈæfənəs/', pos:'adjective', def:'Light, delicate, and translucent; so fine as to be almost transparent.', lang:'Greek, from diaphanes (\'showing through, transparent\'), from dia (\'through\') + phainein (\'to show\').', example:'The dancer\'s diaphanous silk costume floated around her like a cloud, the fabric so sheer it seemed woven from mist and moonlight.', isNoun:false },
+  { word:'Djibouti', pronunciation:'jih-BOO-tee', ipa:'/dʒɪˈbuːti/', pos:'noun', def:'A small country on the Horn of Africa, strategically located at the junction of the Red Sea and the Gulf of Aden.', lang:'Afar, from Djibouti, possibly from the Afar word gabouti (\'a plate\'), referring to the round shape of the region, or from a local word meaning \'land of tehab\' (a type of palm).', example:'Djibouti\'s strategic position at the entrance to the Red Sea has made it a vital hub for international shipping and military bases.', isNoun:true },
+  { word:'domnei', pronunciation:'DOM-nay', ipa:'/ˈdɒmneɪ/', pos:'noun', def:'The medieval code of chivalric love and devotion to a lady; the tradition of courtly love practiced by troubadours.', lang:'Provençal, from domnei (\'the service of a lady\'), from domna (\'a lady\'), from Latin domina (\'mistress\'), the troubadour tradition of devoted love.', example:'The troubadour practiced domnei with absolute devotion, composing verses to his distant lady and performing noble deeds in her name.', isNoun:true },
+  { word:'doxycycline', pronunciation:'DOK-see-SY-kleen', ipa:'/ˌdɒksɪˈsaɪkliːn/', pos:'noun', def:'A broad-spectrum antibiotic of the tetracycline class, used to treat bacterial infections, acne, malaria prevention, and Lyme disease.', lang:'English, from deoxy- (from Greek, \'lacking oxygen\') + (tetra)cycline, describing its modified tetracycline chemical structure.', example:'The doctor prescribed doxycycline for the tick bite as a precaution against Lyme disease, the antibiotic most effective when started early.', isNoun:true },
+  { word:'dragée', pronunciation:'dra-ZHAY', ipa:'/drɑːˈʒeɪ/', pos:'noun', def:'A sugar-coated almond or chocolate; a small silver or gold candy ball used for cake decoration; a sugar-coated pill.', lang:'French, from dragée (\'a sugar-coated sweet\'), from Old French dragie, from Latin tragemata (\'sweetmeats\'), from Greek tragein (\'to gnaw\').', example:'The wedding cake was adorned with silver dragées that sparkled like tiny mirrors among the delicate sugar flowers.', isNoun:true },
+  { word:'drahthaar', pronunciation:'DRAHT-har', ipa:'/ˈdrɑːtˌhɑːr/', pos:'noun', def:'A German wirehaired pointer, a versatile hunting dog breed with a distinctive rough, wiry coat and keen intelligence.', lang:'German, from Draht (\'wire\') + Haar (\'hair\'), literally \'wire hair\', describing the breed\'s characteristic rough coat.', example:'The drahthaar plunged fearlessly into the icy marsh to retrieve the fallen duck, its wiry coat protecting it from thorns and cold water alike.', isNoun:true },
+  { word:'Dubhe', pronunciation:'DUB-ee', ipa:'/ˈdʌbi/', pos:'noun', def:'The second-brightest star in the constellation Ursa Major, forming one of the two "pointer stars" that lead to Polaris.', lang:'Arabic, from dubb (\'a bear\'), short for thahr ad-dubb al-akbar (\'the back of the Great Bear\'), its position in the constellation.', example:'Navigators have used Dubhe and Merak as pointer stars for centuries, following their line northward to find Polaris and true north.', isNoun:true },
+  { word:'Dubuque', pronunciation:'duh-BYOOK', ipa:'/dəˈbjuːk/', pos:'noun', def:'A city in northeastern Iowa on the Mississippi River, one of the oldest settlements west of the Mississippi.', lang:'Named after Julien Dubuque (1762-1810), a French-Canadian fur trader who was the first European to settle in the area and mine its lead deposits.', example:'Dubuque\'s bluffs rise dramatically above the Mississippi River, the historic river city preserving its Victorian architecture and frontier heritage.', isNoun:true },
+  { word:'duello', pronunciation:'doo-EL-oh', ipa:'/djuˈɛloʊ/', pos:'noun', def:'The practice or code of dueling; the rules governing formal combat between two individuals to settle a point of honor.', lang:'Italian, from duello (\'a duel\'), from Latin duellum (\'a war, combat between two\'), archaic form of bellum (\'war\').', example:'The gentlemen settled their quarrel according to the strict code of duello, meeting at dawn with pistols and their respective seconds.', isNoun:true },
+  { word:'duxelles', pronunciation:'dook-SEL', ipa:'/dʊkˈsɛl/', pos:'noun', def:'A finely chopped mixture of mushrooms, shallots, and herbs sautéed in butter, used as a stuffing or sauce base in French cuisine.', lang:'Named after the Marquis d\'Uxelles, the 17th-century French nobleman whose chef is credited with creating this mushroom preparation.', example:'The chef spread a layer of duxelles over the beef tenderloin before wrapping it in puff pastry to make a classic Beef Wellington.', isNoun:true },
+  { word:'dvandva', pronunciation:'DVAHN-dvah', ipa:'/ˈdvɑːndvə/', pos:'noun', def:'A compound word in which two elements are joined as equal, coordinate parts, such as "bittersweet" or "singer-songwriter."', lang:'Sanskrit, from dvandva (\'a pair\'), a reduplication of dva (\'two\'), a grammatical term describing coordinate compound words.', example:'The linguist explained that "mother-father" is a dvandva compound, with both elements carrying equal weight rather than one modifying the other.', isNoun:true },
+  { word:'Dvorak', pronunciation:'duh-VOR-zhak', ipa:'/dəˈvɔːrʒæk/', pos:'noun', def:'Antonín Dvořák, the Czech composer known for his New World Symphony; also a keyboard layout designed for typing efficiency.', lang:'Czech surname, from Dvořák, a common Czech name meaning \'courtier\' or \'one who lives at a manor\', from dvůr (\'court, manor\').', example:'Dvořák\'s New World Symphony captured the spirit of America with melodies so beautiful they have been mistaken for actual folk songs.', isNoun:true },
+  { word:'dysphasia', pronunciation:'dis-FAY-zhuh', ipa:'/dɪsˈfeɪʒə/', pos:'noun', def:'Impairment of the ability to speak or understand language, caused by brain damage, less severe than aphasia.', lang:'Greek, from dys- (\'difficult, impaired\') + phasis (\'speech\'), from phanai (\'to speak\').', example:'Following the mild stroke, the patient experienced dysphasia, struggling to find the right words even though she knew exactly what she wanted to say.', isNoun:true }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Slider
+  const totalA = a.length;
+  const pct = totalA > 1 ? s / (totalA - 1) * 100 : 0;
+  document.getElementById("sliderFill").style.width = pct + "%";
+  const sliderArea = document.getElementById("sliderArea");
+  const areaW = sliderArea.offsetWidth || 200;
+  const pad = 10;
+  const thumbLeft = pad + (pct / 100) * (areaW - pad * 2);
+  const thumb = document.getElementById("sliderThumb");
+  if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
+
+  // Ticks - show ~20 evenly spaced markers
+  const tickCount = Math.min(totalA, 20);
+  let ticksHtml = '';
+  for(let t=0; t<tickCount; t++){
+    const ti = Math.round(t / (tickCount-1) * (totalA-1));
+    const cls = ti===s ? 'active' : (t % 5 === 0 ? 'major' : '');
+    ticksHtml += `<div class="slider-tick ${cls}"></div>`;
+  }
+  document.getElementById("sliderDots").innerHTML = ticksHtml;
+  document.getElementById("sliderCounter").textContent = `${s+1} / ${totalA}`;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Slider drag
+const slArea=document.getElementById("sliderArea");
+const slThumb=document.getElementById("sliderThumb");
+let slDragging=false;
+function sliderFromX(cx){
+  const r=slArea.getBoundingClientRect();
+  const pad=10;
+  const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
+  const a=aw(),idx=Math.round(p*(a.length-1));
+  // Move thumb immediately for smooth feel
+  const thumbLeft=pad+(p)*(r.width-pad*2);
+  slThumb.style.left=thumbLeft+"px";
+  if(idx!==si()){
+    const g=WORDS.findIndex(w=>w.word===a[idx].word);
+    flipped=false; currentIndex=g; render();
+  }
+}
+slArea.addEventListener("touchstart",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(slDragging) sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    // Speak the word after releasing
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+slArea.addEventListener("mousedown",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.clientX); e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(slDragging) sliderFromX(e.clientX);
+});
+document.addEventListener("mouseup",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>

@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Spelling Bee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.5);
+  --gold-glow: rgba(212,175,55,0.15);
+  --bg: #0c0a13;
+  --card: rgba(30,26,46,0.97);
+  --text: #f0ece2;
+  --text-dim: rgba(255,255,255,0.55);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(170deg, #0c0a13 0%, #1a1528 45%, #110e1c 100%);
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 6px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 9px; }
+.header-left span { font-size: 22px; }
+.header-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.02em;
+}
+.mode-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.25s;
+}
+.mode-btn.active {
+  background: var(--gold-glow); border-color: var(--gold); color: var(--gold);
+}
+.mode-btn svg { width: 14px; height: 14px; }
+
+/* Card */
+.card-area {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 6px 10px 0; overflow: hidden;
+}
+.card {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, rgba(38,32,56,0.97), rgba(22,18,36,0.99));
+  border-radius: 22px;
+  border: 1px solid rgba(212,175,55,0.1);
+  padding: 16px 16px 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.08s ease;
+}
+.card::-webkit-scrollbar { display: none; }
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.counter { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.side-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; color: var(--gold-dim); text-transform: uppercase; }
+.card-top-right { display: flex; align-items: center; gap: 10px; }
+.mark-btn {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: rgba(255,255,255,0.25); transition: all 0.2s;
+}
+.mark-btn.active { color: var(--gold); }
+.mark-btn svg { width: 22px; height: 22px; }
+
+/* Sections */
+.sect { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+.tag {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+  color: var(--gold); text-transform: uppercase; opacity: 0.75; margin-bottom: 1px;
+}
+.pron-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 21px; font-weight: 700; letter-spacing: 0.05em;
+}
+.ipa { font-size: 13px; color: rgba(255,255,255,0.38); font-family: monospace; }
+.listen-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08);
+  color: var(--gold); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 500; margin-top: 5px; align-self: flex-start;
+  transition: all 0.2s;
+}
+.listen-btn:active { background: rgba(212,175,55,0.2); }
+.listen-btn svg { width: 15px; height: 15px; }
+.pos-chip {
+  display: inline-block; padding: 3px 12px; border-radius: 14px;
+  background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.22);
+  color: var(--gold); font-size: 13px; font-weight: 600; font-style: italic;
+}
+.def-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+.origin-text { font-size: 13px; line-height: 1.55; color: var(--text-dim); font-style: italic; }
+.ex-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.65);
+  border-left: 3px solid rgba(212,175,55,0.35); padding-left: 12px; font-style: italic;
+}
+
+/* Tap hint */
+.tap-hint {
+  text-align: center; padding: 12px 0 4px;
+  font-size: 12px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+
+/* Back */
+.back-content { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 6px; flex: 1; }
+.spelling-box {
+  text-align: center; width: 100%; padding: 22px 12px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02));
+  border-radius: 16px; border: 1px solid rgba(212,175,55,0.15);
+}
+.spelling-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  color: rgba(212,175,55,0.6); text-transform: uppercase; margin-bottom: 10px;
+}
+.spelling-word {
+  font-family: Verdana, Geneva, sans-serif; font-size: 36px; font-weight: 400;
+  letter-spacing: 0.04em; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(212,175,55,0.2); margin-bottom: 14px;
+}
+.letters-row { display: flex; justify-content: center; gap: 3px; flex-wrap: wrap; }
+.letter-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 27px; height: 34px; border-radius: 6px;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2);
+  color: var(--gold); font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.image-box {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: 0.15s;
+}
+.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.img-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 14px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  letter-spacing: 0.06em; text-transform: capitalize;
+}
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; }
+.spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+/* Bottom bar */
+.bottom-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.nav-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-arrow:active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); transform: scale(0.92); }
+.nav-arrow svg { width: 18px; height: 18px; }
+.slider-area {
+  flex: 1; height: 32px; position: relative;
+  display: flex; align-items: center;
+  touch-action: none; cursor: pointer;
+}
+.slider-track-bg {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.08); position: relative; overflow: hidden;
+}
+.slider-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), rgba(212,175,55,0.5));
+  transition: width 0.15s ease;
+}
+.slider-dots {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none; padding: 0 2px;
+}
+.slider-tick {
+  width: 2px; height: 8px; border-radius: 1px;
+  background: rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.slider-tick.major { height: 12px; background: rgba(255,255,255,0.12); }
+.slider-tick.active { background: var(--gold); height: 14px; width: 3px; border-radius: 1.5px; box-shadow: 0 0 6px rgba(212,175,55,0.4); }
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px solid #1a1528;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  cursor: grab; transition: left 0.12s ease;
+  z-index: 2;
+}
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
+.slider-thumb.dragging { transition: none; transform: translate(-50%, -50%) scale(1.15); }
+.slider-counter {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.08em;
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes letterPop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.1) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideOutL { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-105%); opacity: 0; } }
+@keyframes slideOutR { from { transform: translateX(0); opacity: 1; } to { transform: translateX(105%); opacity: 0; } }
+.slide-out-l { animation: slideOutL 0.22s ease forwards; }
+.slide-out-r { animation: slideOutR 0.22s ease forwards; }
+.fade-in { animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span>🐝</span>
+    <h1><a href="index.html" style="color:inherit;text-decoration:none;">Spelling Bee</a></h1>
+  </div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span id="modeBtnText">All (6)</span>
+  </button>
+</div>
+
+<div class="card-area" id="cardArea">
+  <div class="card" id="card"></div>
+</div>
+
+<div class="bottom-bar">
+  <div class="nav-row">
+    <button class="nav-arrow" id="prevBtn" onclick="navigateTo('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="slider-area" id="sliderArea">
+      <div class="slider-track-bg">
+        <div class="slider-fill" id="sliderFill"></div>
+      </div>
+      <div class="slider-dots" id="sliderDots"></div>
+      <div class="slider-thumb" id="sliderThumb"></div>
+    </div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigateTo('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+  </div>
+  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+</div>
+
+<script>
+const WORDS = [
+  { word:'ecchymosis', pronunciation:'EK-ih-MOH-sis', ipa:'/ˌɛkɪˈmoʊsɪs/', pos:'noun', def:'A discoloration of the skin caused by bleeding underneath, typically from bruising; a medical term for a bruise.', lang:'Greek, from ekchymosis (\'an extravasation of blood\'), from ek (\'out\') + chymos (\'juice\'), from chein (\'to pour\').', example:'The doctor noted extensive ecchymosis around the patient\'s eye, the deep purple bruising suggesting a significant impact to the area.', isNoun:true },
+  { word:'echelon', pronunciation:'ESH-uh-lon', ipa:'/ˈɛʃəˌlɒn/', pos:'noun', def:'A level or rank in an organization or society; a formation of troops, ships, or aircraft in parallel rows with each row offset behind the one ahead.', lang:'French, from échelon (\'a rung of a ladder\'), from Old French eschele (\'a ladder\'), from Latin scala (\'a ladder, staircase\').', example:'The decision was made at the highest echelons of government, far above the pay grade of anyone in the room.', isNoun:true },
+  { word:'echinoderm', pronunciation:'ih-KY-noh-durm', ipa:'/ɪˈkaɪnoʊˌdɜːrm/', pos:'noun', def:'A marine animal of the phylum that includes starfish, sea urchins, and sea cucumbers, characterized by radial symmetry and a spiny skin.', lang:'Greek, from echinos (\'a hedgehog, sea urchin\') + derma (\'skin\'), literally \'hedgehog skin\'.', example:'The tide pool was a gallery of echinoderms — purple sea urchins, orange starfish, and brittle stars clinging to every rock surface.', isNoun:true },
+  { word:'edamame', pronunciation:'ED-uh-MAH-may', ipa:'/ˌɛdəˈmɑːmeɪ/', pos:'noun', def:'Young, green soybeans in the pod, boiled or steamed and served as a snack or appetizer, popular in Japanese cuisine.', lang:'Japanese, from edamame (\'branch beans\'), from eda (\'branch\') + mame (\'bean\'), because the pods were originally sold still attached to the branch.', example:'She squeezed the warm edamame pods between her fingers, popping the bright green soybeans directly into her mouth with a sprinkle of sea salt.', isNoun:true },
+  { word:'effete', pronunciation:'ih-FEET', ipa:'/ɪˈfiːt/', pos:'adjective', def:'No longer capable of effective action; weak, exhausted, and decadent; lacking vigor or force.', lang:'Latin, from effetus (\'worn out by bearing, exhausted\'), from ex- (\'out\') + fetus (\'breeding, offspring\').', example:'The once-mighty empire had grown effete, its ruling class more concerned with luxury and pleasure than with governing or defending its borders.', isNoun:false },
+  { word:'effleurage', pronunciation:'EF-lur-AHZH', ipa:'/ˌɛflʊˈrɑːʒ/', pos:'noun', def:'A light, stroking massage technique using long, smooth movements along the body, used to relax muscles and improve circulation.', lang:'French, from effleurer (\'to touch lightly, skim\'), from ef- (\'out\') + fleur (\'flower\'), suggesting the lightness of touching a flower.', example:'The massage therapist began with gentle effleurage, her long, flowing strokes warming the muscles before applying deeper pressure.', isNoun:true },
+  { word:'Egeria', pronunciation:'ih-JEER-ee-uh', ipa:'/ɪˈdʒɪəriə/', pos:'noun', def:'A woman who serves as a wise counselor or advisor; named after the nymph who advised the legendary Roman king Numa Pompilius.', lang:'Latin, from Egeria, the prophetic nymph of Roman mythology who guided King Numa in creating Rome\'s religious institutions.', example:'The veteran senator served as an Egeria to the newly elected congresswoman, offering quiet wisdom born of decades in public service.', isNoun:true },
+  { word:'eisteddfod', pronunciation:'eye-STETH-vod', ipa:'/aɪˈstɛðvɒd/', pos:'noun', def:'A Welsh festival of literature, music, and performance, featuring competitions in poetry, singing, and other arts in the bardic tradition.', lang:'Welsh, from eistedd (\'to sit\') + bod (\'to be\'), literally \'a session\', describing the gathering of bards for literary and musical competition.', example:'The National Eisteddfod drew thousands to the festival, where bards competed for the coveted chair awarded to the finest Welsh-language poet.', isNoun:true },
+  { word:'élan', pronunciation:'ay-LAHN', ipa:'/eɪˈlɑːn/', pos:'noun', def:'Enthusiastic vigor and liveliness; distinctive style and flair; eager energy and confidence.', lang:'French, from élan (\'a rush, impulse\'), from élancer (\'to hurl, rush\'), from Old French eslancer, from es- (\'out\') + lance (\'a lance\').', example:'The young conductor led the orchestra with remarkable élan, his infectious energy transforming a routine concert into a thrilling performance.', isNoun:true },
+  { word:'eleemosynary', pronunciation:'EL-ee-MOS-ih-NAIR-ee', ipa:'/ˌɛliˈmɒsɪˌnɛri/', pos:'adjective', def:'Of or relating to charity; given or done as an act of charity; supported by or dependent on charitable donations.', lang:'Latin, from eleemosynarius (\'of alms\'), from eleemosyna (\'alms\'), from Greek eleemosyne (\'compassion, pity\'), from eleos (\'mercy\').', example:'The eleemosynary foundation distributed millions to hospitals and schools, asking nothing in return from the communities it served.', isNoun:false },
+  { word:'eluate', pronunciation:'EL-yoo-ayt', ipa:'/ˈɛljuˌeɪt/', pos:'noun', def:'The solution obtained by washing a substance from an adsorbent material; the liquid that emerges from a chromatography column.', lang:'Latin, from eluere (\'to wash out\'), from e- (\'out\') + luere (\'to wash\'), + -ate.', example:'The chemist collected the eluate drop by drop as it emerged from the chromatography column, each fraction containing a different purified compound.', isNoun:true },
+  { word:'embouchure', pronunciation:'AHM-boo-SHOOR', ipa:'/ˌɑːmbuːˈʃʊər/', pos:'noun', def:'The way a musician positions and uses the lips, tongue, and facial muscles on the mouthpiece of a wind instrument.', lang:'French, from embouchure (\'the mouth of a river, mouthpiece\'), from emboucher (\'to put to the mouth\'), from en (\'in\') + bouche (\'mouth\').', example:'The trumpet teacher spent weeks helping the student develop a proper embouchure, the precise lip position essential for producing a clear, strong tone.', isNoun:true },
+  { word:'emollient', pronunciation:'ih-MOL-yunt', ipa:'/ɪˈmɒliənt/', pos:'noun', def:'A substance that softens and soothes the skin; something that calms or makes a situation less harsh.', lang:'Latin, from emolliens, present participle of emollire (\'to soften\'), from e- (\'out\') + mollire (\'to soften\'), from mollis (\'soft\').', example:'The dermatologist recommended an emollient cream to soothe the patient\'s dry, cracked skin, the thick moisturizer providing instant relief.', isNoun:true },
+  { word:'emolument', pronunciation:'ih-MOL-yoo-munt', ipa:'/ɪˈmɒljʊmənt/', pos:'noun', def:'A salary, fee, or profit earned from employment or office; formal compensation for work.', lang:'Latin, from emolumentum (\'profit, gain\'), originally \'payment to a miller for grinding grain\', from emolere (\'to grind out\'), from e- + molere (\'to grind\').', example:'The constitutional clause prohibits the president from accepting emoluments from foreign governments while serving in office.', isNoun:true },
+  { word:'emphysema', pronunciation:'EM-fih-SEE-muh', ipa:'/ˌɛmfɪˈsiːmə/', pos:'noun', def:'A chronic lung condition in which the air sacs are damaged and enlarged, causing breathlessness, often caused by long-term smoking.', lang:'Greek, from emphysema (\'a swelling, inflation\'), from emphysan (\'to inflate\'), from en (\'in\') + physan (\'to blow\').', example:'Years of smoking had left him with severe emphysema, each breath a labored struggle as his damaged lungs failed to exchange oxygen efficiently.', isNoun:true },
+  { word:'en arrière', pronunciation:'ahn ah-ree-AIR', ipa:'/ɒn ɑːriˈɛər/', pos:'adverb', def:'Backward; to the rear; in ballet, a movement or step directed backward, away from the audience.', lang:'French, from en (\'in\') + arrière (\'behind, backward\'), from Latin ad retro (\'toward the back\').', example:'The ballerina performed a series of graceful glissades en arrière, gliding smoothly backward across the stage as if pulled by an invisible thread.', isNoun:false },
+  { word:'Enoch Arden', pronunciation:'EE-nok AR-dun', ipa:'/ˌiːnɒk ˈɑːrdən/', pos:'noun', def:'A person who returns after a long absence to find that a spouse has remarried; from the Tennyson poem about a shipwrecked sailor.', lang:'Named after the title character of Alfred, Lord Tennyson\'s 1864 narrative poem about a castaway who returns home after years to find his wife married to another.', example:'The returning soldier found himself in an Enoch Arden situation, discovering that his wife, believing him dead, had remarried years earlier.', isNoun:true },
+  { word:'enoki', pronunciation:'eh-NOH-kee', ipa:'/ɛˈnoʊki/', pos:'noun', def:'A type of slender, white mushroom with long thin stems and tiny caps, widely used in Japanese and East Asian cooking.', lang:'Japanese, from enokitake (\'hackberry mushroom\'), from enoki (\'Chinese hackberry tree\') + take (\'mushroom\'), because it grows on this tree.', example:'The ramen was garnished with a cluster of delicate enoki mushrooms, their long white stems adding a mild, slightly crunchy texture to the broth.', isNoun:true },
+  { word:'epideictic', pronunciation:'EP-ih-DYK-tik', ipa:'/ˌɛpɪˈdaɪktɪk/', pos:'adjective', def:'Of or relating to rhetoric intended for display or ceremony, especially speeches of praise or blame at public occasions.', lang:'Greek, from epideiktikos (\'fit for display\'), from epideiknynai (\'to display\'), from epi- (\'upon\') + deiknynai (\'to show\').', example:'The graduation commencement address was a masterpiece of epideictic rhetoric, praising the accomplishments of the class while inspiring them for the future.', isNoun:false },
+  { word:'epinicion', pronunciation:'EP-ih-NIK-ee-on', ipa:'/ˌɛpɪˈnɪkiɒn/', pos:'noun', def:'An ode or song celebrating a victory, especially one composed for winners at the ancient Greek athletic games.', lang:'Greek, from epinikon (\'a victory song\'), from epi (\'upon, for\') + nike (\'victory\').', example:'Pindar composed his greatest epinicia for Olympic champions, the victory odes celebrating athletic triumph as a gift from the gods.', isNoun:true },
+  { word:'epistemology', pronunciation:'ih-PIS-tuh-MOL-uh-jee', ipa:'/ɪˌpɪstɪˈmɒlədʒi/', pos:'noun', def:'The branch of philosophy concerned with the theory of knowledge, examining how we know what we know and the limits of human understanding.', lang:'Greek, from episteme (\'knowledge, understanding\') + -ology (\'study of\'), from logos.', example:'The philosophy seminar on epistemology grappled with fundamental questions about the nature of truth and whether certainty is ever truly achievable.', isNoun:true },
+  { word:'epixylous', pronunciation:'eh-PIK-sih-lus', ipa:'/ɛˈpɪksɪləs/', pos:'adjective', def:'Growing on wood; of fungi or plants that live on or in dead or decaying wood.', lang:'Greek, from epi (\'upon\') + xylon (\'wood\'), + -ous, describing organisms that colonize woody substrates.', example:'The forest floor was rich with epixylous fungi, colorful mushrooms and bracket fungi sprouting from every fallen log and rotting stump.', isNoun:false },
+  { word:'Equatoguinean', pronunciation:'EK-wah-toh-GIN-ee-un', ipa:'/ˌɛkwətoʊɡɪˈniːən/', pos:'adjective', def:'Of or relating to Equatorial Guinea, a small country on the west coast of Central Africa, one of the few Spanish-speaking nations in Africa.', lang:'From Equatorial Guinea (from Spanish Guinea Ecuatorial, named for its location near the equator) + -an.', example:'Equatoguinean culture blends Spanish colonial traditions with indigenous Fang and Bubi customs, creating a unique fusion found nowhere else in Africa.', isNoun:false },
+  { word:'Erewhonian', pronunciation:'eh-REE-woh-nee-un', ipa:'/ˌɛriˈwoʊniən/', pos:'adjective', def:'Of or relating to Erewhon, the fictional utopian country in Samuel Butler\'s 1872 satirical novel, whose name is an anagram of "nowhere."', lang:'English, from Erewhon (an anagram of \'nowhere\'), the imaginary land in Samuel Butler\'s satirical novel, + -ian.', example:'The Erewhonian practice of treating crime as illness and illness as crime struck readers as absurd — until they recognized their own society in the satire.', isNoun:false },
+  { word:'ergatogyne', pronunciation:'ur-GAT-oh-jyn', ipa:'/ɜːrˈɡætoʊˌdʒaɪn/', pos:'noun', def:'A worker ant that has some characteristics of a queen, particularly in having the ability to lay eggs; an intermediate form.', lang:'Greek, from ergates (\'a worker\') + gyne (\'a woman, female\'), describing worker ants with queen-like reproductive traits.', example:'The entomologist discovered an ergatogyne in the colony, a worker ant with an enlarged abdomen capable of producing viable eggs.', isNoun:true },
+  { word:'Eris', pronunciation:'EER-is', ipa:'/ˈɪərɪs/', pos:'noun', def:'The Greek goddess of strife and discord who sparked the Trojan War; also the largest known dwarf planet in the solar system, beyond Pluto.', lang:'Greek, from Eris (\'strife, discord\'), the goddess who threw the golden apple that led to the judgment of Paris and the Trojan War.', example:'The discovery of Eris, a dwarf planet larger than Pluto, forced astronomers to redefine what counts as a planet in our solar system.', isNoun:true },
+  { word:'erythroblast', pronunciation:'ih-RITH-roh-blast', ipa:'/ɪˈrɪθroʊˌblæst/', pos:'noun', def:'An immature red blood cell still containing a nucleus, found normally in bone marrow during the process of red blood cell formation.', lang:'Greek, from erythros (\'red\') + blastos (\'a bud, germ, sprout\'), describing a precursor cell that will become a red blood cell.', example:'The pathologist noted an abnormal number of erythroblasts in the blood sample, the immature red cells suggesting the bone marrow was under stress.', isNoun:true },
+  { word:'Esau', pronunciation:'EE-saw', ipa:'/ˈiːsɔː/', pos:'noun', def:'In the Bible, the elder twin son of Isaac and Rebecca who sold his birthright to his brother Jacob for a bowl of lentil stew.', lang:'Hebrew, from Esav, possibly meaning \'hairy\' (from se\'ar, \'hair\'), because Esau was born covered in red hair according to Genesis.', example:'Esau\'s decision to trade his birthright for a single meal became a timeless parable about sacrificing long-term value for short-term gratification.', isNoun:true },
+  { word:'escarole', pronunciation:'ES-kuh-rohl', ipa:'/ˈɛskəˌroʊl/', pos:'noun', def:'A variety of endive with broad, slightly bitter leaves, used in salads and Italian soups.', lang:'French, from escarole, from Italian scarola, from Latin escariola, diminutive of escaria (\'food\'), from esca (\'food, bait\').', example:'The Italian wedding soup was loaded with escarole, the broad green leaves wilting beautifully into the savory chicken broth.', isNoun:true },
+  { word:'escheator', pronunciation:'es-CHEET-ur', ipa:'/ɛsˈtʃiːtər/', pos:'noun', def:'A medieval English official responsible for enforcing the crown\'s right to property that reverted to the king when an owner died without heirs.', lang:'Old French, from escheoir (\'to fall to, revert\'), from Latin excadere (\'to fall out\'), from ex- + cadere (\'to fall\'), + -or.', example:'The king\'s escheator seized the manor after the baron died without an heir, the property reverting to the crown as feudal law demanded.', isNoun:true },
+  { word:'esclandre', pronunciation:'es-KLAHN-druh', ipa:'/ɛsˈklɑːndrə/', pos:'noun', def:'A scandalous scene or incident; a noisy public disturbance caused by outrageous behavior; a scene.', lang:'French, from esclandre (\'a scandal, scene\'), from Latin scandalum (\'a stumbling block, offense\'), from Greek skandalon.', example:'The duchess caused an esclandre at the opera by loudly accusing her husband of infidelity in front of the entire audience.', isNoun:true },
+  { word:'espadrille', pronunciation:'ES-puh-dril', ipa:'/ˈɛspəˌdrɪl/', pos:'noun', def:'A light canvas shoe with a plaited fiber sole, originating in the Pyrenees region of Spain and France.', lang:'French, from espadrille, from Provençal espardilho, from espart (\'esparto grass\'), from Latin spartum, the plant fiber used for the soles.', example:'She slipped on her canvas espadrilles for the walk along the beach, the rope soles perfectly suited to the warm sand and cobblestone streets.', isNoun:true },
+  { word:'espalier', pronunciation:'es-PAL-yur', ipa:'/ɛˈspæljər/', pos:'noun', def:'A fruit tree or ornamental shrub trained to grow flat against a wall or trellis in a symmetrical pattern; the trellis or framework itself.', lang:'French, from espalier (\'a shoulder support\'), from Italian spalliera (\'a support for the shoulders\'), from spalla (\'a shoulder\'), from Latin spatula.', example:'The espalier apple trees lined the south-facing wall in perfect symmetry, their branches trained into elegant horizontal tiers heavy with fruit.', isNoun:true },
+  { word:'espial', pronunciation:'es-PY-ul', ipa:'/ɛˈspaɪəl/', pos:'noun', def:'The act of spying or observing secretly; the discovery of something through watching; surveillance.', lang:'Old French, from espier (\'to spy, watch\'), from Germanic origin, related to Old High German spehōn (\'to spy\').', example:'The espial of the enemy\'s troop movements from the hilltop gave the general the intelligence he needed to plan his counterattack.', isNoun:true },
+  { word:'estancia', pronunciation:'es-TAN-see-uh', ipa:'/ɛˈstænsiə/', pos:'noun', def:'A large ranch or estate in Latin America, especially in Argentina and Uruguay, devoted to cattle raising.', lang:'Spanish, from estancia (\'a dwelling, stay, ranch\'), from estar (\'to be, stay\'), from Latin stare (\'to stand\').', example:'The estancia stretched across thousands of acres of Argentine pampas, its gauchos herding vast herds of cattle across the endless grasslands.', isNoun:true },
+  { word:'estovers', pronunciation:'es-TOH-vurz', ipa:'/ɛˈstoʊvərz/', pos:'noun', def:'In English law, the right of a tenant to take necessary wood from the landlord\'s estate for fuel, fencing, and building repairs.', lang:'Old French, from estover (\'to be necessary\'), from Latin est opus (\'it is necessary\'), describing the essential resources a tenant could claim.', example:'The medieval tenant exercised his right of estovers, cutting timber from the lord\'s woodland for firewood and fence repairs on his holding.', isNoun:true },
+  { word:'estrepe', pronunciation:'es-TREEP', ipa:'/ɛˈstriːp/', pos:'verb', def:'To commit waste on land; in old law, to strip or despoil an estate of its timber or other resources.', lang:'Old French, from estreper (\'to strip, pull up\'), from Latin exstirpare (\'to root out\'), from ex- + stirps (\'a root, stock\').', example:'The outgoing tenant was accused of estreping the property, having felled all the mature oaks and stripped the orchard before his lease expired.', isNoun:false },
+  { word:'ethylene', pronunciation:'ETH-ih-leen', ipa:'/ˈɛθɪˌliːn/', pos:'noun', def:'A colorless, flammable gas that serves as a plant hormone, promoting fruit ripening, and is a basic building block for plastics and chemicals.', lang:'English, from ether (from Greek aither, \'the upper air\') + -yl + -ene, named for its relationship to ethyl alcohol.', example:'The green bananas ripened quickly when stored with apples, the ethylene gas naturally released by the apples triggering the ripening process.', isNoun:true },
+  { word:'étouffée', pronunciation:'AY-too-FAY', ipa:'/ˌeɪtuːˈfeɪ/', pos:'noun', def:'A spicy Cajun and Creole dish of shellfish, typically crawfish or shrimp, smothered in a seasoned roux-based sauce and served over rice.', lang:'French, from étouffer (\'to smother, stifle\'), from Old French estofer (\'to stop up\'), because the dish is cooked in a covered pot.', example:'The crawfish étouffée arrived steaming over a mound of white rice, the rich, peppery sauce packed with tender tails and the holy trinity of Cajun cooking.', isNoun:true },
+  { word:'eudiometer', pronunciation:'YOO-dee-OM-uh-tur', ipa:'/ˌjuːdiˈɒmɪtər/', pos:'noun', def:'A graduated glass tube used for measuring changes in volume of gases during chemical reactions, originally to determine oxygen content in air.', lang:'Greek, from eudios (\'clear, fine\', of weather) + metron (\'a measure\'), originally meant to measure air quality.', example:'The chemistry students used a eudiometer to collect hydrogen gas over water, carefully measuring the volume produced by the reaction.', isNoun:true },
+  { word:'Euroclydon', pronunciation:'yoo-ROK-lih-don', ipa:'/jʊˈrɒklɪdɒn/', pos:'noun', def:'A fierce northeast wind in the Mediterranean, mentioned in the Bible as the storm that shipwrecked the apostle Paul on Malta.', lang:'Greek, from Euroklydon, possibly from Euros (\'the east wind\') + klydon (\'a wave, surge\'), the violent storm described in Acts 27.', example:'The Euroclydon struck the ship with terrifying force, the biblical tempest driving Paul\'s vessel helplessly across the Mediterranean toward Malta.', isNoun:true },
+  { word:'exchequer', pronunciation:'eks-CHEK-ur', ipa:'/ɛksˈtʃɛkər/', pos:'noun', def:'A national treasury; the government department responsible for managing public finances; royal or national revenue.', lang:'Old French, from eschequier (\'a chessboard\'), from Latin scaccarium, because accounts were originally calculated on a checkered cloth resembling a chessboard.', example:'The Chancellor of the Exchequer presented the annual budget to Parliament, outlining how the national treasury would be spent in the coming year.', isNoun:true }
+];
+
+let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
+let imageCache = {}, imageLoading = {};
+let touchStartX = 0, swipeX = 0;
+
+function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
+function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
+function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
+
+function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
+
+async function fetchImage(word) {
+  if(imageCache[word]||imageLoading[word]) return;
+  imageLoading[word]=true;
+  // Update just the image placeholder if it exists
+  const imgPlaceholder = document.getElementById('img-'+word);
+  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
+    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
+    imageCache[word]=m?m[0]:null;
+  } catch(e){imageCache[word]=null;}
+  imageLoading[word]=false;
+  // Update just the image placeholder if still on same word
+  const imgEl = document.getElementById('img-'+word);
+  if(imgEl && imageCache[word]) {
+    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
+  } else if(imgEl) {
+    imgEl.innerHTML='';
+  }
+}
+
+const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+function renderFront(w) {
+  return `
+    <div class="sect fade-in"><div class="tag">PRONUNCIATION</div><div class="pron-main">${w.pronunciation}</div><div class="ipa">${w.ipa}</div>
+      <button class="listen-btn" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Listen</span></button></div>
+    <div class="sect fade-in" style="animation-delay:.06s"><div class="tag">PART OF SPEECH</div><span class="pos-chip">${w.pos}</span></div>
+    <div class="sect fade-in" style="animation-delay:.12s"><div class="tag">DEFINITION</div><div class="def-text">${w.def}</div></div>
+    <div class="sect fade-in" style="animation-delay:.18s"><div class="tag">LANGUAGE OF ORIGIN</div><div class="origin-text">${w.lang}</div></div>
+    <div class="sect fade-in" style="animation-delay:.24s"><div class="tag">EXAMPLE</div><div class="ex-text">"${w.example.replace(new RegExp(w.word,'gi'),'________')}"</div></div>
+    <div class="tap-hint fade-in" style="animation-delay:.3s">Tap card to reveal spelling</div>`;
+}
+
+function renderBack(w) {
+  const letters=w.word.split("").map((c,i)=>`<span class="letter-tile" style="animation-delay:${i*0.04+0.12}s">${c}</span>`).join("");
+  let img="";
+  if(w.isNoun){
+    let imgContent = "";
+    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
+    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    img=`<div id="img-${w.word}">${imgContent}</div>`;
+  }
+  return `<div class="back-content">
+    <div class="spelling-box" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both">
+      <div class="spelling-label">THE WORD IS</div><h2 class="spelling-word">${w.word}</h2>
+      <div class="letters-row">${letters}</div>
+      <button class="listen-btn" style="margin:14px auto 0" onclick="event.stopPropagation();speak('${w.word}')">${speakerSvg}<span>Hear Again</span></button>
+    </div>${img}
+    <div class="tap-hint">Tap card to go back to clues</div></div>`;
+}
+
+function render() {
+  const a=aw();
+  if(!a.length){ document.getElementById("card").innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><p style="color:rgba(255,255,255,0.5);font-size:16px">No marked words yet.</p><button class="flip-btn" style="width:auto;padding:10px 24px" onclick="markedOnly=false;render()">← Show All</button></div>`; return; }
+  const s=si(), g=gi(), w=a[s];
+
+  document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
+
+  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+
+  // Slider
+  const totalA = a.length;
+  const pct = totalA > 1 ? s / (totalA - 1) * 100 : 0;
+  document.getElementById("sliderFill").style.width = pct + "%";
+  const sliderArea = document.getElementById("sliderArea");
+  const areaW = sliderArea.offsetWidth || 200;
+  const pad = 10;
+  const thumbLeft = pad + (pct / 100) * (areaW - pad * 2);
+  const thumb = document.getElementById("sliderThumb");
+  if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
+
+  // Ticks - show ~20 evenly spaced markers
+  const tickCount = Math.min(totalA, 20);
+  let ticksHtml = '';
+  for(let t=0; t<tickCount; t++){
+    const ti = Math.round(t / (tickCount-1) * (totalA-1));
+    const cls = ti===s ? 'active' : (t % 5 === 0 ? 'major' : '');
+    ticksHtml += `<div class="slider-tick ${cls}"></div>`;
+  }
+  document.getElementById("sliderDots").innerHTML = ticksHtml;
+  document.getElementById("sliderCounter").textContent = `${s+1} / ${totalA}`;
+
+  // Mode btn
+  const mb=document.getElementById("modeBtn");
+  mb.className="mode-btn"+(markedOnly?" active":"");
+  mb.querySelector("svg").setAttribute("fill",markedOnly?"currentColor":"none");
+  document.getElementById("modeBtnText").textContent=(markedOnly?"Marked":"All")+` (${markedOnly?markedWords.size:WORDS.length})`;
+}
+
+function jumpTo(idx) {
+  const a=aw(); if(idx<0||idx>=a.length) return;
+  const g=WORDS.findIndex(w=>w.word===a[idx].word);
+  flipped=false; currentIndex=g; render();
+  setTimeout(()=>speak(a[idx].word),200);
+}
+
+function navigateTo(dir) {
+  const a=aw(); if(!a.length) return;
+  const s=si(), card=document.getElementById("card");
+  card.classList.add(dir==="left"?"slide-out-l":"slide-out-r");
+  flipped=false;
+  setTimeout(()=>{
+    card.classList.remove("slide-out-l","slide-out-r");
+    const ni=dir==="left"?(s+1)%a.length:(s-1+a.length)%a.length;
+    currentIndex=WORDS.findIndex(w=>w.word===a[ni].word);
+    render(); setTimeout(()=>speak(a[ni].word),150);
+  },220);
+}
+
+function flipCard(){flipped=!flipped;render();}
+function toggleMark(g){markedWords.has(g)?markedWords.delete(g):markedWords.add(g);render();}
+function toggleMarkedOnly(){if(!markedOnly&&markedWords.size===0)return;markedOnly=!markedOnly;flipped=false;render();}
+
+// Swipe
+const ca=document.getElementById("cardArea");
+let swiped=false;
+ca.addEventListener("touchstart",e=>{touchStartX=e.touches[0].clientX;swiped=false;},{passive:true});
+ca.addEventListener("touchmove",e=>{swipeX=e.touches[0].clientX-touchStartX;if(Math.abs(swipeX)>15)swiped=true;},{passive:true});
+ca.addEventListener("touchend",()=>{if(Math.abs(swipeX)>50)navigateTo(swipeX<0?"left":"right");swipeX=0;});
+
+// Card tap to flip
+const card=document.getElementById("card");
+card.addEventListener("click",e=>{
+  if(e.target.closest('button')||swiped) return;
+  flipCard();
+});
+
+// Slider drag
+const slArea=document.getElementById("sliderArea");
+const slThumb=document.getElementById("sliderThumb");
+let slDragging=false;
+function sliderFromX(cx){
+  const r=slArea.getBoundingClientRect();
+  const pad=10;
+  const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
+  const a=aw(),idx=Math.round(p*(a.length-1));
+  // Move thumb immediately for smooth feel
+  const thumbLeft=pad+(p)*(r.width-pad*2);
+  slThumb.style.left=thumbLeft+"px";
+  if(idx!==si()){
+    const g=WORDS.findIndex(w=>w.word===a[idx].word);
+    flipped=false; currentIndex=g; render();
+  }
+}
+slArea.addEventListener("touchstart",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(slDragging) sliderFromX(e.touches[0].clientX);
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    // Speak the word after releasing
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+slArea.addEventListener("mousedown",e=>{
+  slDragging=true; slThumb.classList.add('dragging');
+  sliderFromX(e.clientX); e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(slDragging) sliderFromX(e.clientX);
+});
+document.addEventListener("mouseup",()=>{
+  if(slDragging){
+    slDragging=false; slThumb.classList.remove('dragging');
+    const a=aw(),s=si();
+    if(a[s]) setTimeout(()=>speak(a[s].word),100);
+  }
+});
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")navigateTo("left");
+  else if(e.key==="ArrowLeft")navigateTo("right");
+  else if(e.key===" "){e.preventDefault();flipCard();}
+});
+
+render();
+setTimeout(()=>speak(WORDS[0].word),500);
+</script>
+</body>
+</html>
