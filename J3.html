@@ -157,12 +157,13 @@ body {
   animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
 }
 .image-box {
-  width: 100%; border-radius: 14px; overflow: hidden;
+  width: 300px; height: 300px; border-radius: 14px; overflow: hidden;
   border: 1px solid rgba(255,255,255,0.08); position: relative;
   animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
   animation-delay: 0.15s;
+  margin: 0 auto;
 }
-.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.word-img { width: 300px; height: 300px; object-fit: cover; display: block; }
 .img-caption {
   position: absolute; bottom: 0; left: 0; right: 0;
   padding: 20px 14px 8px;
@@ -260,7 +261,7 @@ body {
   </div>
   <button class="mode-btn" id="modeBtn" onclick="toggleMarkedOnly()">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-    <span id="modeBtnText">All (6)</span>
+    <span id="modeBtnText">All (11)</span>
   </button>
 </div>
 
@@ -284,22 +285,22 @@ body {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
     </button>
   </div>
-  <div class="slider-counter" id="sliderCounter">1 / 208</div>
+  <div class="slider-counter" id="sliderCounter">1 / 11</div>
 </div>
 
 <script>
 const WORDS = [
-  { word:'jacqueminot', pronunciation:'ZHAK-mih-noh', ipa:'/ˈʒækmɪˌnoʊ/', pos:'noun', def:'A deep crimson hybrid perpetual rose, prized for its rich color and strong fragrance, popular in Victorian-era gardens.', lang:'Named after General Jean-François Jacqueminot (1787-1865), a French military officer, the rose variety bred in his honor.', example:'She carried a bouquet of jacqueminot roses, their deep crimson petals and intoxicating fragrance filling the church with the scent of old-fashioned romance.', isNoun:true },
-  { word:'Jahiliya', pronunciation:'JAH-hih-LEE-yuh', ipa:'/ˌdʒɑːhɪˈliːjə/', pos:'noun', def:'The period of ignorance and moral darkness in Arabia before the coming of Islam; the pre-Islamic era.', lang:'Arabic, from jahiliya (\'ignorance\'), from jahil (\'ignorant\'), describing the era before the Prophet Muhammad received divine revelation.', example:'Islamic scholars describe the Jahiliya as a time of tribal warfare and idol worship that ended with the arrival of the Prophet\'s message.', isNoun:true },
-  { word:'jai alai', pronunciation:'HY-ah-LY', ipa:'/ˌhaɪ əˈlaɪ/', pos:'noun', def:'A fast-paced ball game of Basque origin played on a three-walled court, in which players use a curved basket strapped to the wrist to hurl a ball at tremendous speed.', lang:'Basque, from jai (\'festival\') + alai (\'merry\'), literally \'merry festival\', because it was traditionally played at celebrations.', example:'The jai alai ball rocketed off the wall at over 150 miles per hour, the fastest ball speed in any sport.', isNoun:true },
-  { word:'janthina', pronunciation:'jan-THY-nuh', ipa:'/dʒænˈθaɪnə/', pos:'noun', def:'A genus of small violet sea snails that float on the ocean surface using a raft of mucus-covered bubbles.', lang:'Greek, from ianthinos (\'violet-colored\'), from ion (\'a violet\') + anthos (\'a flower\'), describing the snail\'s purple shell.', example:'The janthina drifted across the open ocean on its bubble raft, its delicate violet shell one of the most beautiful found on any beach.', isNoun:true },
-  { word:'jasmone', pronunciation:'JAZ-mohn', ipa:'/ˈdʒæzmoʊn/', pos:'noun', def:'An organic compound found in jasmine essential oil, responsible for part of the flower\'s characteristic sweet, floral scent.', lang:'English, from jasmine (from Persian yasmin, \'a gift from God\') + -one (a chemical suffix for ketones).', example:'The perfumer isolated jasmone from jasmine flowers, the compound adding its distinctive sweet, woody note to the fragrance blend.', isNoun:true },
-  { word:'je ne sais quoi', pronunciation:'zhuh nuh SAY KWAH', ipa:'/ˌʒə nə seɪ ˈkwɑː/', pos:'noun', def:'A pleasant quality that is difficult to describe; an indefinable, appealing charm or attractiveness.', lang:'French, from je (\'I\') + ne (\'not\') + sais (\'know\') + quoi (\'what\'), literally \'I don\'t know what\'.', example:'The little café had a certain je ne sais quoi that kept people coming back — perhaps the light, the music, or the owner\'s warm smile.', isNoun:true },
-  { word:'jerboa', pronunciation:'jur-BOH-uh', ipa:'/dʒɜːrˈboʊə/', pos:'noun', def:'A small jumping rodent with long hind legs and a long tail, native to Asia and North Africa, resembling a tiny kangaroo.', lang:'Arabic, from jarbū\' (\'a jumping rodent\'), the desert-dwelling animal known for its extraordinary leaping ability.', example:'The jerboa bounded across the moonlit desert on its enormous hind legs, covering six feet in a single hop despite being barely three inches long.', isNoun:true },
-  { word:'jocote', pronunciation:'hoh-KOH-tay', ipa:'/hoʊˈkoʊteɪ/', pos:'noun', def:'A tropical fruit tree native to Central America producing small, plum-like fruits eaten fresh or used in beverages and preserves.', lang:'Nahuatl, from xocotl (\'fruit\'), the indigenous name for this tart tropical fruit cultivated throughout Mesoamerica.', example:'The jocote fruits turned from green to deep red as they ripened, their sweet-tart flesh a favorite snack eaten straight from the tree.', isNoun:true },
-  { word:'joropo', pronunciation:'hoh-ROH-poh', ipa:'/hoʊˈroʊpoʊ/', pos:'noun', def:'The national dance and music of Venezuela, characterized by rapid footwork, harp and guitar accompaniment, and lively rhythm.', lang:'Spanish, from joropo, possibly from Arabic xarop (\'syrup\'), or of indigenous origin, the traditional music of the Venezuelan plains.', example:'The dancers performed the joropo with breathtaking speed, their feet a blur as the harp and maracas drove the infectious rhythm faster and faster.', isNoun:true },
-  { word:'Jumada', pronunciation:'joo-MAH-dah', ipa:'/dʒuːˈmɑːdə/', pos:'noun', def:'Either of two months in the Islamic calendar: Jumada al-Ula (the fifth month) and Jumada al-Thani (the sixth month).', lang:'Arabic, from jumada (\'dry, frozen\'), because these months originally fell during the dry winter season when the calendar was fixed.', example:'The Islamic historical text recorded that the treaty was signed during Jumada al-Ula, the fifth month of the lunar calendar.', isNoun:true },
-  { word:'Jungian', pronunciation:'YOONG-ee-un', ipa:'/ˈjʊŋiən/', pos:'adjective', def:'Of or relating to the psychological theories of Carl Jung, including archetypes, the collective unconscious, and personality types.', lang:'Named after Carl Gustav Jung (1875-1961), the Swiss psychiatrist and psychoanalyst who founded analytical psychology, + -ian.', example:'The Jungian therapist explored her patient\'s recurring dreams of water, interpreting them as symbols of the unconscious mind seeking integration.', isNoun:false }
+  { word:'jacqueminot', pronunciation:'JAK-muh-noh', ipa:'/ˈʒæk.mɪˌnoʊ/', pos:'noun', def:'A deep crimson variety of hybrid perpetual rose, named after French general Jean-François Jacqueminot; also used as an adjective to describe the raspberry-red color of such roses.', lang:'French, named after Viscount Jean-François Jacqueminot (1787–1865), a French general of the Napoleonic Wars, in whose honor the rose cultivar was introduced in 1853.', example:'The florist arranged a dozen jacqueminot roses in a crystal vase, their deep crimson petals filling the room with an intoxicating fragrance.', isNoun:true },
+  { word:'Jahiliya', pronunciation:'JAH-hih-LEE-yuh', ipa:'/ˌdʒɑːhɪˈliːjə/', pos:'noun', def:'In Islam, the period of ignorance and moral darkness in Arabia before the revelation of the Quran to the Prophet Muhammad; broadly, any state of cultural or spiritual ignorance.', lang:'Arabic, from jāhilīyah (جاهلية), meaning \'ignorance\' or \'barbarism,\' derived from the root j-h-l (\'to be ignorant\'), contrasted with ḥilm (\'forbearance, wisdom\').', example:'The professor explained that the concept of Jahiliya encompassed not merely a historical period but an entire worldview of tribal chaos that Islam sought to transform.', isNoun:true },
+  { word:'jai alai', pronunciation:'HY-uh-LY', ipa:'/ˌhaɪ.əˈlaɪ/', pos:'noun', def:'A fast-paced court game of Basque origin in which players use a curved wicker basket (cesta) strapped to the wrist to hurl a hard ball against a walled court.', lang:'Basque, from jai (\'festival, merry\') + alai (\'joyous\'), literally meaning \'merry festival,\' reflecting the game\'s origins as festive Basque entertainment.', example:'The jai alai player launched the pelota at blistering speed, the ball ricocheting off the granite wall faster than any spectator could follow.', isNoun:true },
+  { word:'janthina', pronunciation:'jan-THYE-nuh', ipa:'/dʒænˈθaɪnə/', pos:'noun', def:'A genus of small pelagic sea snails with delicate violet or purple shells that float on the ocean surface using self-made rafts of mucus-coated air bubbles, feeding on jellyfish and other hydrozoans.', lang:'Latin, from Greek ianthinos (\'violet-colored\'), from ion (\'violet\') + anthos (\'flower\'), describing the snail\'s distinctive purple coloration.', example:'After the tropical storm, dozens of janthina shells washed ashore, their fragile violet spirals glistening like tiny amethysts among the seaweed.', isNoun:true },
+  { word:'jasmone', pronunciation:'JAZ-mohn', ipa:'/ˈdʒæzmoʊn/', pos:'noun', def:'A volatile organic compound (C₁₁H₁₆O) extracted from the essential oil of jasmine flowers, existing as a colorless to pale yellow liquid used widely in perfumery and cosmetics.', lang:'From jasmine (via Arabic yāsamīn, from Persian yāsaman) + -one (chemical suffix indicating a ketone), named for its natural occurrence in jasmine oil.', example:'The perfumer added just a trace of jasmone to the blend, its warm floral character lending the fragrance the unmistakable soul of a jasmine garden at dusk.', isNoun:true },
+  { word:'je ne sais quoi', pronunciation:'zhuh-nuh-say-KWAH', ipa:'/ʒə nə seɪ ˈkwɑː/', pos:'noun', def:'An indefinable, indescribable quality that makes something or someone attractive, distinctive, or special; a certain something that eludes precise description.', lang:'French, literally \'I don\'t know what,\' from je (\'I\') + ne (\'not\') + sais (\'know\') + quoi (\'what\'), used in English since the 17th century as a borrowed phrase.', example:'The old Parisian café possessed a je ne sais quoi that no modern renovation could ever replicate — an ineffable charm woven into its very walls.', isNoun:true },
+  { word:'jerboa', pronunciation:'jer-BOH-uh', ipa:'/dʒɜːrˈboʊə/', pos:'noun', def:'Any of several small nocturnal jumping rodents of the family Dipodidae, native to the deserts and steppes of Asia and North Africa, characterized by exceptionally long hind legs, large ears, and a long tufted tail.', lang:'New Latin, from Arabic yarbūʿ (\'jerboa\'), a desert rodent name related to the root for \'four\' or \'square,\' possibly describing its sitting posture.', example:'The jerboa bounded across the moonlit sand in erratic zigzag leaps, its impossibly long hind legs propelling it three meters in a single bound to escape the owl.', isNoun:true },
+  { word:'jocote', pronunciation:'hoh-KOH-tay', ipa:'/hoʊˈkoʊteɪ/', pos:'noun', def:'A small, oval tropical fruit (Spondias purpurea) of the cashew family, native to Central America, with a thin waxy skin that ripens from green to purple-red and tangy-sweet flesh surrounding a large stone.', lang:'Spanish, from Nahuatl xocotl (\'any sour or acidic fruit\'), reflecting the indigenous Mesoamerican origins of the fruit and its tart flavor when unripe.', example:'At the roadside stand in Costa Rica, the vendor offered ripe jocote by the bagful, each small fruit bursting with a flavor somewhere between mango and plum.', isNoun:true },
+  { word:'joropo', pronunciation:'hoh-ROH-poh', ipa:'/hoʊˈroʊpoʊ/', pos:'noun', def:'A lively traditional music genre and accompanying partner dance originating from the Llanos plains of Venezuela and Colombia, performed with harp, cuatro, and maracas, and recognized as Venezuela\'s national dance.', lang:'Spanish (Venezuelan), possibly from Arabic xarop (\'syrup, jarabe\'), related to the Mexican jarabe; formerly meaning \'a party\' before coming to denote the specific music and dance form.', example:'The joropo musicians launched into a driving rhythm on harp and maracas while the dancers\' feet flew across the floor in intricate zapateado footwork.', isNoun:true },
+  { word:'Jumada', pronunciation:'joo-MAH-dah', ipa:'/dʒuːˈmɑːdə/', pos:'noun', def:'Either the fifth (Jumada al-Awwal) or sixth (Jumada al-Thani) month of the Islamic lunar calendar, originally named for the dry, frozen season when water sources would freeze or the land lay parched.', lang:'Arabic, from jamada (جمد, \'to freeze\' or \'to become dry and hard\'), referring to the freezing of water or the parched condition of the land during the season when the month was originally named.', example:'The imam reminded the congregation that the month of Jumada was approaching and encouraged reflection on the historical events that shaped early Islamic history.', isNoun:true },
+  { word:'Jungian', pronunciation:'YUNG-ee-un', ipa:'/ˈjʊŋiən/', pos:'adjective', def:'Of, relating to, or characteristic of the Swiss psychiatrist Carl Gustav Jung (1875–1961) or his system of analytical psychology, which emphasizes the collective unconscious, archetypes, and individuation.', lang:'From the surname Jung (German, meaning \'young\') + -ian (English suffix forming adjectives), after Carl Gustav Jung, founder of analytical psychology.', example:'Her therapist took a Jungian approach, exploring the archetypal symbols in her recurring dreams to illuminate hidden aspects of her unconscious mind.', isNoun:false }
 ];
 
 let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
@@ -315,7 +316,6 @@ function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtteran
 async function fetchImage(word) {
   if(imageCache[word]||imageLoading[word]) return;
   imageLoading[word]=true;
-  // Update just the image placeholder if it exists
   const imgPlaceholder = document.getElementById('img-'+word);
   if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
   try {
@@ -325,7 +325,6 @@ async function fetchImage(word) {
     imageCache[word]=m?m[0]:null;
   } catch(e){imageCache[word]=null;}
   imageLoading[word]=false;
-  // Update just the image placeholder if still on same word
   const imgEl = document.getElementById('img-'+word);
   if(imgEl && imageCache[word]) {
     imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
@@ -386,7 +385,7 @@ function render() {
   const thumb = document.getElementById("sliderThumb");
   if(!thumb.classList.contains('dragging')) thumb.style.left = thumbLeft + "px";
 
-  // Ticks - show ~20 evenly spaced markers
+  // Ticks
   const tickCount = Math.min(totalA, 20);
   let ticksHtml = '';
   for(let t=0; t<tickCount; t++){
@@ -451,7 +450,6 @@ function sliderFromX(cx){
   const pad=10;
   const p=Math.max(0,Math.min(1,(cx-r.left-pad)/(r.width-pad*2)));
   const a=aw(),idx=Math.round(p*(a.length-1));
-  // Move thumb immediately for smooth feel
   const thumbLeft=pad+(p)*(r.width-pad*2);
   slThumb.style.left=thumbLeft+"px";
   if(idx!==si()){
@@ -469,7 +467,6 @@ document.addEventListener("touchmove",e=>{
 document.addEventListener("touchend",()=>{
   if(slDragging){
     slDragging=false; slThumb.classList.remove('dragging');
-    // Speak the word after releasing
     const a=aw(),s=si();
     if(a[s]) setTimeout(()=>speak(a[s].word),100);
   }
