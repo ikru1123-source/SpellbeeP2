@@ -157,12 +157,12 @@ body {
   animation: letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
 }
 .image-box {
-  width: 100%; border-radius: 14px; overflow: hidden;
+  width: 300px; height: 300px; border-radius: 14px; overflow: hidden;
   border: 1px solid rgba(255,255,255,0.08); position: relative;
   animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
-  animation-delay: 0.15s;
+  animation-delay: 0.15s; margin: 0 auto;
 }
-.word-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.word-img { width: 300px; height: 300px; object-fit: cover; display: block; }
 .img-caption {
   position: absolute; bottom: 0; left: 0; right: 0;
   padding: 20px 14px 8px;
@@ -298,36 +298,46 @@ const WORDS = [
 ];
 
 let currentIndex = 0, flipped = false, markedWords = new Set(), markedOnly = false;
-let imageCache = {}, imageLoading = {};
+let imageCache = {};
+let imageLoading = {};
 let touchStartX = 0, swipeX = 0;
+
+const wikiImageMap = {
+  'yabbies': 'Yabby',
+  'yacata': 'Yácata',
+  'yardang': 'Yardang',
+  'yawmeter': 'Yaw_(rotation)',
+  'Yorkshire': 'Yorkshire',
+  'Yoruba': 'Yoruba_people'
+};
+
+async function loadImages() {
+  for (const [word, article] of Object.entries(wikiImageMap)) {
+    try {
+      const resp = await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(article));
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.thumbnail && data.thumbnail.source) {
+          let url = data.thumbnail.source;
+          url = url.replace(/\/\d+px-/, '/400px-');
+          imageCache[word] = url;
+          const imgEl = document.getElementById('img-' + word);
+          if (imgEl) {
+            imgEl.innerHTML = '<div class="image-box"><img class="word-img" src="' + url + '" alt="' + word + '" onerror="this.parentElement.style.display=\'none\'"><div class="img-caption">' + word + '</div></div>';
+          }
+        }
+      }
+    } catch(e) {}
+  }
+}
+
+loadImages();
 
 function aw() { return markedOnly ? WORDS.filter((_,i) => markedWords.has(i)) : WORDS; }
 function si() { const a=aw(); if(markedOnly){const i=a.findIndex(w=>w.word===WORDS[currentIndex]?.word);return i>=0?i:0;} return currentIndex; }
 function gi() { const a=aw(),s=si(); return WORDS.findIndex(w=>w.word===a[s]?.word); }
 
 function speak(t) { speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=0.85;u.pitch=1;u.lang="en-US"; speechSynthesis.speak(u); }
-
-async function fetchImage(word) {
-  if(imageCache[word]||imageLoading[word]) return;
-  imageLoading[word]=true;
-  // Update just the image placeholder if it exists
-  const imgPlaceholder = document.getElementById('img-'+word);
-  if(imgPlaceholder) imgPlaceholder.innerHTML=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
-  try {
-    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:'Search online and find a direct image URL for "'+word+'". Return ONLY the raw URL ending in .jpg/.jpeg/.png/.svg/.webp. No markdown, no explanation.'}],tools:[{type:"web_search_20250305",name:"web_search"}]})});
-    const d=await r.json(); const t=d.content.map(b=>b.type==="text"?b.text:"").filter(Boolean).join("\n").trim();
-    const m=t.match(/https?:\/\/[^\s"'<>\)]+\.(jpg|jpeg|png|svg|webp)([^\s"'<>\)]*)*/i);
-    imageCache[word]=m?m[0]:null;
-  } catch(e){imageCache[word]=null;}
-  imageLoading[word]=false;
-  // Update just the image placeholder if still on same word
-  const imgEl = document.getElementById('img-'+word);
-  if(imgEl && imageCache[word]) {
-    imgEl.innerHTML=`<div class="image-box"><img class="word-img" src="${imageCache[word]}" alt="${word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${word}</div></div>`;
-  } else if(imgEl) {
-    imgEl.innerHTML='';
-  }
-}
 
 const starSvg=f=>`<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
 const speakerSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
@@ -348,8 +358,8 @@ function renderBack(w) {
   let img="";
   if(w.isNoun){
     let imgContent = "";
-    if(imageLoading[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Finding image…</span></div>`;
-    else if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    if(imageCache[w.word]) imgContent=`<div class="image-box"><img class="word-img" src="${imageCache[w.word]}" alt="${w.word}" onerror="this.parentElement.style.display='none'"><div class="img-caption">${w.word}</div></div>`;
+    else if(wikiImageMap[w.word]) imgContent=`<div class="loading-box"><div class="spinner"></div><span class="loading-text">Loading image…</span></div>`;
     img=`<div id="img-${w.word}">${imgContent}</div>`;
   }
   return `<div class="back-content">
@@ -368,7 +378,7 @@ function render() {
 
   document.getElementById("card").innerHTML=`<div class="card-top"><span class="counter">${s+1} / ${a.length}</span><div class="card-top-right"><span class="side-label">${flipped?'ANSWER':'CLUES'}</span><button class="mark-btn ${markedWords.has(g)?'active':''}" onclick="toggleMark(${g})">${starSvg(markedWords.has(g))}</button></div></div>`+(flipped?renderBack(w):renderFront(w));
 
-  if(flipped && w.isNoun&&!imageCache[w.word]&&!imageLoading[w.word]) fetchImage(w.word);
+  // Images loaded in background via loadImages()
 
   // Slider
   const totalA = a.length;
